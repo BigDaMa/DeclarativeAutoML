@@ -15,7 +15,7 @@ finished = []
 
 session = server.new_session(session_name="install", kill_session=True, attach=False)
 session.attached_pane.send_keys('conda activate dAutoML')
-session.attached_pane.send_keys('cd Software/DeclarativeAutoML')
+session.attached_pane.send_keys('cd /home/neutatz/Software/DeclarativeAutoML')
 session.attached_pane.send_keys('git pull origin main')
 session.attached_pane.send_keys('python -m pip install .')
 
@@ -26,7 +26,7 @@ while len(finished) < len(datasets):
         running_ids.append(datasets[data_id])
         data_id += 1
         session.attached_pane.send_keys('conda activate dAutoML')
-        session.attached_pane.send_keys('cd Software/DeclarativeAutoML')
+        session.attached_pane.send_keys('cd /home/neutatz/Software/DeclarativeAutoML')
         session.attached_pane.send_keys('python fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/check_model_parallel_per_data.py -d ' + str(datasets[data_id]))
 
 
