@@ -27,9 +27,10 @@ test_holdout_dataset_ids = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 
 
 # Initiate the parser
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", "-d", help="OpenML datatset ID")
+parser.add_argument("--dataset", "-d", help="OpenML datatset ID", type=int)
 args = parser.parse_args()
 print(args.dataset)
+
 
 print(args)
 
@@ -38,7 +39,7 @@ privacy = None
 
 results_dict = {}
 
-for test_holdout_dataset_id in test_holdout_dataset_ids:
+for test_holdout_dataset_id in [args.dataset]:
 
     X_train_hold, X_test_hold, y_train_hold, y_test_hold, categorical_indicator_hold, attribute_names_hold = get_data(test_holdout_dataset_id, randomstate=42)
     metafeature_values_hold = data2features(X_train_hold, y_train_hold, categorical_indicator_hold)
@@ -171,4 +172,4 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
         results_dict[test_holdout_dataset_id]['dynamic'] = dynamic_approach
         results_dict[test_holdout_dataset_id]['static'] = static_approach
 
-        pickle.dump(results_dict, open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results.p', 'wb+'))
+    pickle.dump(results_dict, open('/home/neutatz/data/automl_runs/all_results' + str(test_holdout_dataset_id)  + '.p', 'wb+'))
