@@ -20,6 +20,9 @@ session.attached_pane.send_keys('git pull origin main')
 session.attached_pane.send_keys('python -m pip install .')
 
 
+time.sleep(60)
+
+
 while len(finished) < len(datasets):
     if len(running_ids) < parallelism:
         session = server.new_session(session_name="data" + str(datasets[data_id]), kill_session=True, attach=False)

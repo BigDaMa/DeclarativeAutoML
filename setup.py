@@ -30,7 +30,8 @@ setup(
                       "scipy==1.4.1",
                       "ipykernel",
                       "auto-sklearn==0.10.0",
-                      "libtmux"
+                      "libtmux",
+                      "matplotlib"
                       ],
     packages=find_packages(exclude=('tests', 'docs'))
 )
