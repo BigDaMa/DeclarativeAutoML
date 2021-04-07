@@ -80,4 +80,4 @@ for test_holdout_dataset_id in [args.dataset]:
         results_dict[test_holdout_dataset_id] = {}
         results_dict[test_holdout_dataset_id]['dynamic'] = dynamic_approach
 
-    pickle.dump(results_dict,open('/home/neutatz/data/automl_runs/' + args.outputname + '_' + str(test_holdout_dataset_id) + '.p', 'wb+'))
+    pickle.dump(results_dict, open('/home/neutatz/data/automl_runs/' + args.outputname + '_' + str(test_holdout_dataset_id) + '.p', 'wb+'))
