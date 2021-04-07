@@ -29,7 +29,8 @@ setup(
                       "anytree",
                       "scipy==1.4.1",
                       "ipykernel",
-                      "auto-sklearn==0.10.0"
+                      "auto-sklearn==0.10.0",
+                      "libtmux"
                       ],
     packages=find_packages(exclude=('tests', 'docs'))
 )
