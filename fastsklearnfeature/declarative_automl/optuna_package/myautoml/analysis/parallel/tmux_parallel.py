@@ -6,6 +6,12 @@ import multiprocessing
 datasets = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 448, 1458, 162, 1101, 1561, 1061, 1506, 1235, 4135, 151, 51, 41138, 40645, 1510, 1158, 312, 38, 52, 1216, 41007, 1130]
 
 
+program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/check_model_parallel_per_data.py'
+outputname = 'mine'
+
+#program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/checkAutosklearn_parallel.py'
+#outputname = 'autosklearn'
+
 parallelism = multiprocessing.cpu_count()
 server = libtmux.Server()
 
@@ -30,13 +36,13 @@ while len(finished) < len(datasets):
         data_id += 1
         session.attached_pane.send_keys('conda activate dAutoML')
         session.attached_pane.send_keys('cd /home/neutatz/Software/DeclarativeAutoML')
-        session.attached_pane.send_keys('python fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/check_model_parallel_per_data.py -d ' + str(datasets[data_id]))
+        session.attached_pane.send_keys('python ' + program + ' -d ' + str(datasets[data_id]) + ' -o ' + str(outputname))
 
 
     #check if anything is done
     to_be_removed = []
     for r in running_ids:
-        my_file = Path('/home/neutatz/data/automl_runs/all_results' + str(r) + '.p')
+        my_file = Path('/home/neutatz/data/automl_runs/' + outputname + '_' + str(r) + '.p')
         if my_file.is_file():
             time.sleep(60)
             session = server.find_where({"session_name": "data" + str(r)})

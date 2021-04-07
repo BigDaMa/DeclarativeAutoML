@@ -28,13 +28,14 @@ test_holdout_dataset_ids = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 
 # Initiate the parser
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", "-d", help="OpenML datatset ID", type=int)
+parser.add_argument("--outputname", "-o", help="Name of the output file")
 args = parser.parse_args()
 print(args.dataset)
 
 
 print(args)
 
-memory_budget = 20.0
+memory_budget = 500.0
 privacy = None
 
 results_dict = {}
@@ -172,4 +173,4 @@ for test_holdout_dataset_id in [args.dataset]:
         results_dict[test_holdout_dataset_id]['dynamic'] = dynamic_approach
         results_dict[test_holdout_dataset_id]['static'] = static_approach
 
-    pickle.dump(results_dict, open('/home/neutatz/data/automl_runs/all_results' + str(test_holdout_dataset_id)  + '.p', 'wb+'))
+    pickle.dump(results_dict,open('/home/neutatz/data/automl_runs/' + args.outputname + '_' + str(test_holdout_dataset_id) + '.p', 'wb+'))
