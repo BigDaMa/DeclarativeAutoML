@@ -98,7 +98,7 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                                    #evaluation_time=int(0.1*search_time_frozen),
                                                                                    #hold_out_fraction=0.33,
                                                                                    tune_space=True,
-                                                                                   ), n_trials=500, n_jobs=8)
+                                                                                   ), n_trials=500, n_jobs=1)
 
             space = study_prune.best_trial.user_attrs['space']
 
