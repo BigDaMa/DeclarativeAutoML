@@ -33,10 +33,10 @@ while len(finished) < len(datasets):
     if len(running_ids) < parallelism:
         session = server.new_session(session_name="data" + str(datasets[data_id]), kill_session=True, attach=False)
         running_ids.append(datasets[data_id])
-        data_id += 1
         session.attached_pane.send_keys('conda activate dAutoML')
         session.attached_pane.send_keys('cd /home/neutatz/Software/DeclarativeAutoML')
         session.attached_pane.send_keys('python ' + program + ' -d ' + str(datasets[data_id]) + ' -o ' + str(outputname))
+        data_id += 1
 
 
     #check if anything is done
