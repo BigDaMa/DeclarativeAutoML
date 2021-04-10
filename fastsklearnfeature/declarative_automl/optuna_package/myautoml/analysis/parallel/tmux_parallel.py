@@ -2,15 +2,20 @@ import libtmux
 from pathlib import Path
 import time
 import multiprocessing
+import argparse
 
 datasets = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 448, 1458, 162, 1101, 1561, 1061, 1506, 1235, 4135, 151, 51, 41138, 40645, 1510, 1158, 312, 38, 52, 1216, 41007, 1130]
 
-
-#program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/check_model_parallel_per_data.py'
-#outputname = 'mine'
-
-program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/checkAutosklearn_parallel.py'
-outputname = 'autosklearn'
+parser = argparse.ArgumentParser()
+parser.add_argument("--tool", "-t", help="Tool mine(0), autosklearn(1)", type=int)
+args = parser.parse_args()
+if args.tool == 0:
+    program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/check_model_parallel_per_data.py'
+    outputname = 'mine'
+    
+if args.tool == 1:
+    program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/checkAutosklearn_parallel.py'
+    outputname = 'autosklearn'
 
 parallelism = multiprocessing.cpu_count()
 server = libtmux.Server()
