@@ -12,7 +12,7 @@ args = parser.parse_args()
 if args.tool == 0:
     program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/check_model_parallel_per_data.py'
     outputname = 'mine'
-    
+
 if args.tool == 1:
     program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/checkAutosklearn_parallel.py'
     outputname = 'autosklearn'
@@ -35,7 +35,7 @@ time.sleep(60)
 
 
 while len(finished) < len(datasets):
-    if len(running_ids) < parallelism:
+    if len(running_ids) < parallelism and data_id < len(datasets):
         session = server.new_session(session_name="data" + str(datasets[data_id]), kill_session=True, attach=False)
         running_ids.append(datasets[data_id])
         session.attached_pane.send_keys('conda activate dAutoML')
