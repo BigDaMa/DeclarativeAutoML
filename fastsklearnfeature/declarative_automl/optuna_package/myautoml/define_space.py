@@ -40,6 +40,10 @@ from fastsklearnfeature.declarative_automl.optuna_package.feature_preprocessing.
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateLogisticRegressionOptuna import PrivateLogisticRegressionOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateGaussianNBOptuna import PrivateGaussianNBOptuna
 
+from fastsklearnfeature.declarative_automl.optuna_package.augmentation.RandomOverSamplerOptuna import RandomOverSamplerOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.augmentation.SMOTEOptuna import SMOTEOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.augmentation.ADASYNOptuna import ADASYNOptuna
+
 classifier_list = [RandomForestClassifierOptuna(),
                                 AdaBoostClassifierOptuna(),
                                 BernoulliNBOptuna(),
@@ -88,6 +92,12 @@ scaling_list = [IdentityTransformation(),
                              QuantileTransformerOptuna(),
                              RobustScalerOptuna(),
                              StandardScalerOptuna()]
+
+augmentation_list = [IdentityTransformation(),
+                     RandomOverSamplerOptuna(),
+                     SMOTEOptuna(),
+                     ADASYNOptuna()
+                     ]
 
 
 categorical_encoding_list = [OneHotEncoderOptuna(),

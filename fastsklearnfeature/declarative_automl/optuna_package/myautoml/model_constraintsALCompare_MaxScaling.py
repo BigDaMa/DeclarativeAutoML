@@ -1,9 +1,9 @@
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.MyAutoMLProcess import MyAutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.MyAutoMLProcessClassBalance import MyAutoML
 import optuna
 import time
 from sklearn.metrics import make_scorer
 import numpy as np
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.Space_GenerationTree import SpaceGenerator
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.Space_GenerationTreeBalance import SpaceGenerator
 import copy
 from optuna.trial import FrozenTrial
 from anytree import RenderTree
@@ -43,6 +43,7 @@ for t_v in test_holdout_dataset_id:
 
 
 feature_names, feature_names_new = get_feature_names()
+
 
 def run_AutoML(trial, X_train=None, X_test=None, y_train=None, y_test=None, categorical_indicator=None):
     space = None
@@ -139,6 +140,7 @@ def run_AutoML(trial, X_train=None, X_test=None, y_train=None, y_test=None, cate
 
 
     dynamic_params = []
+    static_params = []
     for random_i in range(5):
         search = MyAutoML(cv=cv,
                           number_of_cvs=number_of_cvs,
@@ -165,13 +167,44 @@ def run_AutoML(trial, X_train=None, X_test=None, y_train=None, y_test=None, cate
             pass
         dynamic_params.append(test_score)
 
-    count_success = 0
-    for i_run in range(len(dynamic_params)):
-        if dynamic_params[i_run] > 0.0:
-            count_success += 1
-    success_rate = float(count_success) / float(len(dynamic_params))
+        # default params
+        gen_new = SpaceGenerator()
+        space_new = gen_new.generate_params()
+        for pre, _, node in RenderTree(space_new.parameter_tree):
+            if node.status == True:
+                print("%s%s" % (pre, node.name))
 
-    return success_rate, search
+        search_static = MyAutoML(n_jobs=1,
+                          time_search_budget=search_time,
+                          space=space_new,
+                          evaluation_budget=int(0.1 * search_time),
+                          main_memory_budget_gb=memory_limit,
+                          differential_privacy_epsilon=privacy_limit,
+                          hold_out_fraction=0.33,
+                          training_time_limit=training_time_limit,
+                          inference_time_limit=inference_time_limit,
+                          pipeline_size_limit=pipeline_size_limit
+                          )
+
+        try:
+            best_result = search_static.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
+            test_score_default = my_scorer(search_static.get_best_pipeline(), X_test, y_test)
+        except:
+            test_score_default = 0.0
+        static_params.append(test_score_default)
+
+    #comparison = np.mean(dynamic_params) - np.mean(static_params)
+
+    #conservativ cost function
+    all_results = copy.deepcopy(dynamic_params)
+    all_results.extend(static_params)
+    comparison = np.min(dynamic_params) / np.max(all_results)
+
+    #less conservativ
+    #but this has to little signal
+    #comparison = np.mean(dynamic_params) / np.max([np.mean(static_params), np.mean(dynamic_params)])
+
+    return comparison, search
 
 
 def run_AutoML_global(trial_id):
@@ -246,11 +279,8 @@ def optimize_uncertainty(trial):
 
 
 
-#random sampling 10 iterations
+#cold start - random sampling
 study = optuna.create_study(direction='maximize', sampler=RandomSampler(seed=42))
-
-
-#first random sampling
 study.optimize(run_AutoML_score_only, n_trials=4, n_jobs=1)
 
 print('done')
@@ -275,10 +305,12 @@ print(X_meta.shape)
 
 
 pruned_accuray_results = []
-verbose = False
-cv_over_time = []
-topk = 20#20
 
+verbose = False
+
+cv_over_time = []
+
+topk = 20#20
 while True:
 
     assert X_meta.shape[1] == len(feature_names_new), 'error'
@@ -292,19 +324,19 @@ while True:
         model = cross_val.best_estimator_
         cv_over_time.append(cross_val.best_score_)
 
-        with open('/tmp/my_great_model_success.p', "wb") as pickle_model_file:
+        with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
             pickle.dump(model, pickle_model_file)
 
-        with open('/tmp/felix_X_success.p', "wb") as pickle_model_file:
+        with open('/tmp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
             pickle.dump(X_meta, pickle_model_file)
 
-        with open('/tmp/felix_y_success.p', "wb") as pickle_model_file:
+        with open('/tmp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
             pickle.dump(y_meta, pickle_model_file)
 
-        with open('/tmp/felix_group_success.p', "wb") as pickle_model_file:
+        with open('/tmp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
             pickle.dump(group_meta, pickle_model_file)
 
-        with open('/tmp/felix_cv_success.p', "wb") as pickle_model_file:
+        with open('/tmp/felix_cv_compare_scaled.p', "wb") as pickle_model_file:
             pickle.dump(cv_over_time, pickle_model_file)
     else:
         model = RandomForestRegressor(n_estimators=1000)
@@ -337,4 +369,5 @@ while True:
             X_meta = np.vstack((X_meta, result_p['feature_l'][f_progress]))
             y_meta.append(result_p['target_l'][f_progress])
             group_meta.append(result_p['group_l'])
+
 

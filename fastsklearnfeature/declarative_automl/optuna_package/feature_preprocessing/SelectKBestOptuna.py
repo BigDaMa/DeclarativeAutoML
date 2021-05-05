@@ -1,5 +1,5 @@
 from sklearn.feature_selection import SelectPercentile
-from sklearn.feature_selection.from_model import _get_feature_importances
+from sklearn.feature_selection._base import _get_feature_importances
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import SelectKBest
 import sklearn
