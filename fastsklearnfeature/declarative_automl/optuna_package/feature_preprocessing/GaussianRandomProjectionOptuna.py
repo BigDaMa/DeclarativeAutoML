@@ -17,7 +17,7 @@ class GaussianRandomProjectionOptuna(GaussianRandomProjection):
 
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('GaussianRandomProjection_')
-        space_gen.generate_number(self.name + 'n_components_fraction', 0.1, depending_node=depending_node)
+        space_gen.generate_number(self.name + 'n_components_fraction', 0.1, depending_node=depending_node, low=0.0, high=1.0)
 
 
 

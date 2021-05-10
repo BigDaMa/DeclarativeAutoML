@@ -12,5 +12,5 @@ class PrivateLogisticRegressionOptuna(LogisticRegression):
 
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('PrivateLogisticRegression_')
-        space_gen.generate_number(self.name + "tol", 1e-4, depending_node=depending_node)
-        space_gen.generate_number(self.name + "C", 1.0, depending_node=depending_node)
+        space_gen.generate_number(self.name + "tol", 1e-4, depending_node=depending_node, low=1e-5, high=1e-1, is_log=True)
+        space_gen.generate_number(self.name + "C", 1.0, depending_node=depending_node, low=0.03125, high=32768, is_log=True)

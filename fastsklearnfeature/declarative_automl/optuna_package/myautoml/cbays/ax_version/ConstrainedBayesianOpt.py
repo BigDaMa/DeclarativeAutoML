@@ -1,22 +1,12 @@
-import optuna
-#from sklearn.pipeline import Pipeline
 from imblearn.pipeline import Pipeline
 import sklearn.metrics
 from sklearn.metrics import make_scorer
 from sklearn.metrics import roc_auc_score
 import openml
-import numpy as np
 from fastsklearnfeature.declarative_automl.optuna_package.feature_preprocessing.CategoricalMissingTransformer import CategoricalMissingTransformer
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.compose import ColumnTransformer
-from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.SimpleImputerOptuna import SimpleImputerOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.QuadraticDiscriminantAnalysisOptuna import QuadraticDiscriminantAnalysisOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.PassiveAggressiveOptuna import PassiveAggressiveOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.KNeighborsClassifierOptuna import KNeighborsClassifierOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.HistGradientBoostingClassifierOptuna import HistGradientBoostingClassifierOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateLogisticRegressionOptuna import PrivateLogisticRegressionOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateGaussianNBOptuna import PrivateGaussianNBOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.cbays.Space_GenerationTreeBalanceConstrained import SpaceGenerator
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.cbays.ax_version.Space_GenerationTreeBalanceConstrained import SpaceGenerator
 from sklearn.model_selection import StratifiedKFold
 import pandas as pd
 import time
@@ -28,11 +18,18 @@ import fastsklearnfeature.declarative_automl.optuna_package.myautoml.define_spac
 import pickle
 import os
 import glob
-from dataclasses import dataclass
 import sys
 from fastsklearnfeature.declarative_automl.optuna_package.feature_preprocessing.MyIdentity import IdentityTransformation
 import numpy as np
 from ax import *
+from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.SimpleImputerOptuna import SimpleImputerOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.QuadraticDiscriminantAnalysisOptuna import QuadraticDiscriminantAnalysisOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.PassiveAggressiveOptuna import PassiveAggressiveOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.KNeighborsClassifierOptuna import KNeighborsClassifierOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.HistGradientBoostingClassifierOptuna import HistGradientBoostingClassifierOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateLogisticRegressionOptuna import PrivateLogisticRegressionOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateGaussianNBOptuna import PrivateGaussianNBOptuna
+from ax.models.numpy.randomforest import RandomForest
 
 class TimeException(Exception):
     def __init__(self, message="Time is over!"):
@@ -49,7 +46,6 @@ def calculate_class_weight(y, custom_weight):
     return class_weight
 
 def evaluatePipeline(key, return_dict):
-    print('eval')
     try:
         class_weighting = mp_global.mp_store[key]['class_weighting']
         custom_weighting = mp_global.mp_store[key]['custom_weighting']
@@ -74,25 +70,19 @@ def evaluatePipeline(key, return_dict):
 
         #todo: cancel fitting if over time
         start_training = time.time()
-        if class_weighting:
-            class_weight = 'balanced'
-            if custom_weighting:
-                class_weight = calculate_class_weight(y, custom_weight)
-            p.fit(X, y, classifier__sample_weight=compute_sample_weight(class_weight=class_weight, y=y))
-        else:
-            p.fit(X, y)
+        p.fit(X, y)
 
         training_time = time.time() - start_training
         return_dict[key + 'result' + '_training_time'] = training_time
         if type(training_time_limit) != type(None) and training_time > training_time_limit:
-            return_dict[key + 'result'] = -1 * (training_time - training_time_limit) #return the difference to satisfying the constraint
+            return_dict[key + 'result'] = 0.0
             return
 
         dumped_obj = pickle.dumps(p)
         pipeline_size = sys.getsizeof(dumped_obj)
         return_dict[key + 'result' + '_pipeline_size'] = pipeline_size
         if type(pipeline_size_limit) != type(None) and pipeline_size > pipeline_size_limit:
-            return_dict[key + 'result'] = -1 * (pipeline_size - pipeline_size_limit)  # return the difference to satisfying the constraint
+            return_dict[key + 'result'] = 0.0
             return
 
         inference_times = []
@@ -103,14 +93,11 @@ def evaluatePipeline(key, return_dict):
             inference_times.append(time.time() - start_inference)
         return_dict[key + 'result' + '_inference_time'] = np.mean(inference_times)
         if type(inference_time_limit) != type(None) and np.mean(inference_times) > inference_time_limit:
-            return_dict[key + 'result'] = -1 * (np.mean(inference_times) - inference_time_limit)  # return the difference to satisfying the constraint
+            return_dict[key + 'result'] = 0.0
             return
 
 
         trained_pipeline = copy.deepcopy(p)
-
-
-
         scores = []
 
         if type(hold_out_fraction) == type(None):
@@ -118,37 +105,23 @@ def evaluatePipeline(key, return_dict):
                 my_splits = StratifiedKFold(n_splits=cv, shuffle=True, random_state=int(time.time())).split(X, y)
                 #my_splits = StratifiedKFold(n_splits=cv, shuffle=True, random_state=int(42)).split(X, y)
                 for train_ids, test_ids in my_splits:
-                    if class_weighting:
-                        class_weight = 'balanced'
-                        if custom_weighting:
-                            class_weight = calculate_class_weight(y[train_ids], custom_weight)
-                        p.fit(X[train_ids, :], y[train_ids], classifier__sample_weight=compute_sample_weight(class_weight=class_weight, y=y[train_ids]))
-                    else:
-                        p.fit(X[train_ids, :], y[train_ids])
+                    p.fit(X[train_ids, :], y[train_ids])
 
                     scores.append(scorer(p, X[test_ids, :], pd.DataFrame(y[test_ids])))
         else:
             X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
                                                                   test_size=hold_out_fraction)
-            if class_weighting:
-                class_weight = 'balanced'
-                if custom_weighting:
-                    class_weight = calculate_class_weight(y_train, custom_weight)
-                p.fit(X_train, y_train,
-                      classifier__sample_weight=compute_sample_weight(class_weight=class_weight, y=y_train))
-            else:
-                p.fit(X_train, y_train)
+            p.fit(X_train, y_train)
             scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
 
         return_dict[key + 'result'] = np.mean(scores)
-        print(return_dict[key + 'result'])
 
         if mp_global.mp_store[key]['study_best_value'] < return_dict[key + 'result']:
             with open('/tmp/my_pipeline' + str(key) + '.p', "wb") as pickle_pipeline_file:
                 pickle.dump(trained_pipeline, pickle_pipeline_file)
 
     except Exception as e:
-        return_dict[key + 'result'] = -1 * np.inf
+        return_dict[key + 'result'] = 0.0
         print(p)
         print(str(e) + '\n\n')
 
@@ -226,43 +199,53 @@ class ConstrainedBayesianOpt:
         def objective1(parameterization):
             start_total = time.time()
 
+            self.space.parameterization = parameterization
+
             try:
 
-
                 imputer = SimpleImputerOptuna()
-                #imputer.init_hyperparameters(self.space, X, y)
+                imputer.init_hyperparameters(self.space, X, y)
 
-                scaler = self.scaling_list[0]
-                #scaler = self.space.suggest_categorical('scaler', self.scaling_list)
-                #scaler.init_hyperparameters(self.space, X, y)
+                scaler = self.space.suggest_categorical('scaler', self.scaling_list)
+                scaler.init_hyperparameters(self.space, X, y)
 
-                onehot_transformer = self.categorical_encoding_list[0]
-                #onehot_transformer = self.space.suggest_categorical('categorical_encoding', self.categorical_encoding_list)
-                #onehot_transformer.init_hyperparameters(self.space, X, y)
+                onehot_transformer = self.space.suggest_categorical('categorical_encoding', self.categorical_encoding_list)
+                onehot_transformer.init_hyperparameters(self.space, X, y)
 
-                preprocessor = self.preprocessor_list[0]
-                #preprocessor = self.space.suggest_categorical('preprocessor', self.preprocessor_list)
-                #preprocessor.init_hyperparameters(self.space, X, y)
+                preprocessor = self.space.suggest_categorical('preprocessor', self.preprocessor_list)
+                preprocessor.init_hyperparameters(self.space, X, y)
 
 
                 if type(self.differential_privacy_epsilon) == type(None):
-                    classifier = self.classifier_list[0]
-                    #classifier = self.space.suggest_categorical('classifier', self.classifier_list)
+                    classifier = self.space.suggest_categorical('classifier', self.classifier_list)
                 else:
-                    classifier = self.private_classifier_list[0]
-                    #classifier = self.space.suggest_categorical('private_classifier', self.private_classifier_list)
+                    classifier = self.space.suggest_categorical('private_classifier', self.private_classifier_list)
 
-                #classifier.init_hyperparameters(self.space, X, y)
+                classifier.init_hyperparameters(self.space, X, y)
 
                 class_weighting = False
                 custom_weighting = False
                 custom_weight = 0.5
 
-                augmentation = IdentityTransformation()
-                if class_weighting == False:
-                    #augmentation = self.space.suggest_categorical('augmentation', self.augmentation_list)
-                    #augmentation.init_hyperparameters(self.space, X, y)
+                if isinstance(classifier, KNeighborsClassifierOptuna) or \
+                        isinstance(classifier, QuadraticDiscriminantAnalysisOptuna) or \
+                        isinstance(classifier, HistGradientBoostingClassifierOptuna) or \
+                        isinstance(classifier, PrivateLogisticRegressionOptuna) or \
+                        isinstance(classifier, PrivateGaussianNBOptuna):
                     pass
+                else:
+                    class_weighting = self.space.suggest_categorical('class_weighting', [True, False])
+                    if class_weighting:
+                        custom_weighting = self.space.suggest_categorical('custom_weighting', [True, False])
+                        if custom_weighting:
+                            custom_weight = self.space.suggest_uniform('custom_weight', 0.00000001, 1.0)
+
+                if class_weighting:
+                    classifier.set_weight(custom_weight)
+
+                augmentation = self.space.suggest_categorical('augmentation', self.augmentation_list)
+                augmentation.init_hyperparameters(self.space, X, y)
+
 
                 numeric_transformer = Pipeline([('imputation', imputer), ('scaler', scaler)])
                 categorical_transformer = Pipeline([('removeNAN', CategoricalMissingTransformer()), ('onehot_transform', onehot_transformer)])
@@ -281,12 +264,14 @@ class ConstrainedBayesianOpt:
                 my_pipeline = Pipeline([('data_preprocessing', data_preprocessor), ('preprocessing', preprocessor), ('augmentation', augmentation),
                               ('classifier', classifier)])
 
+                print(my_pipeline)
+
 
                 key = 'My_automl' + self.random_key + 'My_process' + str(time.time()) + "##" + str(np.random.randint(0,1000))
 
                 mp_global.mp_store[key] = {}
 
-                mp_global.mp_store[key]['class_weighting'] = parameterization.get("class_weighting")
+                mp_global.mp_store[key]['class_weighting'] = class_weighting
                 mp_global.mp_store[key]['custom_weighting'] = parameterization.get("custom_weighting")
                 mp_global.mp_store[key]['custom_weight'] = parameterization.get("custom_weight")
                 mp_global.mp_store[key]['p'] = copy.deepcopy(my_pipeline)
@@ -302,7 +287,7 @@ class ConstrainedBayesianOpt:
                 mp_global.mp_store[key]['pipeline_size_limit'] = self.pipeline_size_limit
                 mp_global.mp_store[key]['adversarial_robustness_constraint'] = self.adversarial_robustness_constraint
 
-                print('class weighting: ' + str(mp_global.mp_store[key]['class_weighting']))
+                print('class_weighting: ' + str(mp_global.mp_store[key]['class_weighting']) + ' custom_weighting: ' + str(mp_global.mp_store[key]['custom_weighting'])+ ' custom_weight: ' + str(mp_global.mp_store[key]['custom_weight'])+ ' augmentation: ' + str(parameterization.get('augmentation')))
 
                 result_dictionary = {}
 
@@ -312,7 +297,8 @@ class ConstrainedBayesianOpt:
 
                 if already_used_time + 2 >= self.time_search_budget:  # already over budget
                     time.sleep(2)
-                    result_dictionary['accuracy'] = (-1 * np.inf, 0.0)
+                    #result_dictionary['accuracy'] = (-1 * np.inf, 0.0)
+                    result_dictionary['accuracy'] = (0.0, 0.0)
                     return result_dictionary
 
                 remaining_time = np.min([self.evaluation_budget, self.time_search_budget - already_used_time])
@@ -332,21 +318,30 @@ class ConstrainedBayesianOpt:
                 del mp_global.mp_store[key]
 
                 result = -1 * (time.time() - start_total)
-                print(return_dict)
+                print('result: ' + str(return_dict[key + 'result']))
                 if key + 'result' in return_dict:
                     result_dictionary['accuracy'] = (return_dict[key + 'result'], 0.0)
 
-                '''
+
+
                 if key + 'result' + '_training_time' in return_dict:
                     result_dictionary['training_time'] = (return_dict[key + 'result' + '_training_time'], 0.0)
+                else:
+                    result_dictionary['training_time'] = (0.0, 0.0)
+
                 if key + 'result' + '_pipeline_size' in return_dict:
                     result_dictionary['pipeline_size'] = (return_dict[key + 'result' + '_pipeline_size'], 0.0)
+                else:
+                    result_dictionary['pipeline_size'] = (0.0, 0.0)
+
                 if key + 'result' + '_inference_time' in return_dict:
                     result_dictionary['inference_time'] = (return_dict[key + 'result' + '_inference_time'], 0.0)
-                
+                else:
+                    result_dictionary['inference_time'] = (0.0, 0.0)
+
                 result_dictionary['evaluation_time'] = (time.time() - start_total, 0.0)
-                result_dictionary['time_since_start'] = (time.time() - self.start_fitting, 0.0)
-                '''
+                #result_dictionary['time_since_start'] = (time.time() - self.start_fitting, 0.0)
+
 
                 if result > 0:
                     pickle_file_name = '/tmp/my_pipeline' + str(key) + '.p'
@@ -367,24 +362,60 @@ class ConstrainedBayesianOpt:
                 return result_dictionary
             except Exception as e:
                 print(str(e) + '\n\n')
-                result_dictionary['accuracy'] = (-1 * np.inf, 0.0)
+                # result_dictionary['accuracy'] = (-1 * np.inf, 0.0)
+                result_dictionary['accuracy'] = (0.0, 0.0)
                 return result_dictionary
 
         exp = SimpleExperiment(
             name="constrained_Ax",
-            search_space=self.space,
+            search_space=self.space.get_space(),
             evaluation_function=objective1,
             objective_name='accuracy',
             minimize=False
         )
+        #exp.add_tracking_metric(Metric('evaluation_time', lower_is_better=True))
+        #exp.add_tracking_metric(Metric('time_since_start'))
+
+        random_sampling_start = time.time()
 
         sobol = Models.SOBOL(exp.search_space)
-        for i in range(10):
+        for i in range(5):
             exp.new_trial(generator_run=sobol.gen(1))
 
-        for i in range(25):
-            gpei = Models.GPEI(experiment=exp, data=exp.eval())
+        print('random sampling: ' + str(time.time() - random_sampling_start))
+
+        already_used_time = time.time() - self.start_fitting
+        while already_used_time + 2 < self.time_search_budget:
+            #try:
+            eval_start = time.time()
+            eval_data = exp.eval()
+            print('eval time: ' + str(time.time() - eval_start))
+            model_start = time.time()
+
+            #from ax.modelbridge.factory import get_empirical_bayes_thompson
+            #gpei = get_empirical_bayes_thompson(exp, eval_data)
+
+            '''
+            from ax.modelbridge.numpy import NumpyModelBridge
+            from ax.modelbridge.transforms.unit_x import UnitX
+            from ax.modelbridge.transforms.standardize_y import StandardizeY
+            gpei = NumpyModelBridge(
+                experiment=exp,
+                search_space=self.space.get_space(),
+                data=eval_data,
+                model=RandomForest(),
+                transforms=[UnitX, StandardizeY],  # Include the desired set of transforms
+            )
+            '''
+
+            gpei = Models.GPEI(experiment=exp, data=eval_data)
+            print('model time: ' + str(time.time() - model_start))
+            bayesian_sampling_start = time.time()
             batch = exp.new_trial(generator_run=gpei.gen(1))
+            print('bayesian_sampling time: ' + str(time.time() - bayesian_sampling_start))
+            #except:
+            #    break
+            already_used_time = time.time() - self.start_fitting
 
         #clean up all remaining pipelines
         for my_path in glob.glob('/tmp/my_pipeline' + 'My_automl' + self.random_key + 'My_process' + '*.p'):
@@ -426,13 +457,11 @@ if __name__ == "__main__":
     gen = SpaceGenerator()
     space = gen.generate_params()
 
-    from anytree import RenderTree
-
     #for pre, _, node in RenderTree(space.parameter_tree):
     #    print("%s%s: %s" % (pre, node.name, node.status))
 
     search = ConstrainedBayesianOpt(n_jobs=1,
-                      time_search_budget=2*60,
+                      time_search_budget=60*60*3,
                       space=space,
                       main_memory_budget_gb=40,
                       hold_out_fraction=0.5)

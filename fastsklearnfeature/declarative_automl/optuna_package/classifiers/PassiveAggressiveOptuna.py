@@ -1,5 +1,8 @@
 from sklearn.linear_model import PassiveAggressiveClassifier
 from fastsklearnfeature.declarative_automl.optuna_package.optuna_utils import id_name
+from sklearn.utils.class_weight import compute_sample_weight
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.wrapper.ClassifierWrapper import \
+    calculate_class_weight
 
 class PassiveAggressiveOptuna(PassiveAggressiveClassifier):
 
@@ -11,17 +14,27 @@ class PassiveAggressiveOptuna(PassiveAggressiveClassifier):
         self.tol = trial.suggest_loguniform(self.name + "tol", 1e-5, 1e-1)
         self.average = trial.suggest_categorical(self.name + "average", [False, True])
 
-        self.max_iter = trial.suggest_int(self.name + "max_iter", 10, 1024, log=False)
+        self.max_iter = trial.suggest_int(self.name + "max_iter", 10, 1024, log=True)
 
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('PassiveAggressive_')
 
-        space_gen.generate_number(self.name + "C", 1.0, depending_node=depending_node)
+        space_gen.generate_number(self.name + "C", 1.0, depending_node=depending_node, low=1e-5, high=10, is_log=True)
         space_gen.generate_cat(self.name + "loss", ["hinge", "squared_hinge"], "hinge", depending_node=depending_node)
-        space_gen.generate_number(self.name + "tol", 1e-4, depending_node=depending_node)
+        space_gen.generate_number(self.name + "tol", 1e-4, depending_node=depending_node, low=1e-5, high=1e-1, is_log=True)
         space_gen.generate_cat(self.name + "average", [False, True], False, depending_node=depending_node)
 
-        space_gen.generate_number(self.name + "max_iter", 1000, depending_node=depending_node)
+        space_gen.generate_number(self.name + "max_iter", 1000, depending_node=depending_node, low=10, high=1024, is_float=False, is_log=True)
 
 
+    def set_weight(self, custom_weight):
+        self.custom_weight = custom_weight
 
+    def fit(self, X, y=None):
+        if hasattr(self, 'custom_weight'):
+            self.class_weight = 'balanced'
+            if self.custom_weight != 0.5:
+                self.class_weight = calculate_class_weight(y, self.custom_weight)
+            return super().fit(X, y)
+        else:
+            return super().fit(X, y)

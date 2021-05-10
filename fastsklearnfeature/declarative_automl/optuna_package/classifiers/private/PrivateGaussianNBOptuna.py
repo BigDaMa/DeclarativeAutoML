@@ -9,4 +9,4 @@ class PrivateGaussianNBOptuna(GaussianNB):
 
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('PrivateGaussianNB_')
-        space_gen.generate_number(self.name + "var_smoothing", 1e-9, depending_node=depending_node)
+        space_gen.generate_number(self.name + "var_smoothing", 1e-9, depending_node=depending_node, low=1e-11, high=1e-7, is_log=True)

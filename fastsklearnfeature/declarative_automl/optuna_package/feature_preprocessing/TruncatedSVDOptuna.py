@@ -11,13 +11,11 @@ class TruncatedSVDOptuna(TruncatedSVD):
 
     def fit(self, X, y=None):
         self.n_components = min(max(1, int(self.n_components_fraction * X.shape[1])), X.shape[1]-1)
-        #print('ncom: ' + str(self.n_components))
         return super().fit(X=X, y=y)
 
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('TruncatedSVD_')
-
-        space_gen.generate_number(self.name + 'n_components_fraction', 0.5, depending_node=depending_node)
+        space_gen.generate_number(self.name + 'n_components_fraction', 0.5, depending_node=depending_node, low=0.0, high=1.0)
 
 
 

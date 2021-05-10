@@ -27,9 +27,9 @@ class KernelPCAOptuna(KernelPCA):
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('KernelPCA_')
 
-        space_gen.generate_number(self.name + "n_components_fraction", 0.5, depending_node=depending_node)
+        space_gen.generate_number(self.name + "n_components_fraction", 0.5, depending_node=depending_node, low=0.0, high=1.0)
         category_kernel = space_gen.generate_cat(self.name + 'kernel', ['poly', 'rbf', 'sigmoid', 'cosine'], 'rbf', depending_node=depending_node)
-        space_gen.generate_number(self.name + "gamma", 1.0, depending_node=depending_node)
-        space_gen.generate_number(self.name + 'degree', 3, depending_node=category_kernel[0])
-        space_gen.generate_number(self.name + "coef0", 0, depending_node=depending_node) # todo: fix once it is a graph
+        space_gen.generate_number(self.name + "gamma", 1.0, depending_node=depending_node, low=3.0517578125e-05, high=8, is_log=True)
+        space_gen.generate_number(self.name + 'degree', 3, depending_node=category_kernel[0], low=2, high=5, is_float=False)
+        space_gen.generate_number(self.name + "coef0", 0, depending_node=depending_node, low=-1, high=1) # todo: fix once it is a graph
 

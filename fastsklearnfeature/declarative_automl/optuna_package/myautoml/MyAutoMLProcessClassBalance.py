@@ -7,7 +7,6 @@ from sklearn.metrics import roc_auc_score
 import openml
 import numpy as np
 from fastsklearnfeature.declarative_automl.optuna_package.feature_preprocessing.CategoricalMissingTransformer import CategoricalMissingTransformer
-from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.compose import ColumnTransformer
 from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.SimpleImputerOptuna import SimpleImputerOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.QuadraticDiscriminantAnalysisOptuna import QuadraticDiscriminantAnalysisOptuna
@@ -46,14 +45,6 @@ class TimeException(Exception):
         super().__init__(self.message)
 
 
-def calculate_class_weight(y, custom_weight):
-    class_weight = {}
-    unique_counts = np.unique(y, return_counts=True)
-    sorted_ids = np.argsort(unique_counts[1])
-    class_weight[unique_counts[0][sorted_ids[0]]] = custom_weight / unique_counts[1][sorted_ids[0]]
-    class_weight[unique_counts[0][sorted_ids[1]]] = (1.0 - custom_weight) / unique_counts[1][sorted_ids[1]]
-    return class_weight
-
 def evaluatePipeline(key, return_dict):
     try:
         class_weighting = mp_global.mp_store[key]['class_weighting']
@@ -79,13 +70,7 @@ def evaluatePipeline(key, return_dict):
 
         #todo: cancel fitting if over time
         start_training = time.time()
-        if class_weighting:
-            class_weight = 'balanced'
-            if custom_weighting:
-                class_weight = calculate_class_weight(y, custom_weight)
-            p.fit(X, y, classifier__sample_weight=compute_sample_weight(class_weight=class_weight, y=y))
-        else:
-            p.fit(X, y)
+        p.fit(X, y)
 
         training_time = time.time() - start_training
         return_dict[key + 'result' + '_training_time'] = training_time
@@ -123,26 +108,12 @@ def evaluatePipeline(key, return_dict):
                 my_splits = StratifiedKFold(n_splits=cv, shuffle=True, random_state=int(time.time())).split(X, y)
                 #my_splits = StratifiedKFold(n_splits=cv, shuffle=True, random_state=int(42)).split(X, y)
                 for train_ids, test_ids in my_splits:
-                    if class_weighting:
-                        class_weight = 'balanced'
-                        if custom_weighting:
-                            class_weight = calculate_class_weight(y[train_ids], custom_weight)
-                        p.fit(X[train_ids, :], y[train_ids], classifier__sample_weight=compute_sample_weight(class_weight=class_weight, y=y[train_ids]))
-                    else:
-                        p.fit(X[train_ids, :], y[train_ids])
-
+                    p.fit(X[train_ids, :], y[train_ids])
                     scores.append(scorer(p, X[test_ids, :], pd.DataFrame(y[test_ids])))
         else:
             X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
                                                                   test_size=hold_out_fraction)
-            if class_weighting:
-                class_weight = 'balanced'
-                if custom_weighting:
-                    class_weight = calculate_class_weight(y_train, custom_weight)
-                p.fit(X_train, y_train,
-                      classifier__sample_weight=compute_sample_weight(class_weight=class_weight, y=y_train))
-            else:
-                p.fit(X_train, y_train)
+            p.fit(X_train, y_train)
             scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
 
         return_dict[key + 'result'] = np.mean(scores)
@@ -262,7 +233,6 @@ class MyAutoML:
 
                 if isinstance(classifier, KNeighborsClassifierOptuna) or \
                         isinstance(classifier, QuadraticDiscriminantAnalysisOptuna) or \
-                        isinstance(classifier, PassiveAggressiveOptuna) or \
                         isinstance(classifier, HistGradientBoostingClassifierOptuna) or \
                         isinstance(classifier, PrivateLogisticRegressionOptuna) or \
                         isinstance(classifier, PrivateGaussianNBOptuna):
@@ -274,10 +244,12 @@ class MyAutoML:
                         if custom_weighting:
                             custom_weight = self.space.suggest_uniform('custom_weight', 0.00000001, 1.0)
 
-                augmentation = IdentityTransformation()
-                if class_weighting == False:
-                    augmentation = self.space.suggest_categorical('augmentation', self.augmentation_list)
-                    augmentation.init_hyperparameters(self.space, X, y)
+                if class_weighting:
+                    classifier.set_weight(custom_weight)
+
+
+                augmentation = self.space.suggest_categorical('augmentation', self.augmentation_list)
+                augmentation.init_hyperparameters(self.space, X, y)
 
                 numeric_transformer = Pipeline([('imputation', imputer), ('scaler', scaler)])
                 categorical_transformer = Pipeline([('removeNAN', CategoricalMissingTransformer()), ('onehot_transform', onehot_transformer)])
@@ -418,8 +390,8 @@ if __name__ == "__main__":
     for pre, _, node in RenderTree(space.parameter_tree):
         print("%s%s: %s" % (pre, node.name, node.status))
 
-    search = MyAutoML(n_jobs=1,
-                      time_search_budget=2*60,
+    search = MyAutoML(n_jobs=4,
+                      time_search_budget=40*60,
                       space=space,
                       main_memory_budget_gb=40,
                       hold_out_fraction=0.5)

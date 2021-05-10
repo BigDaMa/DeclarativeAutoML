@@ -193,16 +193,26 @@ def run_AutoML(trial, X_train=None, X_test=None, y_train=None, y_test=None, cate
             test_score_default = 0.0
         static_params.append(test_score_default)
 
+    #this was a bad idea because it is not comparable across scenarios
     #comparison = np.mean(dynamic_params) - np.mean(static_params)
 
     #conservativ cost function
     all_results = copy.deepcopy(dynamic_params)
     all_results.extend(static_params)
-    comparison = np.min(dynamic_params) / np.max(all_results)
+
+    if np.max(all_results) <= 0.0:
+        comparison = 1.0
+    else:
+        comparison = np.min(dynamic_params) / np.max(all_results)
 
     #less conservativ
     #but this has to little signal
-    #comparison = np.mean(dynamic_params) / np.max([np.mean(static_params), np.mean(dynamic_params)])
+    '''
+    if np.max([np.mean(static_params), np.mean(dynamic_params)]) <= 0.0:
+        comparison = 1.0
+    else:
+        comparison = np.mean(dynamic_params) / np.max([np.mean(static_params), np.mean(dynamic_params)])
+    '''
 
     return comparison, search
 

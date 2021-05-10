@@ -27,7 +27,7 @@ class SpaceGenerator:
         custom_weighting_p = self.space.generate_cat('custom_weighting', [True, False], False, depending_node=class_weighting_p[0])
         self.space.generate_number('custom_weight', 0.5, depending_node=custom_weighting_p[0])
 
-        category_aug = self.space.generate_cat('augmentation', self.augmentation_list, self.augmentation_list[0], depending_node=class_weighting_p[1])
+        category_aug = self.space.generate_cat('augmentation', self.augmentation_list, self.augmentation_list[0])
         for au_i in range(len(self.augmentation_list)):
             augmentation = self.augmentation_list[au_i]
             augmentation.generate_hyperparameters(self.space, category_aug[au_i])

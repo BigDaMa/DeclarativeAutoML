@@ -24,12 +24,11 @@ class SparseRandomProjectionOptuna(SparseRandomProjection):
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('SparseRandomProjection_')
 
-        space_gen.generate_number(self.name + 'n_components_fraction', 0.1, depending_node=depending_node)
+        space_gen.generate_number(self.name + 'n_components_fraction', 0.1, depending_node=depending_node, low=0.0, high=1.0)
 
-        category_density = space_gen.generate_cat(self.name + 'density_auto', [True, False], True,
-                                                 depending_node=depending_node)
+        category_density = space_gen.generate_cat(self.name + 'density_auto', [True, False], True, depending_node=depending_node)
 
-        space_gen.generate_number(self.name + 'density_def', 'auto', depending_node=category_density[1])
+        space_gen.generate_number(self.name + 'density_def', 'auto', depending_node=category_density[1], low=1e-6, high=1)
 
         space_gen.generate_cat(self.name + 'dense_output', [True, False], False, depending_node=depending_node)
 

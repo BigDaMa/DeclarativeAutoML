@@ -28,7 +28,7 @@ class FastICAOptuna(FastICA):
         category_whiten = space_gen.generate_cat(self.name + 'whiten', [False, True], False,
                                                  depending_node=depending_node)
 
-        space_gen.generate_number(self.name + 'n_components_fraction', 0.5, depending_node=category_whiten[1])
+        space_gen.generate_number(self.name + 'n_components_fraction', 0.5, depending_node=category_whiten[1], low=0.0, high=1.0)
         space_gen.generate_cat(self.name + 'algorithm', ['parallel', 'deflation'], 'parallel', depending_node=depending_node)
 
         space_gen.generate_cat(self.name + 'fun', ['logcosh', 'exp', 'cube'], 'logcosh', depending_node=depending_node)

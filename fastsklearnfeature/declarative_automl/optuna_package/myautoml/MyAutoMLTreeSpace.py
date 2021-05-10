@@ -24,7 +24,7 @@ class MyAutoMLSpace:
         return categorical_node.children
 
 
-    def generate_number(self, name, default_element, depending_node=None):
+    def generate_number(self, name, default_element, depending_node=None, low=0.0, high=1.0 , is_float=True, is_log=False):
         parent_node = self.parameter_tree
         if type(depending_node) != type(None):
             parent_node = depending_node
