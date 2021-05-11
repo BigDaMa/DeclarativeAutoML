@@ -2,12 +2,14 @@ from sklearn.datasets import load_boston
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 import time
+from emukit.core import CategoricalParameter, ContinuousParameter,  DiscreteParameter, OneHotEncoding
 
 X, y = load_boston(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 model_reg = RandomForestRegressor(n_estimators=100)
 
 def eval(parameters):
+    print(parameters)
     result = np.zeros((len(parameters), 1))
     constraint = np.zeros((len(parameters), 1))
     for i in range(len(parameters)):
@@ -32,7 +34,7 @@ from emukit.model_wrappers import GPyModelWrapper
 n_iterations = 50
 
 p = ContinuousParameter('n_estimators', 1, 1000)
-space = ParameterSpace([p])
+space = ParameterSpace([p, CategoricalParameter('test', OneHotEncoding(['test1', 'test2'])), DiscreteParameter('discrete', [1,2,3,4])])
 
 x_init = np.array([[1,], [100, ], [999,]])
 
@@ -46,7 +48,6 @@ model = GPyModelWrapper(gpy_model)
 gpy_constraint_model = GPy.models.GPRegression(x_init, y_init)
 constraint_model = GPyModelWrapper(gpy_constraint_model)
 
-space = ParameterSpace([ContinuousParameter('n_estimators', 1, 1000)])
 acquisition = ExpectedImprovement(model)
 
 # Make loop and collect points

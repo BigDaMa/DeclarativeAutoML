@@ -22,7 +22,7 @@ class HistGradientBoostingClassifierOptuna(HistGradientBoostingClassifier):
         self.classes_ = np.unique(y.astype(int))
 
         #new
-        self.max_iter = trial.suggest_int(self.name + "max_iter", 10, 512, log=True)
+        self.max_iter = trial.suggest_int(self.name + "max_iter", 10, 512)
 
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('HistGradientBoostingClassifier_')
@@ -35,6 +35,6 @@ class HistGradientBoostingClassifierOptuna(HistGradientBoostingClassifier):
         space_gen.generate_number(self.name + "n_iter_no_change", 10, depending_node=depending_node, low=1, high=20, is_float=False)
         space_gen.generate_number(self.name + "validation_fraction", 0.1, depending_node=depending_node, low=0.01, high=0.4)
 
-        space_gen.generate_number(self.name + "max_iter", 100, depending_node=depending_node, low=10, high=512, is_float=False, is_log=True)
+        space_gen.generate_number(self.name + "max_iter", 100, depending_node=depending_node, low=10, high=512, is_float=False)
 
 

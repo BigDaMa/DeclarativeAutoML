@@ -24,7 +24,7 @@ class SGDClassifierOptuna(SGDClassifier):
             self.power_t = trial.suggest_uniform(self.name + "power_t", 1e-5, 1)
         self.average = trial.suggest_categorical(self.name + "average", [False, True])
 
-        self.max_iter = trial.suggest_int(self.name + "max_iter", 10, 1024, log=True)
+        self.max_iter = trial.suggest_int(self.name + "max_iter", 10, 1024)
 
         #todo: add conditional parameters
 
@@ -43,7 +43,7 @@ class SGDClassifierOptuna(SGDClassifier):
         space_gen.generate_number(self.name + "power_t", 0.5, depending_node=category_learn[1], low=1e-5, high=1)
         space_gen.generate_cat(self.name + "average", [False, True], False, depending_node=depending_node)
 
-        space_gen.generate_number(self.name + "max_iter", 1000, depending_node=depending_node, low=10, high=1024, is_float=False, is_log=True)
+        space_gen.generate_number(self.name + "max_iter", 1000, depending_node=depending_node, low=10, high=1024, is_float=False)
 
     def set_weight(self, custom_weight):
         self.custom_weight = custom_weight

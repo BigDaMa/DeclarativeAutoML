@@ -14,7 +14,7 @@ class PassiveAggressiveOptuna(PassiveAggressiveClassifier):
         self.tol = trial.suggest_loguniform(self.name + "tol", 1e-5, 1e-1)
         self.average = trial.suggest_categorical(self.name + "average", [False, True])
 
-        self.max_iter = trial.suggest_int(self.name + "max_iter", 10, 1024, log=True)
+        self.max_iter = trial.suggest_int(self.name + "max_iter", 10, 1024, log=False)
 
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('PassiveAggressive_')
@@ -24,7 +24,7 @@ class PassiveAggressiveOptuna(PassiveAggressiveClassifier):
         space_gen.generate_number(self.name + "tol", 1e-4, depending_node=depending_node, low=1e-5, high=1e-1, is_log=True)
         space_gen.generate_cat(self.name + "average", [False, True], False, depending_node=depending_node)
 
-        space_gen.generate_number(self.name + "max_iter", 1000, depending_node=depending_node, low=10, high=1024, is_float=False, is_log=True)
+        space_gen.generate_number(self.name + "max_iter", 1000, depending_node=depending_node, low=10, high=1024, is_float=False)
 
 
     def set_weight(self, custom_weight):

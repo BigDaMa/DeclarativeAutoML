@@ -1,9 +1,9 @@
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.MyAutoMLProcessClassBalance import MyAutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalance import MyAutoML
 import optuna
 import time
 from sklearn.metrics import make_scorer
 import numpy as np
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.Space_GenerationTreeBalance import SpaceGenerator
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 import copy
 from optuna.trial import FrozenTrial
 from anytree import RenderTree

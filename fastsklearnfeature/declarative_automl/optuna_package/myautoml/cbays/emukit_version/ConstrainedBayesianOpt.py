@@ -1,21 +1,11 @@
-import optuna
-#from sklearn.pipeline import Pipeline
 from imblearn.pipeline import Pipeline
 import sklearn.metrics
 from sklearn.metrics import make_scorer
 from sklearn.metrics import roc_auc_score
 import openml
-import numpy as np
 from fastsklearnfeature.declarative_automl.optuna_package.feature_preprocessing.CategoricalMissingTransformer import CategoricalMissingTransformer
 from sklearn.compose import ColumnTransformer
-from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.SimpleImputerOptuna import SimpleImputerOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.QuadraticDiscriminantAnalysisOptuna import QuadraticDiscriminantAnalysisOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.PassiveAggressiveOptuna import PassiveAggressiveOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.KNeighborsClassifierOptuna import KNeighborsClassifierOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.HistGradientBoostingClassifierOptuna import HistGradientBoostingClassifierOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateLogisticRegressionOptuna import PrivateLogisticRegressionOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateGaussianNBOptuna import PrivateGaussianNBOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.Space_GenerationTreeBalance import SpaceGenerator
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.cbays.emukit_version.Space_GenerationTreeBalanceConstrained import SpaceGenerator
 from sklearn.model_selection import StratifiedKFold
 import pandas as pd
 import time
@@ -27,17 +17,24 @@ import fastsklearnfeature.declarative_automl.optuna_package.myautoml.define_spac
 import pickle
 import os
 import glob
-from dataclasses import dataclass
 import sys
-from fastsklearnfeature.declarative_automl.optuna_package.feature_preprocessing.MyIdentity import IdentityTransformation
+from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.SimpleImputerOptuna import SimpleImputerOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.QuadraticDiscriminantAnalysisOptuna import QuadraticDiscriminantAnalysisOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.KNeighborsClassifierOptuna import KNeighborsClassifierOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.HistGradientBoostingClassifierOptuna import HistGradientBoostingClassifierOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateLogisticRegressionOptuna import PrivateLogisticRegressionOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateGaussianNBOptuna import PrivateGaussianNBOptuna
 
-@dataclass
-class StopWhenOptimumReachedCallback:
-    optimum: float
+import GPy
+import numpy as np
 
-    def __call__(self, study, trial):
-        if study.best_value == self.optimum:
-            study.stop()
+from emukit.bayesian_optimization.acquisitions import ExpectedImprovement
+from emukit.bayesian_optimization.loops import UnknownConstraintBayesianOptimizationLoop
+from emukit.core.loop import UserFunctionWrapper, FixedIterationsStoppingCondition
+from emukit.model_wrappers import GPyModelWrapper
+from emukit.core.initial_designs.random_design import RandomDesign
+from emukit.core.loop.stopping_conditions import StoppingCondition
+from emukit.core.loop.loop_state import LoopState
 
 class TimeException(Exception):
     def __init__(self, message="Time is over!"):
@@ -45,12 +42,18 @@ class TimeException(Exception):
         super().__init__(self.message)
 
 
+class FixedTimeStoppingCondition(StoppingCondition):
+    """ Stops after a fixed number of iterations """
+    def __init__(self, start_fitting, time_search_budget) -> None:
+        self.start_fitting = start_fitting
+        self.time_search_budget = time_search_budget
+
+    def should_stop(self, loop_state: LoopState) -> bool:
+        already_used_time = time.time() - self.start_fitting
+        return already_used_time + 2 >= self.time_search_budget
+
 def evaluatePipeline(key, return_dict):
     try:
-        class_weighting = mp_global.mp_store[key]['class_weighting']
-        custom_weighting = mp_global.mp_store[key]['custom_weighting']
-        custom_weight = mp_global.mp_store[key]['custom_weight']
-
         p = mp_global.mp_store[key]['p']
         number_of_cvs = mp_global.mp_store[key]['number_of_cvs']
         cv = mp_global.mp_store[key]['cv']
@@ -75,14 +78,14 @@ def evaluatePipeline(key, return_dict):
         training_time = time.time() - start_training
         return_dict[key + 'result' + '_training_time'] = training_time
         if type(training_time_limit) != type(None) and training_time > training_time_limit:
-            return_dict[key + 'result'] = -1 * (training_time - training_time_limit) #return the difference to satisfying the constraint
+            return_dict[key + 'result'] = 0.0
             return
 
         dumped_obj = pickle.dumps(p)
         pipeline_size = sys.getsizeof(dumped_obj)
         return_dict[key + 'result' + '_pipeline_size'] = pipeline_size
         if type(pipeline_size_limit) != type(None) and pipeline_size > pipeline_size_limit:
-            return_dict[key + 'result'] = -1 * (pipeline_size - pipeline_size_limit)  # return the difference to satisfying the constraint
+            return_dict[key + 'result'] = 0.0
             return
 
         inference_times = []
@@ -93,14 +96,11 @@ def evaluatePipeline(key, return_dict):
             inference_times.append(time.time() - start_inference)
         return_dict[key + 'result' + '_inference_time'] = np.mean(inference_times)
         if type(inference_time_limit) != type(None) and np.mean(inference_times) > inference_time_limit:
-            return_dict[key + 'result'] = -1 * (np.mean(inference_times) - inference_time_limit)  # return the difference to satisfying the constraint
+            return_dict[key + 'result'] = 0.0
             return
 
 
         trained_pipeline = copy.deepcopy(p)
-
-
-
         scores = []
 
         if type(hold_out_fraction) == type(None):
@@ -109,6 +109,7 @@ def evaluatePipeline(key, return_dict):
                 #my_splits = StratifiedKFold(n_splits=cv, shuffle=True, random_state=int(42)).split(X, y)
                 for train_ids, test_ids in my_splits:
                     p.fit(X[train_ids, :], y[train_ids])
+
                     scores.append(scorer(p, X[test_ids, :], pd.DataFrame(y[test_ids])))
         else:
             X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
@@ -123,7 +124,7 @@ def evaluatePipeline(key, return_dict):
                 pickle.dump(trained_pipeline, pickle_pipeline_file)
 
     except Exception as e:
-        return_dict[key + 'result'] = -1 * np.inf
+        return_dict[key + 'result'] = 0.0
         print(p)
         print(str(e) + '\n\n')
 
@@ -131,7 +132,7 @@ def evaluatePipeline(key, return_dict):
 
 
 
-class MyAutoML:
+class ConstrainedBayesianOpt:
     def __init__(self, cv=5,
                  number_of_cvs=1,
                  hold_out_fraction=None,
@@ -139,7 +140,6 @@ class MyAutoML:
                  time_search_budget=10*60,
                  n_jobs=1,
                  space=None,
-                 study=None,
                  main_memory_budget_gb=4,
                  sample_fraction=1.0,
                  differential_privacy_epsilon=None,
@@ -166,7 +166,6 @@ class MyAutoML:
 
 
         self.space = space
-        self.study = study
         self.main_memory_budget_gb = main_memory_budget_gb
         self.sample_fraction = sample_fraction
         self.differential_privacy_epsilon = differential_privacy_epsilon
@@ -200,12 +199,12 @@ class MyAutoML:
             X = X_new
             y = y_new
 
-        def objective1(trial):
+        def objective1(parameterization):
             start_total = time.time()
 
-            try:
+            self.space.parameterization = parameterization
 
-                self.space.trial = trial
+            try:
 
                 imputer = SimpleImputerOptuna()
                 imputer.init_hyperparameters(self.space, X, y)
@@ -247,9 +246,9 @@ class MyAutoML:
                 if class_weighting:
                     classifier.set_weight(custom_weight)
 
-
                 augmentation = self.space.suggest_categorical('augmentation', self.augmentation_list)
                 augmentation.init_hyperparameters(self.space, X, y)
+
 
                 numeric_transformer = Pipeline([('imputation', imputer), ('scaler', scaler)])
                 categorical_transformer = Pipeline([('removeNAN', CategoricalMissingTransformer()), ('onehot_transform', onehot_transformer)])
@@ -268,13 +267,13 @@ class MyAutoML:
                 my_pipeline = Pipeline([('data_preprocessing', data_preprocessor), ('preprocessing', preprocessor), ('augmentation', augmentation),
                               ('classifier', classifier)])
 
+                print(my_pipeline)
+
+
                 key = 'My_automl' + self.random_key + 'My_process' + str(time.time()) + "##" + str(np.random.randint(0,1000))
 
                 mp_global.mp_store[key] = {}
 
-                mp_global.mp_store[key]['class_weighting'] = class_weighting
-                mp_global.mp_store[key]['custom_weighting'] = custom_weighting
-                mp_global.mp_store[key]['custom_weight'] = custom_weight
                 mp_global.mp_store[key]['p'] = copy.deepcopy(my_pipeline)
                 mp_global.mp_store[key]['number_of_cvs'] = self.number_of_cvs
                 mp_global.mp_store[key]['cv'] = self.cv
@@ -288,16 +287,17 @@ class MyAutoML:
                 mp_global.mp_store[key]['pipeline_size_limit'] = self.pipeline_size_limit
                 mp_global.mp_store[key]['adversarial_robustness_constraint'] = self.adversarial_robustness_constraint
 
-                try:
-                    mp_global.mp_store[key]['study_best_value'] = self.study.best_value
-                except ValueError:
-                    mp_global.mp_store[key]['study_best_value'] = -np.inf
+                result_dictionary = {}
+
+                mp_global.mp_store[key]['study_best_value'] = -np.inf
 
                 already_used_time = time.time() - self.start_fitting
 
                 if already_used_time + 2 >= self.time_search_budget:  # already over budget
                     time.sleep(2)
-                    return -1 * (time.time() - start_total)
+                    #result_dictionary['accuracy'] = (-1 * np.inf, 0.0)
+                    result_dictionary['accuracy'] = (0.0, 0.0)
+                    return 0.0, 0.0
 
                 remaining_time = np.min([self.evaluation_budget, self.time_search_budget - already_used_time])
 
@@ -316,18 +316,30 @@ class MyAutoML:
                 del mp_global.mp_store[key]
 
                 result = -1 * (time.time() - start_total)
+                print('result: ' + str(return_dict[key + 'result']))
                 if key + 'result' in return_dict:
-                    result = return_dict[key + 'result']
+                    result_dictionary['accuracy'] = return_dict[key + 'result']
+
+
 
                 if key + 'result' + '_training_time' in return_dict:
-                    trial.set_user_attr('training_time', return_dict[key + 'result' + '_training_time'])
-                if key + 'result' + '_pipeline_size' in return_dict:
-                    trial.set_user_attr('pipeline_size', return_dict[key + 'result' + '_pipeline_size'])
-                if key + 'result' + '_inference_time' in return_dict:
-                    trial.set_user_attr('inference_time', return_dict[key + 'result' + '_inference_time'])
+                    result_dictionary['training_time'] = (return_dict[key + 'result' + '_training_time'], 0.0)
+                else:
+                    result_dictionary['training_time'] = (0.0, 0.0)
 
-                trial.set_user_attr('evaluation_time', time.time() - start_total)
-                trial.set_user_attr('time_since_start', time.time() - self.start_fitting)
+                if key + 'result' + '_pipeline_size' in return_dict:
+                    result_dictionary['pipeline_size'] = (return_dict[key + 'result' + '_pipeline_size'], 0.0)
+                else:
+                    result_dictionary['pipeline_size'] = (0.0, 0.0)
+
+                if key + 'result' + '_inference_time' in return_dict:
+                    result_dictionary['inference_time'] = (return_dict[key + 'result' + '_inference_time'], 0.0)
+                else:
+                    result_dictionary['inference_time'] = (0.0, 0.0)
+
+                result_dictionary['evaluation_time'] = (time.time() - start_total, 0.0)
+                #result_dictionary['time_since_start'] = (time.time() - self.start_fitting, 0.0)
+
 
                 if result > 0:
                     pickle_file_name = '/tmp/my_pipeline' + str(key) + '.p'
@@ -335,31 +347,62 @@ class MyAutoML:
                         if os.path.exists(pickle_file_name):
                             if self.study.best_value < result:
                                 with open(pickle_file_name, "rb") as pickle_pipeline_file:
-                                    trial.set_user_attr('pipeline', pickle.load(pickle_pipeline_file))
+                                    #result_dictionary['pipeline'] = pickle.load(pickle_pipeline_file)
+                                    pass
                             os.remove(pickle_file_name)
                     except:
                         if os.path.exists(pickle_file_name):
                             with open(pickle_file_name, "rb") as pickle_pipeline_file:
-                                trial.set_user_attr('pipeline', pickle.load(pickle_pipeline_file))
+                                #result_dictionary['pipeline'] = pickle.load(pickle_pipeline_file)
+                                pass
                             os.remove(pickle_file_name)
 
-                return result
+                return result_dictionary['accuracy'], 0.0
             except Exception as e:
                 print(str(e) + '\n\n')
-                return -1 * np.inf
+                # result_dictionary['accuracy'] = (-1 * np.inf, 0.0)
+                return 0.0, 0.0
 
-        if type(self.study) == type(None):
-            self.study = optuna.create_study(direction='maximize')
-        self.study.optimize(objective1, timeout=self.time_search_budget,
-                            n_jobs=self.n_jobs,
-                            catch=(TimeException,),
-                            callbacks=[StopWhenOptimumReachedCallback(1.0)]) # todo: check for scorer to know what is the optimum
+        def objective_multi(parameterization):
+            results = np.zeros((len(parameterization), 1))
+            constraints = np.zeros((len(parameterization), 1))
+            for p in range(parameterization.shape[0]):
+                results[p], constraints[p] = objective1(parameterization[p])
+            return results * -1, constraints
+
+        design = RandomDesign(self.space.get_space())
+        num_data_points = 5
+        X_init = design.get_samples(num_data_points)
+
+        y_init, y_constraint_init = objective_multi(X_init)
+
+        # Make GPy objective model
+        gpy_model = GPy.models.GPRegression(X_init, y_init)
+        model = GPyModelWrapper(gpy_model)
+
+        # Make GPy constraint model
+        gpy_constraint_model = GPy.models.GPRegression(X_init, y_init)
+        constraint_model = GPyModelWrapper(gpy_constraint_model)
+
+        acquisition = ExpectedImprovement(model)
+
+        # Make loop and collect points
+        bo = UnknownConstraintBayesianOptimizationLoop(model_objective=model, space=self.space.get_space(), acquisition=acquisition,
+                                                       model_constraint=constraint_model)
+        bo.run_loop(UserFunctionWrapper(objective_multi, extra_output_names=['Y_constraint']),
+                    FixedTimeStoppingCondition(start_fitting=self.start_fitting, time_search_budget=self.time_search_budget))
+
+
+        minimum_value = np.min(bo.loop_state.Y[:,0])
+        print('minimum: ' + str(minimum_value))
+
 
         #clean up all remaining pipelines
         for my_path in glob.glob('/tmp/my_pipeline' + 'My_automl' + self.random_key + 'My_process' + '*.p'):
             os.remove(my_path)
 
-        return self.study.best_value
+        cur_max = 0.0
+        return cur_max
 
 
 
@@ -367,10 +410,10 @@ class MyAutoML:
 if __name__ == "__main__":
     auc = make_scorer(roc_auc_score, greater_is_better=True, needs_threshold=True)
 
-    dataset = openml.datasets.get_dataset(1114)
+    #dataset = openml.datasets.get_dataset(1114)
 
     #dataset = openml.datasets.get_dataset(1116)
-    #dataset = openml.datasets.get_dataset(52)
+    dataset = openml.datasets.get_dataset(1464)
 
     X, y, categorical_indicator, attribute_names = dataset.get_data(
         dataset_format='array',
@@ -385,13 +428,11 @@ if __name__ == "__main__":
     gen = SpaceGenerator()
     space = gen.generate_params()
 
-    from anytree import RenderTree
+    #for pre, _, node in RenderTree(space.parameter_tree):
+    #    print("%s%s: %s" % (pre, node.name, node.status))
 
-    for pre, _, node in RenderTree(space.parameter_tree):
-        print("%s%s: %s" % (pre, node.name, node.status))
-
-    search = MyAutoML(n_jobs=4,
-                      time_search_budget=40*60,
+    search = ConstrainedBayesianOpt(n_jobs=1,
+                      time_search_budget=60*10,
                       space=space,
                       main_memory_budget_gb=40,
                       hold_out_fraction=0.5)
@@ -400,8 +441,10 @@ if __name__ == "__main__":
 
     best_result = search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=auc)
 
-    from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import show_progress
-    show_progress(search, X_test, y_test, auc)
+    print(best_result)
+
+    #from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import show_progress
+    #show_progress(search, X_test, y_test, auc)
 
     #importances = optuna.importance.get_param_importances(search.study)
     #print(importances)
