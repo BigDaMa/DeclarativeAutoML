@@ -1,5 +1,6 @@
 from autosklearn.metalearning.metafeatures.metafeatures import calculate_all_metafeatures_with_labels
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.MyAutoMLProcess import MyAutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalance import MyAutoML
+
 import optuna
 import time
 import sklearn.model_selection
@@ -9,7 +10,7 @@ from sklearn.metrics import make_scorer
 from sklearn.metrics import roc_auc_score
 import openml
 import numpy as np
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.Space_GenerationTree import SpaceGenerator
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 import copy
 from optuna.trial import FrozenTrial
 from anytree import RenderTree

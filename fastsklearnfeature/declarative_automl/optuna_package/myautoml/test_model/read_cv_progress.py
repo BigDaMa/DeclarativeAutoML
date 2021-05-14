@@ -2,7 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 
-cv = np.array(pickle.load(open('/home/felix/phd2/picture_progress/al_only/felix_cv_compare.p', "rb")))
+#cv = np.array(pickle.load(open('/home/felix/phd2/picture_progress/al_only/felix_cv_compare.p', "rb")))
+#cv = np.array(pickle.load(open('/tmp/felix_cv_compare_scaled.p', "rb")))
+cv = np.array(pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/felix_cv_success.p', "rb")))
 plt.plot(range(len(cv)), cv)
 plt.ylim(0, 1)
 plt.axhline(y=np.nanmax(cv))

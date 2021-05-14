@@ -11,9 +11,14 @@ import autosklearn.pipeline.components.regression
 from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
 
-X_meta = pickle.load(open('/home/felix/phd2/picture_progress/uniform_sampling/test_model/felix_X_compare.p', "rb"))
-y_meta = np.array(pickle.load(open('/home/felix/phd2/picture_progress/uniform_sampling/test_model/felix_y_compare.p', "rb")))
-group_meta = np.array(pickle.load(open('/home/felix/phd2/picture_progress/uniform_sampling/test_model/felix_group_compare.p', "rb")))
+#X_meta = pickle.load(open('/home/felix/phd2/picture_progress/uniform_sampling/test_model/felix_X_compare.p', "rb"))
+#y_meta = np.array(pickle.load(open('/home/felix/phd2/picture_progress/uniform_sampling/test_model/felix_y_compare.p', "rb")))
+#group_meta = np.array(pickle.load(open('/home/felix/phd2/picture_progress/uniform_sampling/test_model/felix_group_compare.p', "rb")))
+
+X_meta = pickle.load(open('/tmp/felix_X_compare_scaled.p', "rb"))
+y_meta = np.array(pickle.load(open('/tmp/felix_y_compare_scaled.p', "rb")))
+group_meta = np.array(pickle.load(open('/tmp/felix_group_compare_scaled.p', "rb")))
+
 
 print(X_meta.shape)
 

@@ -41,8 +41,19 @@ my_openml_datasets = [3, 4, 13, 15, 24, 25, 29, 31, 37, 38, 40, 43, 44, 49, 50, 
 for t_v in test_holdout_dataset_id:
     my_openml_datasets.remove(t_v)
 
+my_list_constraints = ['global_search_time_constraint',
+                           'global_evaluation_time_constraint',
+                           'global_memory_constraint',
+                           'global_cv',
+                           'global_number_cv',
+                           'privacy',
+                           'hold_out_fraction',
+                           'sample_fraction',
+                           'training_time_constraint',
+                           'inference_time_constraint',
+                           'pipeline_size_constraint']
 
-feature_names, feature_names_new = get_feature_names()
+feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
 
 def run_AutoML(trial, X_train=None, X_test=None, y_train=None, y_test=None, categorical_indicator=None):
@@ -320,7 +331,7 @@ verbose = False
 
 cv_over_time = []
 
-topk = 20#20
+topk = 4#20
 while True:
 
     assert X_meta.shape[1] == len(feature_names_new), 'error'

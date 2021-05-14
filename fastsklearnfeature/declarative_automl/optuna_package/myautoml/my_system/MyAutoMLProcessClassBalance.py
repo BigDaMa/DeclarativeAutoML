@@ -383,7 +383,7 @@ if __name__ == "__main__":
         print("%s%s: %s" % (pre, node.name, node.status))
 
     search = MyAutoML(n_jobs=4,
-                      time_search_budget=40*60,
+                      time_search_budget=60*60,
                       space=space,
                       main_memory_budget_gb=40,
                       hold_out_fraction=0.5)
