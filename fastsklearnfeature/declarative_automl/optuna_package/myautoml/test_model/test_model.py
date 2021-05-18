@@ -19,6 +19,9 @@ X_meta = pickle.load(open('/tmp/felix_X_compare_scaled.p', "rb"))
 y_meta = np.array(pickle.load(open('/tmp/felix_y_compare_scaled.p', "rb")))
 group_meta = np.array(pickle.load(open('/tmp/felix_group_compare_scaled.p', "rb")))
 
+X_meta = np.array(pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/felix_X_success.p', "rb")))
+y_meta = np.array(pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/felix_y_success.p', "rb")))
+group_meta = np.array(pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/felix_group_success.p', "rb")))
 
 print(X_meta.shape)
 
@@ -37,6 +40,11 @@ group_train = group_meta[train_ids]
 X_test = X_meta[test_ids]
 y_test = y_meta[test_ids]
 group_test = group_meta[test_ids]
+
+plt.hist(y_meta)
+plt.show()
+
+
 
 gkf = GroupKFold(n_splits=8)
 cross_val = GridSearchCV(RandomForestRegressor(), param_grid={'n_estimators': [1000]}, cv=gkf, refit=True, scoring='r2', n_jobs=8)

@@ -212,12 +212,12 @@ def run_AutoML(trial, X_train=None, X_test=None, y_train=None, y_test=None, cate
     all_results.extend(static_params)
 
     if np.max(all_results) <= 0.0:
-        comparison = 1.0
+        comparison = 0.0
     else:
-        comparison = np.quantile(dynamic_params, 0.1) / np.max(all_results)
+        comparison = float(np.quantile(dynamic_params, 0.1)) / float(np.max(all_results))
 
     #less conservativ
-    #but this has to little signal
+    #but this has too little signal
     '''
     if np.max([np.mean(static_params), np.mean(dynamic_params)]) <= 0.0:
         comparison = 1.0

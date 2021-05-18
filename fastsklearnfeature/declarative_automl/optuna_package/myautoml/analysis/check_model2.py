@@ -1,6 +1,6 @@
 import pickle
 from autosklearn.metalearning.metafeatures.metafeatures import calculate_all_metafeatures_with_labels
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.MyAutoMLProcess import MyAutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalance import MyAutoML
 import optuna
 import time
 import sklearn.model_selection
@@ -8,7 +8,7 @@ import sklearn.datasets
 import sklearn.metrics
 from sklearn.metrics import make_scorer
 from sklearn.metrics import f1_score
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.Space_GenerationTree import SpaceGenerator
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 import copy
 import pickle
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_data
@@ -47,7 +47,9 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
     #model_success = pickle.load(open('/home/felix/phd2/picture_progress/uniform_sampling/test_model/my_great_model_success.p', "rb"))
 
     model_compare = pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/my_great_model_compare.p', "rb"))
-    model_success = pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/my_great_model_success.p', "rb"))
+    #model_success = pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/my_great_model_success.p', "rb"))
+
+    model_success = pickle.load(open('/tmp/my_great_model_compare_scaled.p', "rb"))
 
     my_list_constraints = ['global_search_time_constraint',
                            'global_evaluation_time_constraint',
@@ -88,7 +90,7 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
                                                                                    #evaluation_time=int(0.1*search_time_frozen),
                                                                                    #hold_out_fraction=0.33,
                                                                                    tune_space=True,
-                                                                                   ), n_trials=500, n_jobs=8)
+                                                                                   ), n_trials=500, n_jobs=1)
 
             space = study_prune.best_trial.user_attrs['space']
 
