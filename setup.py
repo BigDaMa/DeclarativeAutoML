@@ -22,14 +22,14 @@ setup(
     include_package_data=True,
     install_requires=["numpy",
                       "pandas==0.25.3",
-                      "scikit-learn==0.24.1",#0.22.1
+                      #"scikit-learn==0.24.1",#0.22.1
                       "optuna",
                       "openml==0.12.0",
                       "diffprivlib==0.2.0",
                       "anytree",
                       "scipy==1.4.1",
                       "ipykernel",
-                      "auto-sklearn==0.10.0",
+                      #"auto-sklearn==0.10.0",
                       "libtmux",
                       "matplotlib"
                       ],
