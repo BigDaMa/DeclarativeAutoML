@@ -24,7 +24,7 @@ setup(
                       "pandas==0.25.3",
                       #"scikit-learn==0.24.1",#0.22.1
                       "optuna",
-                      "openml==0.12.0",
+                      #"openml==0.12.0",
                       "diffprivlib==0.2.0",
                       "anytree",
                       "scipy==1.4.1",
