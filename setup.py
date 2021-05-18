@@ -31,7 +31,8 @@ setup(
                       "ipykernel",
                       #"auto-sklearn==0.10.0",
                       "libtmux",
-                      "matplotlib"
+                      "matplotlib",
+                      "imbalanced-learn==0.8.0"
                       ],
     packages=find_packages(exclude=('tests', 'docs'))
 )
