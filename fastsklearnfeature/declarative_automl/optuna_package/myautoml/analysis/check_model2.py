@@ -49,7 +49,9 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
     model_compare = pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/my_great_model_compare.p', "rb"))
     #model_success = pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/my_great_model_success.p', "rb"))
 
-    model_success = pickle.load(open('/tmp/my_great_model_compare_scaled.p', "rb"))
+    #model_success = pickle.load(open('/tmp/my_great_model_compare_scaled.p', "rb"))
+    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/machine 4_squared/my_great_model_compare_scaled.p', "rb"))
+    model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/machine 2/my_great_model_compare_scaled.p', "rb"))
 
     my_list_constraints = ['global_search_time_constraint',
                            'global_evaluation_time_constraint',

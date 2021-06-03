@@ -11,8 +11,11 @@ import openml
 
 #new_dct = pickle.load(open('/home/felix/phd2/picture_progress/all_test_datasets/all_results_only_success.p', 'rb'))
 
-new_dct = pickle.load(open('/home/felix/phd2/picture_progress/all_test_datasets/all_results_pipeline_size_constraint.p', 'rb'))
+#new_dct = pickle.load(open('/home/felix/phd2/picture_progress/all_test_datasets/all_results_pipeline_size_constraint.p', 'rb'))
 #new_dct = pickle.load(open('/home/felix/phd2/picture_progress/all_test_datasets/all_results_memory_size_constraint.p', 'rb'))
+
+new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results.p', 'rb'))#test
+#new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_squared4.p', 'rb'))#test
 
 for k, v in new_dct.items():
     print(k)
@@ -48,7 +51,7 @@ for k, v in new_dct.items():
     #plt.xscale('log')
     plt.legend()
 
-    plt.savefig('/home/felix/phd2/picture_progress/all_test_datasets/img/data_' + name + '_' + str(k) + '.png')
+    plt.savefig('/home/neutatz/phd2/picture_progress/all_test_datasets/img/data_' + name + '_' + str(k) + '.png')
     plt.clf()
 
     print( ' dynamic: ' + "{:.2f}".format(np.mean(v['dynamic'])) + ' +- ' + "{:.2f}".format(np.std(v['dynamic'])))

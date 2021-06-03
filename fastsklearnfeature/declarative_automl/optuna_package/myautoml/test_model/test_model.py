@@ -2,12 +2,7 @@ from sklearn.ensemble import RandomForestRegressor
 import pickle
 from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import GridSearchCV
-from sklearn.preprocessing import QuantileTransformer
-from sklearn.compose import TransformedTargetRegressor
 import numpy as np
-import autosklearn.regression
-import autosklearn.classification
-import autosklearn.pipeline.components.regression
 from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
 
@@ -15,13 +10,22 @@ import matplotlib.pyplot as plt
 #y_meta = np.array(pickle.load(open('/home/felix/phd2/picture_progress/uniform_sampling/test_model/felix_y_compare.p', "rb")))
 #group_meta = np.array(pickle.load(open('/home/felix/phd2/picture_progress/uniform_sampling/test_model/felix_group_compare.p', "rb")))
 
-X_meta = pickle.load(open('/tmp/felix_X_compare_scaled.p', "rb"))
-y_meta = np.array(pickle.load(open('/tmp/felix_y_compare_scaled.p', "rb")))
-group_meta = np.array(pickle.load(open('/tmp/felix_group_compare_scaled.p', "rb")))
+#X_meta = pickle.load(open('/tmp/felix_X_compare_scaled.p', "rb"))
+#y_meta = np.array(pickle.load(open('/tmp/felix_y_compare_scaled.p', "rb")))
+#group_meta = np.array(pickle.load(open('/tmp/felix_group_compare_scaled.p', "rb")))
 
-X_meta = np.array(pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/felix_X_success.p', "rb")))
-y_meta = np.array(pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/felix_y_success.p', "rb")))
-group_meta = np.array(pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/felix_group_success.p', "rb")))
+#X_meta = np.array(pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/felix_X_success.p', "rb")))
+#y_meta = np.array(pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/felix_y_success.p', "rb")))
+#group_meta = np.array(pickle.load(open('/home/neutatz/phd2/picture_progress/al_only/felix_group_success.p', "rb")))
+
+#X_meta = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/machine 4_squared/felix_X_compare_scaled.p', "rb"))
+#y_meta = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/machine 4_squared/felix_y_compare_scaled.p', "rb")))
+#group_meta = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/machine 4_squared/felix_group_compare_scaled.p', "rb")))
+
+X_meta = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/machine 2/felix_X_compare_scaled.p', "rb"))
+y_meta = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/machine 2/felix_y_compare_scaled.p', "rb")))
+group_meta = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/machine 2/felix_group_compare_scaled.p', "rb")))
+
 
 print(X_meta.shape)
 

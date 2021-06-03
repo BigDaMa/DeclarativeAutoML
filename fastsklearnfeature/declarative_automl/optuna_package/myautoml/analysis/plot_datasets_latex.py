@@ -13,7 +13,7 @@ import openml
 #new_dct = pickle.load(open('/home/felix/phd2/picture_progress/all_test_datasets/all_results_memory_size_constraint.p', 'rb'))
 
 #running only sucess on new computer
-new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results.p', 'rb'))
+new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results.p', 'rb'))#test
 #new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_auto_sklearn_more_time.p', 'rb'))
 
 print(new_dct)
