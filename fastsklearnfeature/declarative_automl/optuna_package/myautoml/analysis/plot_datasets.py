@@ -14,8 +14,10 @@ import openml
 #new_dct = pickle.load(open('/home/felix/phd2/picture_progress/all_test_datasets/all_results_pipeline_size_constraint.p', 'rb'))
 #new_dct = pickle.load(open('/home/felix/phd2/picture_progress/all_test_datasets/all_results_memory_size_constraint.p', 'rb'))
 
-new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results.p', 'rb'))#test
+new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_cost_sens.p', 'rb'))#test
 #new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_squared4.p', 'rb'))#test
+
+
 
 for k, v in new_dct.items():
     print(k)

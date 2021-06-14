@@ -21,8 +21,8 @@ from anytree import RenderTree
 
 my_scorer=make_scorer(f1_score)
 
-test_holdout_dataset_ids = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 448, 1458, 162, 1101, 1561, 1061, 1506, 1235, 4135, 151, 51, 41138, 40645, 1510, 1158, 312, 38, 52, 1216, 41007, 1130]
-
+#test_holdout_dataset_ids = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 448, 1458, 162, 1101, 1561, 1061, 1506, 1235, 4135, 151, 51, 41138, 40645, 1510, 1158, 312, 38, 52, 1216, 41007, 1130]
+test_holdout_dataset_ids = [312, 316, 1216]
 
 memory_budget = 20.0
 privacy = None
@@ -51,7 +51,11 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
 
     #model_success = pickle.load(open('/tmp/my_great_model_compare_scaled.p', "rb"))
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/machine 4_squared/my_great_model_compare_scaled.p', "rb"))
-    model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/machine 2/my_great_model_compare_scaled.p', "rb"))
+    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/machine 2/my_great_model_compare_scaled.p', "rb"))
+    model_success = pickle.load(open("/home/neutatz/phd2/decAutoML2weeks_compare2default/1 week/machine4 cost_sensitive/my_great_model_compare_scaled.p", "rb"))
+
+    #model_success = pickle.load(open("/home/neutatz/phd2/decAutoML2weeks_compare2default/3 weeks/machine2_normal_scaled_compare/my_great_model_compare_scaled.p", "rb"))
+
 
     my_list_constraints = ['global_search_time_constraint',
                            'global_evaluation_time_constraint',
@@ -166,4 +170,4 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
         results_dict[test_holdout_dataset_id]['dynamic'] = dynamic_approach
         results_dict[test_holdout_dataset_id]['static'] = static_approach
 
-        pickle.dump(results_dict, open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results.p', 'wb+'))
+        pickle.dump(results_dict, open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_cost_sens.p', 'wb+'))

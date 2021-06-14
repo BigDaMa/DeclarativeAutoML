@@ -243,7 +243,8 @@ def run_AutoML_global(trial_id):
     return {'feature_l': feature_list,
             'target_l': target_list,
             'loss': np.square(target_list[-1] - mp_glob.my_trials[trial_id].user_attrs['predicted_target']),
-            'group_l': copy.deepcopy(mp_glob.my_trials[trial_id].params['dataset_id'])}
+            'group_l': copy.deepcopy(mp_glob.my_trials[trial_id].params['dataset_id']),
+            'trial_id_l': trial_id}
 
 
 def run_AutoML_score_only(trial, X_train=None, X_test=None, y_train=None, y_test=None, categorical_indicator=None):
@@ -324,6 +325,7 @@ all_trials = study.get_trials()
 X_meta = []
 y_meta = []
 group_meta = []
+aquisition_function_value = []
 
 for t in range(len(study.get_trials())):
     current_trial = all_trials[t]
@@ -333,6 +335,7 @@ for t in range(len(study.get_trials())):
         y_meta.append(0.0)
     X_meta.append(current_trial.user_attrs['features'])
     group_meta.append(current_trial.params['dataset_id'])
+    aquisition_function_value.append(np.inf)
 
 X_meta = np.vstack(X_meta)
 print(X_meta.shape)
@@ -371,6 +374,10 @@ while True:
 
         with open('/tmp/felix_cv_compare_scaled.p', "wb") as pickle_model_file:
             pickle.dump(cv_over_time, pickle_model_file)
+
+        with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
+            pickle.dump(aquisition_function_value, pickle_model_file)
+
     else:
         model = RandomForestRegressor(n_estimators=1000)
         model.fit(X_meta, y_meta)
@@ -391,8 +398,10 @@ while True:
     k_keys_sorted_by_values = heapq.nlargest(topk, data2most_uncertain, key=lambda s: data2most_uncertain[s][1])
 
     mp_glob.my_trials = []
+    trial_id2aqval = {}
     for keyy in k_keys_sorted_by_values:
         mp_glob.my_trials.append(data2most_uncertain[keyy][0])
+        trial_id2aqval[data2most_uncertain[keyy][0]] = data2most_uncertain[keyy][1]
 
     with MyPool(processes=topk) as pool:
         results = pool.map(run_AutoML_global, range(topk))
@@ -402,5 +411,6 @@ while True:
             X_meta = np.vstack((X_meta, result_p['feature_l'][f_progress]))
             y_meta.append(result_p['target_l'][f_progress])
             group_meta.append(result_p['group_l'])
+            aquisition_function_value.append(trial_id2aqval[result_p['trial_id_l']])
 
 
