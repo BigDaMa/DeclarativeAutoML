@@ -7,6 +7,7 @@ from anytree import RenderTree
 from sklearn.metrics import f1_score
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_data
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_feature_names
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.smac_it.CustomRandomForest import CustomRandomForest
 
 from smac.optimizer.acquisition import AbstractAcquisitionFunction
 from smac.epm.base_epm import AbstractEPM
@@ -22,6 +23,7 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter, \
 from ConfigSpace.conditions import EqualsCondition
 
 from smac.configspace import ConfigurationSpace
+from smac.epm.rf_with_instances import RandomForestWithInstances
 
 def predict_range(model, X):
     y_pred = model.predict(X)
@@ -54,7 +56,6 @@ my_list_constraints = ['global_search_time_constraint',
                            'pipeline_size_constraint']
 
 feature_names, feature_names_new = get_feature_names(my_list_constraints)
-
 
 def run_AutoML(x):
     # which hyperparameters to use
@@ -113,7 +114,10 @@ def run_AutoML(x):
 
     my_random_seed = int(time.time())
 
-    X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data(dataset_id, randomstate=my_random_seed)
+    try:
+        X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data(dataset_id, randomstate=my_random_seed)
+    except:
+        return 0.0
 
     dynamic_params = []
     static_params = []
@@ -243,7 +247,8 @@ gen = SpaceGenerator()
 space = gen.generate_params()
 space.generate_SMAC(cs)
 
-
+print(cs.get_hyperparameter_names())
+print(cs.get_idx_by_hyperparameter_name('dataset_id'))
 
 class UncertaintySampling(AbstractAcquisitionFunction):
     def __init__(self,
@@ -286,12 +291,13 @@ smac = SMAC4HPO(scenario=scenario, rng=np.random.RandomState(42),
                 acquisition_function=UncertaintySampling,
                 initial_design=LHDesign,
                 initial_design_kwargs={'n_configs_x_params': 4, 'max_config_fracs': 0.1},
-                model=RandomForestWithInstances,
+                model=CustomRandomForest,
                 model_kwargs={'num_trees': 1000,
                               'do_bootstrapping': True,
                               'ratio_features': 1.0,
                               'min_samples_split': 2,
                               'min_samples_leaf': 1,
+                              'log_y': False
                               }
                 )
 

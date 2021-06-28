@@ -14,17 +14,45 @@ import pickle
 
 #cv = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/3 weeks/more_weeks_scaled_compare_5min_machine2/felix_cv_compare_scaled.p', "rb")))
 
-cv = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/more_weeks/machine2_5min/felix_cv_compare_scaled.p', "rb")))
+
+X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/1 week/more weeks cost sensitive - machine4/felix_X_compare_scaled.p', "rb")))
+
+#X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/3 weeks/more_weeks_scaled_compare_5min_machine2//felix_X_compare_scaled.p', "rb")))
 
 
-plt.plot(range(len(cv)), cv)
-plt.ylim(0, 1)
-plt.axhline(y=np.nanmax(cv))
-plt.title('comparison prediction')
-plt.ylabel('Cross-Validation R2 score')
-plt.xlabel('Active Learning Iterations')
+my_list_constraints = ['global_search_time_constraint',
+                           'global_evaluation_time_constraint',
+                           'global_memory_constraint',
+                           'global_cv',
+                           'global_number_cv',
+                           'privacy',
+                           'hold_out_fraction',
+                           'sample_fraction',
+                           'training_time_constraint',
+                           'inference_time_constraint',
+                           'pipeline_size_constraint']
+
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_feature_names
+_, feature_names = get_feature_names(my_list_constraints)
+
+print(feature_names)
+
+id_time = feature_names.index('global_search_time_constraint')
+
+x = range(len(X))
+y = X[:,id_time].flatten()
+
+plt.scatter(x, y)
+
+z = np.polyfit(x, y, 1)
+p = np.poly1d(z)
+plt.plot(x, p(x),"r--")
+
+plt.title('Search Time Constraint Trend over Time')
+plt.axhline(y=5*60)
 plt.show()
-print(cv)
+
+print(np.max(y))
 
 '''
 
