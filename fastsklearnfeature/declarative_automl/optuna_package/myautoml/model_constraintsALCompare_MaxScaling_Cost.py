@@ -399,9 +399,12 @@ while True:
 
     mp_glob.my_trials = []
     trial_id2aqval = {}
+    counter_trial_id = 0
     for keyy in k_keys_sorted_by_values:
         mp_glob.my_trials.append(data2most_uncertain[keyy][0])
-        trial_id2aqval[data2most_uncertain[keyy][0]] = data2most_uncertain[keyy][1]
+        trial_id2aqval[counter_trial_id] = data2most_uncertain[keyy][1]
+        counter_trial_id += 1
+
 
     with MyPool(processes=topk) as pool:
         results = pool.map(run_AutoML_global, range(topk))
