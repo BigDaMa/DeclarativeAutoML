@@ -14,11 +14,11 @@ import openml
 #new_dct = pickle.load(open('/home/felix/phd2/picture_progress/all_test_datasets/all_results_pipeline_size_constraint.p', 'rb'))
 #new_dct = pickle.load(open('/home/felix/phd2/picture_progress/all_test_datasets/all_results_memory_size_constraint.p', 'rb'))
 
-###new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_cost_sens.p', 'rb'))#test
+new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_cost_sens.p', 'rb'))#test
 #new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_squared4.p', 'rb'))#test
 
 
-new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_3weeks_5min_limit.p', 'rb'))#test
+#new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_3weeks_5min_limit.p', 'rb'))#test
 
 
 new_dict_sum_dynamic = {}
@@ -28,16 +28,6 @@ for k, v in new_dct.items():
     print(k)
     name = openml.datasets.get_dataset(dataset_id=k, download_data=False).name
     print('data: ' + name)
-
-    print(v)
-
-    #x_axis = [0.01, 0.05, 0.1, 1.0, 10.0]
-    #x_axis = [0.00074, 0.00078, 0.00085, 0.00143, 0.00261, 0.00664]
-    x_axis = np.array(range(len(v['dynamic']))) + 1
-    x_axis_name = 'Training time constraint (Seconds)'
-    #x_axis_name = 'Search time constraint (Minutes)'
-    #x_axis_name = 'Inference time constraint (Seconds)'
-
 
     static = v['static']
     dynamic = v['dynamic']
@@ -55,6 +45,9 @@ for k, v in new_dct.items():
 
         dynamic_avg /= max_avg
         static_avg /= max_avg
+
+        print('dyn avg: constr:' + str(constraints_i) + ' : ' + str(dynamic_avg))
+        print('static avg: constr:' + str(constraints_i) + ' : ' + str(static_avg))
 
         new_dict_sum_dynamic[constraints_i] += dynamic_avg
         new_dict_sum_default[constraints_i] += static_avg

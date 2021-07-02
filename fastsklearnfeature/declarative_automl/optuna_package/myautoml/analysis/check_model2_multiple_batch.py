@@ -17,6 +17,8 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model i
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import optimize_accuracy_under_constraints2
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import utils_run_AutoML
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_feature_names
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import generate_features
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import batched_objective
 from anytree import RenderTree
 import numpy as np
 
@@ -27,6 +29,8 @@ test_holdout_dataset_ids = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 
 
 memory_budget = 20.0
 privacy = None
+
+batch_size = 100
 
 results_dict = {}
 
@@ -149,22 +153,47 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
 
         for repeat in range(5):
 
-            study_prune = optuna.create_study(direction='maximize')
-            study_prune.optimize(lambda trial: optimize_accuracy_under_constraints2(trial=trial,
-                                                                                   metafeature_values_hold=metafeature_values_hold,
-                                                                                   search_time=search_time_frozen,
-                                                                                   model_compare=model_compare,
-                                                                                   model_success=model_success,
-                                                                                   memory_limit=memory_budget,
-                                                                                   privacy_limit=privacy,
-                                                                                   #evaluation_time=int(0.1*search_time_frozen),
-                                                                                   #hold_out_fraction=0.33,
-                                                                                   tune_space=True,#TODO
-                                                                                   ), n_trials=1000, n_jobs=1)
+            space = None
+            best_estimate_value = -1
+            for m_run in range(1):
+                study_prune = optuna.create_study(direction='maximize')
+                for b_iteration in range(10):
+                    trial_ids = []
+                    x_batch = []
+                    space_batch = {}
 
-            space = study_prune.best_trial.user_attrs['space']
+                    start_batch = time.time()
 
+                    for _ in range(batch_size):
+                        trial = study_prune.ask()
+                        trial_ids.append(trial.number)
+                        # create feature vector
+                        features_gen, space_gen = generate_features(trial=trial,
+                                                             metafeature_values_hold=metafeature_values_hold,
+                                                             search_time=search_time_frozen,
+                                                             memory_limit=memory_budget,
+                                                             privacy_limit=privacy,
+                                                             # evaluation_time=int(0.1*search_time_frozen),
+                                                             # hold_out_fraction=0.33,
+                                                             tune_space=True,
+                                                             save_data=False
+                                                             )
+                        x_batch.append(features_gen[0])
+                        space_batch[trial.number] = space_gen
 
+                    objectives = batched_objective(np.array(x_batch), model_success=model_success)
+
+                    # finish all trials in the batch
+                    for trial_id, objective in zip(trial_ids, objectives):
+                        study_prune.tell(trial_id, objective)
+
+                        if best_estimate_value < objective:
+                            space = space_batch[trial_id]
+                            best_estimate_value = objective
+
+                    print('time for batch: ' + str(time.time() - start_batch))
+
+            print('best estimate: ' + str(best_estimate_value))
 
             for pre, _, node in RenderTree(space.parameter_tree):
                 if node.status == True:
@@ -182,16 +211,14 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
                                                              my_scorer=my_scorer,
                                                              search_time=search_time_frozen,
                                                              memory_limit=memory_budget,
-                                                             privacy_limit=privacy
+                                                             privacy_limit=privacy,
+                                                             space=space
                                              )
-                new_constraint_evaluation_dynamic.append(
-                    ConstraintRun(space, search_dynamic.study.best_trial, result, more=study_prune.best_trial))
+                new_constraint_evaluation_dynamic.append(ConstraintRun(space, search_dynamic.study.best_trial, result, more=study_prune.best_trial))
             except:
                 result = 0
 
-                new_constraint_evaluation_dynamic.append(
-                    ConstraintRun(space, 'shit happend', result, more=study_prune.best_trial))
-
+                new_constraint_evaluation_dynamic.append(ConstraintRun(space, 'shit happend', result, more=study_prune.best_trial))
             from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import show_progress
             #show_progress(search, X_test_hold, y_test_hold, my_scorer)
 
@@ -230,8 +257,6 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
                 new_constraint_evaluation_default.append(ConstraintRun('default_space', 'shit happened', test_score))
             current_static.append(test_score)
 
-            new_constraint_evaluation_default.append(ConstraintRun('default_space', search_default.study.best_trial, test_score))
-
             print("result: " + str(best_result) + " test: " + str(test_score))
 
             print('dynamic: ' + str(current_dynamic))
@@ -247,7 +272,7 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
         results_dict[test_holdout_dataset_id]['dynamic'] = dynamic_approach
         results_dict[test_holdout_dataset_id]['static'] = static_approach
 
-        pickle.dump(results_dict, open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_cost_sens.p', 'wb+'))
+        pickle.dump(results_dict, open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_cost_sens_mul_batch.p', 'wb+'))
 
         dynamic_approach_log_eval.append(copy.deepcopy(new_constraint_evaluation_dynamic))
         static_approach_log_eval.append(copy.deepcopy(new_constraint_evaluation_default))
@@ -256,4 +281,4 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
         results_dict_log['dynamic'] = dynamic_approach_log_eval
         results_dict_log['static'] = static_approach_log_eval
 
-        pickle.dump(results_dict_log, open('/home/neutatz/phd2/picture_progress/all_test_datasets/eval_dict_log.p', 'wb+'))
+        pickle.dump(results_dict_log, open('/home/neutatz/phd2/picture_progress/all_test_datasets/eval_dict_log_mul_batch.p', 'wb+'))

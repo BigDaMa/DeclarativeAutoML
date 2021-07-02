@@ -179,7 +179,9 @@ def ifNull(value, constant_value=0):
 
 
 
-def optimize_accuracy_under_constraints2(trial, metafeature_values_hold, search_time, model_compare, model_success,
+
+
+def generate_features(trial, metafeature_values_hold, search_time,
                                         memory_limit=10,
                                         privacy_limit=None,
                                         evaluation_time=None,
@@ -187,8 +189,8 @@ def optimize_accuracy_under_constraints2(trial, metafeature_values_hold, search_
                                         training_time_limit=None,
                                         inference_time_limit=None,
                                         pipeline_size_limit=None,
-                                        comparison_weight=0,
-                                        tune_space=False
+                                        tune_space=False,
+                                        save_data=True
                                         ):
     try:
         gen = SpaceGenerator()
@@ -196,7 +198,8 @@ def optimize_accuracy_under_constraints2(trial, metafeature_values_hold, search_
         if tune_space:
             space.sample_parameters(trial)
 
-        trial.set_user_attr('space', copy.deepcopy(space))
+        if save_data:
+            trial.set_user_attr('space', copy.deepcopy(space))
 
         if type(evaluation_time) == type(None):
             evaluation_time = search_time
@@ -255,12 +258,45 @@ def optimize_accuracy_under_constraints2(trial, metafeature_values_hold, search_
         features = space2features(space, my_list_constraints_values, metafeature_values_hold)
         feature_names, _ = get_feature_names(my_list_constraints)
         features = FeatureTransformations().fit(features).transform(features, feature_names=feature_names)
-        trial.set_user_attr('features', features)
 
-        return predict_range(model_success, features) + comparison_weight * predict_range(model_compare, features)
+        if save_data:
+            trial.set_user_attr('features', features)
+
+        if not save_data:
+            return features, space
+        else:
+            return features
     except Exception as e:
-        print(str(e) + 'except dataset _ accuracy: ' + '\n\n')
-        return 0.0
+        return None
+
+def optimize_accuracy_under_constraints2(trial, metafeature_values_hold, search_time, model_compare, model_success,
+                                        memory_limit=10,
+                                        privacy_limit=None,
+                                        evaluation_time=None,
+                                        hold_out_fraction=None,
+                                        training_time_limit=None,
+                                        inference_time_limit=None,
+                                        pipeline_size_limit=None,
+                                        comparison_weight=0,
+                                        tune_space=False
+                                        ):
+    features = generate_features(trial, metafeature_values_hold, search_time,
+                      memory_limit=memory_limit,
+                      privacy_limit=privacy_limit,
+                      evaluation_time=evaluation_time,
+                      hold_out_fraction=hold_out_fraction,
+                      training_time_limit=training_time_limit,
+                      inference_time_limit=inference_time_limit,
+                      pipeline_size_limit=pipeline_size_limit,
+                      tune_space=tune_space
+                      )
+
+    return predict_range(model_success, features) + comparison_weight * predict_range(model_compare, features)
+
+def batched_objective(x, model_success, model_compare=0, comparison_weight=0):
+    print(x)
+    return predict_range(model_success, x)
+
 
 def optimize_accuracy_under_constraints_weights(trial, metafeature_values_hold, search_time, model_weights,
                                         memory_limit=10,
@@ -431,9 +467,11 @@ def utils_run_AutoML(trial, X_train=None, X_test=None, y_train=None, y_test=None
                privacy_limit=None,
                training_time_limit=None,
                inference_time_limit=None,
-               pipeline_size_limit=None
+               pipeline_size_limit=None,
+               space=None
                ):
-    space = trial.user_attrs['space']
+    if type(None) == type(space):
+        space = trial.user_attrs['space']
 
     print(trial.params)
 

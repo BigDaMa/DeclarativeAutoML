@@ -149,20 +149,25 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
 
         for repeat in range(5):
 
-            study_prune = optuna.create_study(direction='maximize')
-            study_prune.optimize(lambda trial: optimize_accuracy_under_constraints2(trial=trial,
-                                                                                   metafeature_values_hold=metafeature_values_hold,
-                                                                                   search_time=search_time_frozen,
-                                                                                   model_compare=model_compare,
-                                                                                   model_success=model_success,
-                                                                                   memory_limit=memory_budget,
-                                                                                   privacy_limit=privacy,
-                                                                                   #evaluation_time=int(0.1*search_time_frozen),
-                                                                                   #hold_out_fraction=0.33,
-                                                                                   tune_space=True,#TODO
-                                                                                   ), n_trials=1000, n_jobs=1)
+            space = None
+            best_estimate_value = -1
+            for m_run in range(5):
+                study_prune = optuna.create_study(direction='maximize')
+                study_prune.optimize(lambda trial: optimize_accuracy_under_constraints2(trial=trial,
+                                                                                       metafeature_values_hold=metafeature_values_hold,
+                                                                                       search_time=search_time_frozen,
+                                                                                       model_compare=model_compare,
+                                                                                       model_success=model_success,
+                                                                                       memory_limit=memory_budget,
+                                                                                       privacy_limit=privacy,
+                                                                                       #evaluation_time=int(0.1*search_time_frozen),
+                                                                                       #hold_out_fraction=0.33,
+                                                                                       tune_space=True,
+                                                                                       ), n_trials=500, n_jobs=1)
 
-            space = study_prune.best_trial.user_attrs['space']
+                if best_estimate_value < study_prune.best_trial.value:
+                    space = study_prune.best_trial.user_attrs['space']
+                    best_estimate_value = study_prune.best_trial.value
 
 
 
@@ -184,14 +189,11 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
                                                              memory_limit=memory_budget,
                                                              privacy_limit=privacy
                                              )
-                new_constraint_evaluation_dynamic.append(
-                    ConstraintRun(space, search_dynamic.study.best_trial, result, more=study_prune.best_trial))
+                new_constraint_evaluation_dynamic.append(ConstraintRun(space, search_dynamic.study.best_trial, result, more=study_prune.best_trial))
             except:
                 result = 0
 
-                new_constraint_evaluation_dynamic.append(
-                    ConstraintRun(space, 'shit happend', result, more=study_prune.best_trial))
-
+                new_constraint_evaluation_dynamic.append(ConstraintRun(space, 'shit happend', result, more=study_prune.best_trial))
             from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import show_progress
             #show_progress(search, X_test_hold, y_test_hold, my_scorer)
 
@@ -230,8 +232,6 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
                 new_constraint_evaluation_default.append(ConstraintRun('default_space', 'shit happened', test_score))
             current_static.append(test_score)
 
-            new_constraint_evaluation_default.append(ConstraintRun('default_space', search_default.study.best_trial, test_score))
-
             print("result: " + str(best_result) + " test: " + str(test_score))
 
             print('dynamic: ' + str(current_dynamic))
@@ -247,7 +247,7 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
         results_dict[test_holdout_dataset_id]['dynamic'] = dynamic_approach
         results_dict[test_holdout_dataset_id]['static'] = static_approach
 
-        pickle.dump(results_dict, open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_cost_sens.p', 'wb+'))
+        pickle.dump(results_dict, open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_cost_sens_mul.p', 'wb+'))
 
         dynamic_approach_log_eval.append(copy.deepcopy(new_constraint_evaluation_dynamic))
         static_approach_log_eval.append(copy.deepcopy(new_constraint_evaluation_default))
@@ -256,4 +256,4 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
         results_dict_log['dynamic'] = dynamic_approach_log_eval
         results_dict_log['static'] = static_approach_log_eval
 
-        pickle.dump(results_dict_log, open('/home/neutatz/phd2/picture_progress/all_test_datasets/eval_dict_log.p', 'wb+'))
+        pickle.dump(results_dict_log, open('/home/neutatz/phd2/picture_progress/all_test_datasets/eval_dict_log_mul.p', 'wb+'))
