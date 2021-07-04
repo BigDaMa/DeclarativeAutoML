@@ -18,11 +18,11 @@ import pickle
 
 #cv = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/cost_sensitive_experiments/machine1_model_constraintsALCompare_MaxScaling_Cost_Optimal/felix_cv_compare_scaled.p', "rb")))
 
-cv = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/cost_sensitive_experiments/Divison/felix_cv_compare_scaled.p', "rb")))
+cv = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/cost_sensitive_experiments/Divison/felix_acquisition function value_scaled.p', "rb")))
 
 
-plt.plot(range(len(cv)), cv)
-plt.ylim(0, 1)
+plt.scatter(range(len(cv)), cv)
+#plt.ylim(0, 1)
 plt.axhline(y=np.nanmax(cv))
 plt.title('comparison prediction')
 plt.ylabel('Cross-Validation R2 score')

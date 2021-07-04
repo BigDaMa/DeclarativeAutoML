@@ -14,10 +14,19 @@ import pickle
 
 #cv = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/3 weeks/more_weeks_scaled_compare_5min_machine2/felix_cv_compare_scaled.p', "rb")))
 
+#constraintsALCompare_MaxScaling_Cost
+#X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/1 week/more weeks cost sensitive - machine4/felix_X_compare_scaled.p', "rb")))
 
-X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/1 week/more weeks cost sensitive - machine4/felix_X_compare_scaled.p', "rb")))
+#constraintsALCompare_MaxScaling_Cost
+#X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/cost_sensitive_experiments/with_quantile_model_constraintsALCompare_MaxScaling_Cost/felix_X_compare_scaled.p', "rb")))
+
 
 #X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/3 weeks/more_weeks_scaled_compare_5min_machine2//felix_X_compare_scaled.p', "rb")))
+
+
+X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/cost_sensitive_experiments/Divison/felix_X_compare_scaled.p', "rb")))
+
+#X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/cost_sensitive_experiments/fraction/felix_X_compare_scaled.p', "rb")))
 
 
 my_list_constraints = ['global_search_time_constraint',

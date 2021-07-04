@@ -15,8 +15,10 @@ import openml
 #new_dct = pickle.load(open('/home/felix/phd2/picture_progress/all_test_datasets/all_results_memory_size_constraint.p', 'rb'))
 
 #img ='_mul'
-img = ''
+#img = ''
 #img = '_mul_batch'
+#img = '_avg'
+img = '_p2'
 new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_cost_sens'+ img +'.p', 'rb'))#test
 #new_dct = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/all_results_squared4.p', 'rb'))#test
 

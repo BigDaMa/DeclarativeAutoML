@@ -36,7 +36,7 @@ test_holdout_dataset_id = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 4
 my_scorer = make_scorer(f1_score)
 
 
-total_search_time_actual = 60 * 60
+total_search_time_actual = 60
 topk = 20 # 20
 
 my_openml_datasets = [3, 4, 13, 15, 24, 25, 29, 31, 37, 38, 40, 43, 44, 49, 50, 51, 52, 53, 55, 56, 59, 151, 152, 153, 161, 162, 164, 172, 179, 310, 311, 312, 316, 333, 334, 335, 336, 337, 346, 444, 446, 448, 450, 451, 459, 461, 463, 464, 465, 466, 467, 470, 472, 476, 479, 481, 682, 683, 747, 803, 981, 993, 1037, 1038, 1039, 1040, 1042, 1045, 1046, 1048, 1049, 1050, 1053, 1054, 1055, 1056, 1059, 1060, 1061, 1062, 1063, 1064, 1065, 1066, 1067, 1068, 1069, 1071, 1073, 1075, 1085, 1101, 1104, 1107, 1111, 1112, 1114, 1116, 1119, 1120, 1121, 1122, 1123, 1124, 1125, 1126, 1127, 1128, 1129, 1130, 1131, 1132, 1133, 1134, 1135, 1136, 1137, 1138, 1139, 1140, 1141, 1142, 1143, 1144, 1145, 1146, 1147, 1148, 1149, 1150, 1151, 1152, 1153, 1154, 1155, 1156, 1157, 1158, 1159, 1160, 1161, 1162, 1163, 1164, 1165, 1166, 1167, 1169, 1216, 1235, 1236, 1237, 1238, 1240, 1412, 1441, 1442, 1443, 1444, 1447, 1448, 1449, 1450, 1451, 1452, 1453, 1455, 1458, 1460, 1461, 1462, 1463, 1464, 1467, 1471, 1473, 1479, 1480, 1484, 1485, 1486, 1487, 1488, 1489, 1490, 1494, 1495, 1496, 1498, 1502, 1504, 1506, 1507, 1510, 1511, 1547, 1561, 1562, 1563, 1564, 1597, 4134, 4135, 4154, 4329, 4534, 23499, 40536, 40645, 40646, 40647, 40648, 40649, 40650, 40660, 40665, 40666, 40669, 40680, 40681, 40690, 40693, 40701, 40705, 40706, 40710, 40713, 40714, 40900, 40910, 40922, 40999, 41005, 41007, 41138, 41142, 41144, 41145, 41146, 41147, 41150, 41156, 41158, 41159, 41160, 41161, 41162, 41228, 41430, 41521, 41538, 41976, 42172, 42477]
@@ -77,11 +77,11 @@ def run_AutoML(trial, X_train=None, X_test=None, y_train=None, y_test=None, cate
         print(trial.params)
 
         #make this a hyperparameter
-        search_time = trial.params['global_search_time_constraint']
+        search_time = trial.params['global_search_time_constraint'] * 60
 
         evaluation_time = search_time
         if 'global_evaluation_time_constraint' in trial.params:
-            evaluation_time = trial.params['global_evaluation_time_constraint']
+            evaluation_time = trial.params['global_evaluation_time_constraint'] * 60
 
         memory_limit = 10
         if 'global_memory_constraint' in trial.params:
@@ -297,7 +297,7 @@ def optimize_uncertainty(trial):
 
         uncertainty = stddev_pred[0]
 
-        objective = (uncertainty / calculate_max_std(model.n_estimators, min_value=0.0, max_value=1.0)) / (search_time / total_search_time)
+        objective = (uncertainty / calculate_max_std(model.n_estimators, min_value=0.0, max_value=1.0)) / float(search_time / float((total_search_time*60)))
 
         return objective
     except Exception as e:
@@ -307,7 +307,7 @@ def optimize_uncertainty(trial):
 
 
 #cold start - random sampling
-total_search_time = 5 * 60
+total_search_time = 5 #mins
 study = optuna.create_study(direction='maximize', sampler=RandomSampler(seed=42))
 study.optimize(run_AutoML_score_only, n_trials=4, n_jobs=1)
 
