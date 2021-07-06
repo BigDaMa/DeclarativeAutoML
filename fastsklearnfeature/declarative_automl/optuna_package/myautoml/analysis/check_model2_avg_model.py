@@ -111,8 +111,12 @@ for test_holdout_dataset_id in test_holdout_dataset_ids:
     #model_success = pickle.load(open("/home/neutatz/phd2/decAutoML2weeks_compare2default/1 week/more weeks cost sensitive - machine4/my_great_model_compare_scaled.p", "rb"))
     #model_success = pickle.load(open("/home/neutatz/phd2/decAutoML2weeks_compare2default/3 weeks/more_weeks_scaled_compare_5min_machine2/my_great_model_compare_scaled.p", "rb"))
 
+    #model_success = pickle.load(open(
+    #    "/home/neutatz/phd2/decAutoML2weeks_compare2default/cost_sensitive_experiments/Divison/my_great_model_compare_scaled.p",
+    #    "rb"))
+
     model_success = pickle.load(open(
-        "/home/neutatz/phd2/decAutoML2weeks_compare2default/cost_sensitive_experiments/Divison/my_great_model_compare_scaled.p",
+        "/home/neutatz/phd2/decAutoML2weeks_compare2default/fraction_min/cost_sensitive/my_great_model_compare_scaled.p",
         "rb"))
 
     #model_success = pickle.load(open(

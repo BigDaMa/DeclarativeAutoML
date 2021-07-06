@@ -58,9 +58,9 @@ class ConstraintEvaluation(object):
             estimates.append(self.runs[i].more.value)
         return np.average(estimates)
 
-#data = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/eval_dict_log.p', 'rb'))
+data = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/eval_dict_log_p2.p', 'rb'))
 
-data = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/machine2_5min_more_weeks_with_log_part1/eval_dict_log_part1.p', 'rb'))
+#data = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/machine2_5min_more_weeks_with_log_part1/eval_dict_log_part1.p', 'rb'))
 
 print(len(data['dynamic']))
 
@@ -75,9 +75,9 @@ for d_i in range(len(data['dynamic'])):
 
         print(static.get_best_run().get_best_config())
 
-        #print('Best Space of dynamic: ')
-        #best_run = d.get_best_run()
-        #best_run.print_space()
+        print('Best Space of dynamic: ')
+        best_run = d.get_best_run()
+        best_run.print_space()
 
         print('Avg Estimate: ' + str(d.get_average_estimate()))
 

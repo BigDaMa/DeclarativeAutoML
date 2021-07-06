@@ -45,18 +45,18 @@ for k, v in new_dct.items():
         dynamic_avg = np.average(dynamic[constraints_i])
         static_avg = np.average(static[constraints_i])
 
+
+
         max_avg = max(np.average(dynamic[constraints_i]), np.average(static[constraints_i]))
         #max_avg = max(np.max(dynamic[constraints_i]), np.max(static[constraints_i]))
 
-        dynamic_avg /= max_avg
-        static_avg /= max_avg
+        if dynamic_avg >= static_avg:
+            new_dict_sum_dynamic[constraints_i] += 1
 
-        print('dyn avg: constr:' + str(constraints_i) + ' : ' + str(dynamic_avg))
-        print('static avg: constr:' + str(constraints_i) + ' : ' + str(static_avg))
+        if static_avg >= dynamic_avg:
+            new_dict_sum_default[constraints_i] += 1
 
-        new_dict_sum_dynamic[constraints_i] += dynamic_avg
-        new_dict_sum_default[constraints_i] += static_avg
-
+print(float(len(new_dct)))
 
 for k, v in new_dict_sum_default.items():
     print('dynamic: ' + str(new_dict_sum_dynamic[k] / float(len(new_dct))))

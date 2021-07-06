@@ -311,7 +311,7 @@ def optimize_uncertainty(trial):
 #cold start - random sampling
 total_search_time = 5 #mins
 study = optuna.create_study(direction='maximize', sampler=RandomSampler(seed=42))
-study.optimize(run_AutoML_score_only, n_trials=4, n_jobs=1)
+study.optimize(run_AutoML_score_only, n_trials=100, n_jobs=1)
 
 total_search_time = total_search_time_actual
 

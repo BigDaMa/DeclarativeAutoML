@@ -44,11 +44,42 @@ class TimeException(Exception):
         super().__init__(self.message)
 
 
+def constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit):
+    return_dict[key + 'result' + '_training_time'] = training_time
+    if type(training_time_limit) != type(None) and training_time > training_time_limit:
+        return_dict[key + 'result'] = -1 * (
+                    training_time - training_time_limit)  # return the difference to satisfying the constraint
+        return False
+
+    dumped_obj = pickle.dumps(p)
+    pipeline_size = sys.getsizeof(dumped_obj)
+    return_dict[key + 'result' + '_pipeline_size'] = pipeline_size
+    if type(pipeline_size_limit) != type(None) and pipeline_size > pipeline_size_limit:
+        return_dict[key + 'result'] = -1 * (
+                    pipeline_size - pipeline_size_limit)  # return the difference to satisfying the constraint
+        return False
+
+    inference_times = []
+    for i in range(10):
+        random_id = np.random.randint(low=0, high=X.shape[0])
+        start_inference = time.time()
+        p.predict(X[[random_id]])
+        inference_times.append(time.time() - start_inference)
+    return_dict[key + 'result' + '_inference_time'] = np.mean(inference_times)
+    if type(inference_time_limit) != type(None) and np.mean(inference_times) > inference_time_limit:
+        return_dict[key + 'result'] = -1 * (np.mean(
+            inference_times) - inference_time_limit)  # return the difference to satisfying the constraint
+        return False
+    return True
+
+
+
 def evaluatePipeline(key, return_dict):
     try:
         p = mp_global.mp_store[key]['p']
         number_of_cvs = mp_global.mp_store[key]['number_of_cvs']
         cv = mp_global.mp_store[key]['cv']
+        training_sampling_factor = mp_global.mp_store[key]['training_sampling_factor']
         scorer = mp_global.mp_store[key]['scorer']
         X = mp_global.mp_store[key]['X']
         y = mp_global.mp_store[key]['y']
@@ -63,36 +94,17 @@ def evaluatePipeline(key, return_dict):
         size = int(main_memory_budget_gb * 1024.0 * 1024.0 * 1024.0)
         resource.setrlimit(resource.RLIMIT_AS, (size, resource.RLIM_INFINITY))
 
-        #todo: cancel fitting if over time
-        start_training = time.time()
-        p.fit(X, y)
+        training_time = 0
+        trained_pipeline = None
+        if training_sampling_factor == 1.0:
+            start_training = time.time()
+            p.fit(X, y)
+            training_time = time.time() - start_training
 
-        training_time = time.time() - start_training
-        return_dict[key + 'result' + '_training_time'] = training_time
-        if type(training_time_limit) != type(None) and training_time > training_time_limit:
-            return_dict[key + 'result'] = -1 * (training_time - training_time_limit) #return the difference to satisfying the constraint
-            return
+            if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit):
+                return
 
-        dumped_obj = pickle.dumps(p)
-        pipeline_size = sys.getsizeof(dumped_obj)
-        return_dict[key + 'result' + '_pipeline_size'] = pipeline_size
-        if type(pipeline_size_limit) != type(None) and pipeline_size > pipeline_size_limit:
-            return_dict[key + 'result'] = -1 * (pipeline_size - pipeline_size_limit)  # return the difference to satisfying the constraint
-            return
-
-        inference_times = []
-        for i in range(10):
-            random_id = np.random.randint(low=0, high=X.shape[0])
-            start_inference = time.time()
-            p.predict(X[[random_id]])
-            inference_times.append(time.time() - start_inference)
-        return_dict[key + 'result' + '_inference_time'] = np.mean(inference_times)
-        if type(inference_time_limit) != type(None) and np.mean(inference_times) > inference_time_limit:
-            return_dict[key + 'result'] = -1 * (np.mean(inference_times) - inference_time_limit)  # return the difference to satisfying the constraint
-            return
-
-
-        trained_pipeline = copy.deepcopy(p)
+            trained_pipeline = copy.deepcopy(p)
 
 
 
@@ -103,13 +115,44 @@ def evaluatePipeline(key, return_dict):
                 my_splits = StratifiedKFold(n_splits=cv, shuffle=True, random_state=int(time.time())).split(X, y)
                 #my_splits = StratifiedKFold(n_splits=cv, shuffle=True, random_state=int(42)).split(X, y)
                 for train_ids, test_ids in my_splits:
-                    p.fit(X[train_ids, :], y[train_ids])
+
+                    if training_sampling_factor < 1.0:
+                        X_train, _, y_train, _ = sklearn.model_selection.train_test_split(X[train_ids, :], y[train_ids],
+                                                                                                    random_state=42,
+                                                                                                    stratify=y[train_ids],
+                                                                                                    train_size=training_sampling_factor)
+                    else:
+                        X_train = X[train_ids, :]
+                        y_train = y[train_ids]
+
+                    start_training = time.time()
+                    p.fit(X_train, y_train)
+                    training_time = time.time() - start_training
                     scores.append(scorer(p, X[test_ids, :], pd.DataFrame(y[test_ids])))
+
+
+
         else:
             X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
                                                                   test_size=hold_out_fraction)
+
+            if training_sampling_factor < 1.0:
+                X_train, _, y_train, _ = sklearn.model_selection.train_test_split(X_train, y_train,
+                                                                                  random_state=42,
+                                                                                  stratify=y_train,
+                                                                                  train_size=training_sampling_factor)
+
+            start_training = time.time()
             p.fit(X_train, y_train)
+            training_time = time.time() - start_training
             scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
+
+        if training_sampling_factor < 1.0:
+            if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit):
+                return
+
+            trained_pipeline = copy.deepcopy(p)
+
 
         return_dict[key + 'result'] = np.mean(scores)
 
@@ -243,6 +286,12 @@ class MyAutoML:
                     classifier.set_weight(custom_weight)
 
 
+                use_training_sampling = self.space.suggest_categorical('use_training_sampling', [True, False])
+                training_sampling_factor = 1.0
+                if use_training_sampling:
+                    training_sampling_factor = self.space.suggest_uniform('training_sampling_factor', 0.0, 1.0)
+
+
                 augmentation = self.space.suggest_categorical('augmentation', self.augmentation_list)
                 augmentation.init_hyperparameters(self.space, X, y)
 
@@ -270,6 +319,7 @@ class MyAutoML:
                 mp_global.mp_store[key]['p'] = copy.deepcopy(my_pipeline)
                 mp_global.mp_store[key]['number_of_cvs'] = self.number_of_cvs
                 mp_global.mp_store[key]['cv'] = self.cv
+                mp_global.mp_store[key]['training_sampling_factor'] = training_sampling_factor
                 mp_global.mp_store[key]['scorer'] = scorer
                 mp_global.mp_store[key]['X'] = X
                 mp_global.mp_store[key]['y'] = y
@@ -359,10 +409,10 @@ class MyAutoML:
 if __name__ == "__main__":
     auc = make_scorer(roc_auc_score, greater_is_better=True, needs_threshold=True)
 
-    dataset = openml.datasets.get_dataset(1114)
+    #dataset = openml.datasets.get_dataset(1114)
 
     #dataset = openml.datasets.get_dataset(1116)
-    #dataset = openml.datasets.get_dataset(52)
+    dataset = openml.datasets.get_dataset(51)
 
     X, y, categorical_indicator, attribute_names = dataset.get_data(
         dataset_format='array',
@@ -382,8 +432,8 @@ if __name__ == "__main__":
     for pre, _, node in RenderTree(space.parameter_tree):
         print("%s%s: %s" % (pre, node.name, node.status))
 
-    search = MyAutoML(n_jobs=4,
-                      time_search_budget=60*60,
+    search = MyAutoML(n_jobs=1,
+                      time_search_budget=10*60,
                       space=space,
                       main_memory_budget_gb=40,
                       hold_out_fraction=0.5)

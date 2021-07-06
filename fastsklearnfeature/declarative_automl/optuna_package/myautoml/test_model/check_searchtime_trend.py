@@ -24,7 +24,11 @@ import pickle
 #X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/3 weeks/more_weeks_scaled_compare_5min_machine2//felix_X_compare_scaled.p', "rb")))
 
 
-X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/cost_sensitive_experiments/Divison/felix_X_compare_scaled.p', "rb")))
+#X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/cost_sensitive_experiments/Divison/felix_X_compare_scaled.p', "rb")))
+
+X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/fraction_min/5min/felix_X_compare_scaled.p', "rb")))
+#X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/fraction_min/cost_sensitive/felix_X_compare_scaled.p', "rb")))
+
 
 #X = np.array(pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/cost_sensitive_experiments/fraction/felix_X_compare_scaled.p', "rb")))
 

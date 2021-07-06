@@ -43,12 +43,6 @@ class ConstraintEvaluation(object):
         best_run = self.get_best_run()
         return best_run.get_best_config()
 
-    def get_average(self):
-        scores = []
-        for i in range(len(self.runs)):
-            scores.append(self.runs[i].test_score)
-        return np.average(scores)
-
     def get_worst_run(self):
         min_score = np.inf
         min_run = None
@@ -58,25 +52,37 @@ class ConstraintEvaluation(object):
                 min_run = self.runs[i]
         return min_run
 
-data = pickle.load(open('/home/neutatz/phd2/picture_progress/all_test_datasets/eval_dict_log_p2.p', 'rb'))
+import io
+import pickle
+
+# Use the pure-Python version, we can't see the internal state of the C version
+pickle.Unpickler = pickle._Unpickler
+
+import dill
+handle = open('/home/neutatz/phd2/picture_progress/all_test_datasets/part1/eval_dict_log.p', 'rb')
+unpickler = dill.Unpickler(handle)
+
+try:
+    unpickler.load()
+except EOFError:
+    pass
+
+print(unpickler.stack)
+
+data = pickle.load()
 
 print(len(data['dynamic']))
 
-for d_i in range(len(data['dynamic'])):
-    d = data['dynamic'][d_i]
-    static = data['static'][d_i]
-
-    if d.get_average() < static.get_average():
-        print('Dataset: ' + str(d.dataset))
-        print('difference: ' + str(static.get_average() - d.get_average()))
-        print('Constraint: ' + str(d.constraint))
-        best_run = d.get_best_run()
-        print('Best Score: ' + str(best_run.test_score))
-        print('Best Space: ')
-        best_run.print_space()
-        print('Best Config: ')
-        print(best_run.get_best_config())
-        print('All paramas: ')
-        print(best_run.more.params)
-        print(best_run.more.value)
-        print('########################################################')
+for d in data['dynamic']:
+    print('Dataset: ' + str(d.dataset))
+    print('Constraint: ' + str(d.constraint))
+    best_run = d.get_best_run()
+    print('Best Score: ' + str(best_run.test_score))
+    print('Best Space: ')
+    best_run.print_space()
+    print('Best Config: ')
+    print(best_run.get_best_config())
+    print('All paramas: ')
+    print(best_run.more.params)
+    print(best_run.more.value)
+    print('########################################################')
