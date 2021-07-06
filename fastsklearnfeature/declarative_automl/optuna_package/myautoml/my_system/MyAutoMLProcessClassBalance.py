@@ -44,7 +44,7 @@ class TimeException(Exception):
         super().__init__(self.message)
 
 
-def constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit):
+def constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X):
     return_dict[key + 'result' + '_training_time'] = training_time
     if type(training_time_limit) != type(None) and training_time > training_time_limit:
         return_dict[key + 'result'] = -1 * (
@@ -101,7 +101,7 @@ def evaluatePipeline(key, return_dict):
             p.fit(X, y)
             training_time = time.time() - start_training
 
-            if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit):
+            if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X):
                 return
 
             trained_pipeline = copy.deepcopy(p)
@@ -148,7 +148,7 @@ def evaluatePipeline(key, return_dict):
             scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
 
         if training_sampling_factor < 1.0:
-            if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit):
+            if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X):
                 return
 
             trained_pipeline = copy.deepcopy(p)
