@@ -285,7 +285,7 @@ group_meta = []
 aquisition_function_value = []
 
 #cold start - random sampling
-random_runs = 10#(2 * len(feature_names_new))
+random_runs = (2 * len(feature_names_new))
 study_random = optuna.create_study(direction='maximize', sampler=RandomSampler(seed=42))
 study_random.optimize(random_config, n_trials=random_runs, n_jobs=1)
 
