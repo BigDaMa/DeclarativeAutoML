@@ -298,7 +298,7 @@ mp_glob.my_trials = []
 trial_id2aqval = {}
 counter_trial_id = 0
 for u_trial in study_random.trials:
-    if u_trial == 0.0: #prune failed configurations
+    if u_trial.value == 0.0: #prune failed configurations
         mp_glob.my_trials.append(u_trial)
         trial_id2aqval[counter_trial_id] = 0.0
         counter_trial_id += 1
