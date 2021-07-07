@@ -6,7 +6,6 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 import copy
-from optuna.trial import FrozenTrial
 from anytree import RenderTree
 from sklearn.ensemble import RandomForestRegressor
 from optuna.samplers import RandomSampler
@@ -202,7 +201,6 @@ def run_AutoML_global(trial_id):
 
     return {'feature_l': feature_list,
             'target_l': target_list,
-            'loss': np.square(target_list[-1] - mp_glob.my_trials[trial_id].user_attrs['predicted_target']),
             'group_l': copy.deepcopy(mp_glob.my_trials[trial_id].params['dataset_id']),
             'trial_id_l': trial_id}
 
@@ -262,8 +260,6 @@ def optimize_uncertainty(trial):
     if type(features) == type(None):
         return -1 * np.inf
 
-    trial.set_user_attr('predicted_target', model.predict(features))
-
     predictions = []
     for tree in range(model.n_estimators):
         predictions.append(predict_range(model.estimators_[tree], features))
@@ -289,7 +285,7 @@ group_meta = []
 aquisition_function_value = []
 
 #cold start - random sampling
-random_runs = (2 * len(feature_names_new))
+random_runs = 10#(2 * len(feature_names_new))
 study_random = optuna.create_study(direction='maximize', sampler=RandomSampler(seed=42))
 study_random.optimize(random_config, n_trials=random_runs, n_jobs=1)
 
