@@ -53,13 +53,13 @@ print(feature_names)
 id_time = feature_names.index('global_search_time_constraint')
 
 x = range(len(X))
-y = X[:,id_time].flatten()
+y = X[:, id_time].flatten()
 
 plt.scatter(x, y)
 
 z = np.polyfit(x, y, 1)
 p = np.poly1d(z)
-plt.plot(x, p(x),"r--")
+plt.plot(x, p(x), "r--")
 
 plt.title('Search Time Constraint Trend over Time')
 plt.axhline(y=5*60)

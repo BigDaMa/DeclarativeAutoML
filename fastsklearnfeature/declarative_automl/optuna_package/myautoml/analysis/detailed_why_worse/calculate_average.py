@@ -39,8 +39,8 @@ for k, v in new_dct.items():
 
     for constraints_i in range(len(dynamic)):
         if not constraints_i in new_dict_sum_dynamic:
-            new_dict_sum_dynamic[constraints_i] = 0.0
-            new_dict_sum_default[constraints_i] = 0.0
+            new_dict_sum_dynamic[constraints_i] = []
+            new_dict_sum_default[constraints_i] = []
 
         dynamic_avg = np.average(dynamic[constraints_i])
         static_avg = np.average(static[constraints_i])
@@ -54,13 +54,13 @@ for k, v in new_dct.items():
         print('dyn avg: constr:' + str(constraints_i) + ' : ' + str(dynamic_avg))
         print('static avg: constr:' + str(constraints_i) + ' : ' + str(static_avg))
 
-        new_dict_sum_dynamic[constraints_i] += dynamic_avg
-        new_dict_sum_default[constraints_i] += static_avg
+        new_dict_sum_dynamic[constraints_i].append(dynamic_avg)
+        new_dict_sum_default[constraints_i].append(static_avg)
 
 
 for k, v in new_dict_sum_default.items():
-    print('dynamic: ' + str(new_dict_sum_dynamic[k] / float(len(new_dct))))
-    print('default: ' + str(new_dict_sum_default[k] / float(len(new_dct))))
+    print('dynamic: ' + str(np.average(new_dict_sum_dynamic[k])) + ' +- ' + str(np.std(new_dict_sum_dynamic[k])))
+    print('default: ' + str(np.average(new_dict_sum_default[k])) + ' +- ' + str(np.std(new_dict_sum_default[k])))
     print('\n\n')
 print(new_dict_sum_default)
 print(new_dict_sum_dynamic)
