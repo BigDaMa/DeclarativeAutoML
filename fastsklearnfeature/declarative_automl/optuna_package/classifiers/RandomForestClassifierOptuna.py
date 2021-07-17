@@ -23,6 +23,7 @@ class RandomForestClassifierOptuna(RandomForestClassifier):
         self.min_impurity_decrease = 0.0
         self.bootstrap = trial.suggest_categorical(self.name + "bootstrap", [True, False])
         #self.classes_ = 2
+        self.n_jobs = 1
 
         #hyperopt config
         #self.n_estimators = trial.suggest_int(self.name + "n_estimators", 10, 512, log=True)

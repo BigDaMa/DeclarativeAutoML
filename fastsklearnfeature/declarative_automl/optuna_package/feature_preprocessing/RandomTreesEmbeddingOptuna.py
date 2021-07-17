@@ -13,6 +13,7 @@ class RandomTreesEmbeddingOptuna(RandomTreesEmbedding):
         self.max_leaf_nodes = None
         self.bootstrap = trial.suggest_categorical(self.name + 'bootstrap', [True, False])
         self.sparse_output = trial.suggest_categorical(self.name + 'sparse_output', [True, False])
+        self.n_jobs = 1
 
         self.sparse = self.sparse_output
 

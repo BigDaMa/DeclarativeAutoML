@@ -42,6 +42,7 @@ class SelectKBestOptuna(SelectKBest):
             model.min_weight_fraction_leaf = 0.
             model.min_impurity_decrease = 0.
             model.bootstrap = trial.suggest_categorical(new_name + "bootstrap", [True, False])
+            model.n_jobs = 1
 
             self.score_func = functools.partial(model_score, estimator=model) #bindFunction1(model)
 

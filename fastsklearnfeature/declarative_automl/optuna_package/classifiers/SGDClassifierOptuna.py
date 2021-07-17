@@ -8,6 +8,7 @@ class SGDClassifierOptuna(SGDClassifier):
 
     def init_hyperparameters(self, trial, X, y):
         self.name = id_name('SGDClassifier_')
+        self.n_jobs = 1
         self.loss = trial.suggest_categorical(self.name + "loss", ["hinge", "log", "modified_huber", "squared_hinge", "perceptron"])
         self.penalty = trial.suggest_categorical(self.name + "penalty", ["l1", "l2", "elasticnet"])
         self.alpha = trial.suggest_loguniform(self.name + "alpha", 1e-7, 1e-1)

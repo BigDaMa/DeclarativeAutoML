@@ -16,6 +16,7 @@ class NystroemOptuna(Nystroem):
             self.coef0 = trial.suggest_uniform(self.name + "coef0", -1, 1)
 
         self.sparse = False
+        self.n_jobs = 1
 
     def fit(self, X, y=None):
         self.n_components = min(len(X), self.n_components)

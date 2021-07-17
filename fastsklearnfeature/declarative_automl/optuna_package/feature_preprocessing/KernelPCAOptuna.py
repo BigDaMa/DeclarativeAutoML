@@ -18,6 +18,7 @@ class KernelPCAOptuna(KernelPCA):
         self.remove_zero_eig = True
 
         self.sparse = False
+        self.n_jobs = 1
 
     def fit(self, X, y=None):
         self.n_components = max(1, int(self.n_components_fraction * X.shape[1]))

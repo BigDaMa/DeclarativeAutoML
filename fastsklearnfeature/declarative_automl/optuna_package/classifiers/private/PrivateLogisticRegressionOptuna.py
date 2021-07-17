@@ -9,6 +9,7 @@ class PrivateLogisticRegressionOptuna(LogisticRegression):
         self.tol = trial.suggest_loguniform(self.name + "tol", 1e-5, 1e-1)
         self.C = trial.suggest_loguniform(self.name + "C", 0.03125, 32768)
         self.fit_intercept = True
+        self.n_jobs = 1
 
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('PrivateLogisticRegression_')

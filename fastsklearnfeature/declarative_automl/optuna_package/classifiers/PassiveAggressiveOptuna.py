@@ -15,6 +15,7 @@ class PassiveAggressiveOptuna(PassiveAggressiveClassifier):
         self.average = trial.suggest_categorical(self.name + "average", [False, True])
 
         self.max_iter = trial.suggest_int(self.name + "max_iter", 10, 1024, log=False)
+        self.n_jobs = 1
 
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('PassiveAggressive_')
