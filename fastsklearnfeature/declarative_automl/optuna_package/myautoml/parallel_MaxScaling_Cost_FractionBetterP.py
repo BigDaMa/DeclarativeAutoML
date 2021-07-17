@@ -119,15 +119,18 @@ def run_AutoML(trial):
     X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data(dataset_id, randomstate=my_random_seed)
 
     # sample features based on seed
+
     if 'random_feature_selection' in trial.params:
         random_feature_selection = trial.params['random_feature_selection']
         rand_feature_ids = np.arange(X_train.shape[1])
         np.random.seed(my_random_seed)
         np.random.shuffle(rand_feature_ids)
         number_of_sampled_features = int(X_train.shape[1] * random_feature_selection)
+
         X_train = X_train[:, rand_feature_ids[0:number_of_sampled_features]]
         X_test = X_test[:, rand_feature_ids[0:number_of_sampled_features]]
-
+        categorical_indicator = np.array(categorical_indicator)[rand_feature_ids[0:number_of_sampled_features]]
+        attribute_names = np.array(attribute_names)[rand_feature_ids[0:number_of_sampled_features]]
 
     if 'sampling_factor' in trial.params:
         sampling_factor = trial.params['sampling_factor']
@@ -246,6 +249,12 @@ def sample_configuration(trial):
         number_of_sampled_features = int(X_train.shape[1] * random_feature_selection)
         X_train = X_train[:, rand_feature_ids[0:number_of_sampled_features]]
         X_test = X_test[:, rand_feature_ids[0:number_of_sampled_features]]
+
+        categorical_indicator = np.array(categorical_indicator)[rand_feature_ids[0:number_of_sampled_features]]
+        attribute_names = np.array(attribute_names)[rand_feature_ids[0:number_of_sampled_features]]
+
+        if X_train.shape[1] <= 0:
+            raise Exception()
 
         sampling_factor = trial.suggest_uniform('sampling_factor', 0, 1)
         X_train, _, y_train, _ = train_test_split(X_train, y_train, random_state=my_random_seed, stratify=y_train, train_size=sampling_factor)
