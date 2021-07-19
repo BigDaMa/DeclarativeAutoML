@@ -2,7 +2,6 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyA
 import optuna
 import time
 from sklearn.metrics import make_scorer
-from sklearn.model_selection import train_test_split
 import numpy as np
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 import copy
@@ -132,9 +131,35 @@ def run_AutoML(trial):
         categorical_indicator = np.array(categorical_indicator)[rand_feature_ids[0:number_of_sampled_features]]
         attribute_names = np.array(attribute_names)[rand_feature_ids[0:number_of_sampled_features]]
 
-    if 'sampling_factor' in trial.params:
-        sampling_factor = trial.params['sampling_factor']
-        X_train, _, y_train, _ = train_test_split(X_train, y_train, random_state=my_random_seed, stratify=y_train, train_size=sampling_factor)
+    # sampling with class imbalancing
+    if 'unbalance_data' in trial.params:
+        class_labels = np.unique(y_train)
+
+        ids_class0 = np.array((y_train == class_labels[0]).nonzero()[0])
+        ids_class1 = np.array((y_train == class_labels[1]).nonzero()[0])
+
+        np.random.seed(my_random_seed)
+        np.random.shuffle(ids_class0)
+        np.random.seed(my_random_seed)
+        np.random.shuffle(ids_class1)
+
+        if trial.params['unbalance_data']:
+            fraction_ids_class0 = trial.params['fraction_ids_class0']
+            fraction_ids_class1 = trial.params['fraction_ids_class1']
+        else:
+            sampling_factor_train_only = trial.params['sampling_factor_train_only']
+            fraction_ids_class0 = sampling_factor_train_only
+            fraction_ids_class1 = sampling_factor_train_only
+
+        number_class0 = int(fraction_ids_class0 * len(ids_class0))
+        number_class1 = int(fraction_ids_class1 * len(ids_class1))
+
+        all_sampled_training_ids = []
+        all_sampled_training_ids.extend(ids_class0[0:number_class0])
+        all_sampled_training_ids.extend(ids_class1[0:number_class1])
+
+        X_train = X_train[all_sampled_training_ids, :]
+        y_train = y_train[all_sampled_training_ids]
 
 
     dynamic_params = []
@@ -256,8 +281,38 @@ def sample_configuration(trial):
         if X_train.shape[1] <= 0:
             raise Exception()
 
-        sampling_factor = trial.suggest_uniform('sampling_factor', 0, 1)
-        X_train, _, y_train, _ = train_test_split(X_train, y_train, random_state=my_random_seed, stratify=y_train, train_size=sampling_factor)
+        #sampling with class imbalancing
+        class_labels = np.unique(y_train)
+
+        ids_class0 = np.array((y_train == class_labels[0]).nonzero()[0])
+        ids_class1 = np.array((y_train == class_labels[1]).nonzero()[0])
+
+        np.random.seed(my_random_seed)
+        np.random.shuffle(ids_class0)
+        np.random.seed(my_random_seed)
+        np.random.shuffle(ids_class1)
+
+        if trial.suggest_categorical('unbalance_data', [True, False]):
+            fraction_ids_class0 = trial.suggest_uniform('fraction_ids_class0', 0, 1)
+            fraction_ids_class1 = trial.suggest_uniform('fraction_ids_class1', 0, 1)
+        else:
+            sampling_factor_train_only = trial.suggest_uniform('sampling_factor_train_only', 0, 1)
+            fraction_ids_class0 = sampling_factor_train_only
+            fraction_ids_class1 = sampling_factor_train_only
+
+        number_class0 = int(fraction_ids_class0 * len(ids_class0))
+        number_class1 = int(fraction_ids_class1 * len(ids_class1))
+
+        if number_class0 == 0 or number_class1 == 0:
+            raise Exception()
+
+        all_sampled_training_ids = []
+        all_sampled_training_ids.extend(ids_class0[0:number_class0])
+        all_sampled_training_ids.extend(ids_class1[0:number_class1])
+
+        X_train = X_train[all_sampled_training_ids, :]
+        y_train = y_train[all_sampled_training_ids]
+
 
         trial.set_user_attr('data_random_seed', my_random_seed)
 
@@ -313,7 +368,7 @@ group_meta = []
 aquisition_function_value = []
 
 #cold start - random sampling
-random_runs = (2 * len(feature_names_new))
+random_runs = (4 * len(feature_names_new))
 study_random = optuna.create_study(direction='maximize', sampler=RandomSampler(seed=42))
 study_random.optimize(random_config, n_trials=random_runs, n_jobs=1)
 
