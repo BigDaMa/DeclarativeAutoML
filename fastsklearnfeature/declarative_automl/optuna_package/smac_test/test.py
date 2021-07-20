@@ -7,20 +7,23 @@ from smac.configspace import ConfigurationSpace
 from smac.facade.smac_hpo_facade import SMAC4HPO
 from smac.runhistory.runhistory2epm import RunHistory2EPM4InvScaledCost
 from smac.scenario.scenario import Scenario
+import matplotlib.pyplot as plt
 
 
 def compute_uncretainty(X: np.ndarray, model) -> np.ndarray:
     if len(X.shape) == 1:
         X = X[:, np.newaxis]
     m, var_ = model.predict(X)
-    print('hello unc')
+    print('sampled points:')
+    print(X)
     return var_
 
 def compute_min(X: np.ndarray, model) -> np.ndarray:
     if len(X.shape) == 1:
         X = X[:, np.newaxis]
     m, var_ = model.predict(X)
-    print('hello_min')
+    print('sampled points:')
+    print(X)
     return -m
 
 my_aquisition = compute_uncretainty
@@ -54,7 +57,7 @@ if __name__ ==  '__main__':
     cs.add_hyperparameters([x0])
 
     scenario = Scenario({"run_obj": "quality",  # we optimize quality (alternatively runtime)
-                         "runcount-limit": 10,  # max. number of function evaluations; for this example set to a low number
+                         "runcount-limit": 40,  # max. number of function evaluations; for this example set to a low number
                          "cs": cs,  # configuration space
                          "deterministic": "true",
                          })
@@ -73,10 +76,28 @@ if __name__ ==  '__main__':
                     )
     smac.optimize()
 
+    xx = [-3.0, -2.0, 1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 6.0, 7.0]
+    estimated = []
+    stddev = []
+    real = []
+    for i in xx:
+        estimated.append(smac.solver.epm_chooser.acq_optimizer.acquisition_function.model.predict(np.array([[float(i)], ]))[0][0][0])
+        stddev.append(np.sqrt(smac.solver.epm_chooser.acq_optimizer.acquisition_function.model.predict(np.array([[float(i)], ]))[1][0][0]))
+
+        real.append(toy_objective({'x0': i}))
+
+    print(estimated)
+    #plt.scatter(xx, estimated,)
+    plt.errorbar(xx, estimated, yerr=stddev)
+    plt.scatter(xx, real)
+    plt.show()
+
+    '''
     print('Phase2: Maximize a different acquisition function for previously trained surrogate model')
 
     smac.solver.epm_chooser.acq_optimizer.n_sls_iterations = 1000
     smac.solver.scenario.acq_opt_challengers = 100000
+    smac.solver.intensifier.use_ta_time_bound =False
 
     my_aquisition = compute_min
 
@@ -91,4 +112,5 @@ if __name__ ==  '__main__':
 
     print(intent)
     print(run_info)
+    '''
 
