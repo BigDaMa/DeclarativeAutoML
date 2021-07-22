@@ -346,12 +346,12 @@ def optimize_accuracy_under_constraints_weights(trial, metafeature_values_hold, 
 
 def generate_parameters(trial, total_search_time_minutes, my_openml_datasets, sample_data=True):
     # which constraints to use
-    search_time = trial.suggest_int('global_search_time_constraint', 1, max(1, total_search_time_minutes), log=False)
+    search_time = trial.suggest_int('global_search_time_constraint', 1, max(1, total_search_time_minutes), log=False) * 60
 
     # how much time for each evaluation
     evaluation_time = search_time
     if trial.suggest_categorical('use_evaluation_time_constraint', [True, False]):
-        evaluation_time = trial.suggest_int('global_evaluation_time_constraint', min(1, search_time), search_time, log=False)
+        evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
 
     # how much memory is allowed
     memory_limit = 10
@@ -365,7 +365,7 @@ def generate_parameters(trial, total_search_time_minutes, my_openml_datasets, sa
 
     training_time_limit = search_time
     if trial.suggest_categorical('use_training_time_constraint', [True, False]):
-        training_time_limit = trial.suggest_loguniform('training_time_constraint', 0.005, search_time*60)
+        training_time_limit = trial.suggest_loguniform('training_time_constraint', 0.005, search_time)
 
     inference_time_limit = 60
     if trial.suggest_categorical('use_inference_time_constraint', [True, False]):
@@ -396,19 +396,19 @@ def generate_parameters(trial, total_search_time_minutes, my_openml_datasets, sa
     if sample_data:
         dataset_id = trial.suggest_categorical('dataset_id', my_openml_datasets)
 
-    return search_time*60, evaluation_time*60, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, dataset_id
+    return search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, dataset_id
 
 
 
 
 def generate_parameters_2constraints(trial, total_search_time_minutes, my_openml_datasets, sample_data=True):
     # which constraints to use
-    search_time = trial.suggest_int('global_search_time_constraint', 1, max(1, total_search_time_minutes), log=False)
+    search_time = trial.suggest_int('global_search_time_constraint', 1, max(1, total_search_time_minutes), log=False) * 60
 
     # how much time for each evaluation
     evaluation_time = search_time
     if trial.suggest_categorical('use_evaluation_time_constraint', [True, False]):
-        evaluation_time = trial.suggest_int('global_evaluation_time_constraint', min(1, search_time), search_time, log=False)
+        evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
 
     # how much memory is allowed
     memory_limit = 10
@@ -422,7 +422,7 @@ def generate_parameters_2constraints(trial, total_search_time_minutes, my_openml
 
     training_time_limit = search_time
     if trial.suggest_categorical('use_training_time_constraint', [False]):
-        training_time_limit = trial.suggest_loguniform('training_time_constraint', 0.005, search_time*60)
+        training_time_limit = trial.suggest_loguniform('training_time_constraint', 0.005, search_time)
 
     inference_time_limit = 60
     if trial.suggest_categorical('use_inference_time_constraint', [False]):
@@ -453,7 +453,7 @@ def generate_parameters_2constraints(trial, total_search_time_minutes, my_openml
     if sample_data:
         dataset_id = trial.suggest_categorical('dataset_id', my_openml_datasets)
 
-    return search_time*60, evaluation_time*60, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, dataset_id
+    return search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, dataset_id
 
 
 
