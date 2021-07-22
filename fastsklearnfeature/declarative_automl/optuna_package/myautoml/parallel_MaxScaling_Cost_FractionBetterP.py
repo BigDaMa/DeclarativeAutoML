@@ -68,7 +68,7 @@ def run_AutoML(trial):
 
     evaluation_time = search_time
     if 'global_evaluation_time_constraint' in trial.params:
-        evaluation_time = trial.params['global_evaluation_time_constraint'] * 60
+        evaluation_time = trial.params['global_evaluation_time_constraint']
 
     memory_limit = 10
     if 'global_memory_constraint' in trial.params:
