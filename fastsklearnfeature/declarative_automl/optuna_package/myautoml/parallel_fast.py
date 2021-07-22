@@ -417,7 +417,7 @@ else:
 
 def sample():
     random_seed = int(time.time())
-    mp_var.model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=random_seed)
+    mp_var.model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=random_seed, n_jobs=1)
     mp_var.model_uncertainty.fit(mp_var.X_meta, mp_var.y_meta)
 
     sampler = TPESampler(seed=random_seed)
@@ -428,13 +428,12 @@ def sample():
 
 def update_training_data_X(result):
     #train model
-    model = RandomForestRegressor(n_estimators=1000)
+    model = RandomForestRegressor(n_estimators=1000, n_jobs=1)
     model.fit(mp_var.X_meta, mp_var.y_meta)
 
     features_of_sampled_point = result.user_attrs['features']
 
     new_y = predict_range(model, features_of_sampled_point)[0]
-    print('new y: ' + str(new_y))
 
     #add estimates
     result.set_user_attr('y_estimate', new_y)
