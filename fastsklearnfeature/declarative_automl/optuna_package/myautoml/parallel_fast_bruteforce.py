@@ -24,6 +24,9 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model i
 from optuna.samplers import TPESampler
 import multiprocessing as mp
 from multiprocessing import Lock
+from multiprocessing import set_start_method
+
+set_start_method('forkserver')
 
 def predict_range(model, X):
     y_pred = model.predict(X)
@@ -36,9 +39,9 @@ test_holdout_dataset_id = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 4
 my_scorer = make_scorer(f1_score)
 
 
-mp_glob.total_search_time = 2#60
-topk = 3#28#26 # 20
-continue_from_checkpoint = True
+mp_glob.total_search_time = 6#60
+topk = 28#26 # 20
+continue_from_checkpoint = False
 
 my_lock = Lock()
 
@@ -61,7 +64,7 @@ my_list_constraints = ['global_search_time_constraint',
 
 feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
-random_runs = 2#(4 * len(feature_names_new))
+random_runs = (4 * len(feature_names_new))
 
 
 def run_AutoML(trial, return_trial=False):
