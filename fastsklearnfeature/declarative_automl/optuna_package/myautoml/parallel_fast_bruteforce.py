@@ -9,7 +9,6 @@ from anytree import RenderTree
 from sklearn.ensemble import RandomForestRegressor
 from optuna.samplers import RandomSampler
 import pickle
-import heapq
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.mp_global_vars as mp_glob
 from sklearn.metrics import f1_score
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.feature_transformation.FeatureTransformations import FeatureTransformations
@@ -24,9 +23,6 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model i
 from optuna.samplers import TPESampler
 import multiprocessing as mp
 from multiprocessing import Lock
-from multiprocessing import set_start_method
-
-set_start_method('forkserver')
 
 def predict_range(model, X):
     y_pred = model.predict(X)
@@ -44,6 +40,9 @@ topk = 28#26 # 20
 continue_from_checkpoint = False
 
 my_lock = Lock()
+
+mgr = mp.Manager()
+dictionary = mgr.dict()
 
 
 my_openml_datasets = [3, 4, 13, 15, 24, 25, 29, 31, 37, 38, 40, 43, 44, 49, 50, 51, 52, 53, 55, 56, 59, 151, 152, 153, 161, 162, 164, 172, 179, 310, 311, 312, 316, 333, 334, 335, 336, 337, 346, 444, 446, 448, 450, 451, 459, 461, 463, 464, 465, 466, 467, 470, 472, 476, 479, 481, 682, 683, 747, 803, 981, 993, 1037, 1038, 1039, 1040, 1042, 1045, 1046, 1048, 1049, 1050, 1053, 1054, 1055, 1056, 1059, 1060, 1061, 1062, 1063, 1064, 1065, 1066, 1067, 1068, 1069, 1071, 1073, 1075, 1085, 1101, 1104, 1107, 1111, 1112, 1114, 1116, 1119, 1120, 1121, 1122, 1123, 1124, 1125, 1126, 1127, 1128, 1129, 1130, 1131, 1132, 1133, 1134, 1135, 1136, 1137, 1138, 1139, 1140, 1141, 1142, 1143, 1144, 1145, 1146, 1147, 1148, 1149, 1150, 1151, 1152, 1153, 1154, 1155, 1156, 1157, 1158, 1159, 1160, 1161, 1162, 1163, 1164, 1165, 1166, 1167, 1169, 1216, 1235, 1236, 1237, 1238, 1240, 1412, 1441, 1442, 1443, 1444, 1447, 1448, 1449, 1450, 1451, 1452, 1453, 1455, 1458, 1460, 1461, 1462, 1463, 1464, 1467, 1471, 1473, 1479, 1480, 1484, 1485, 1486, 1487, 1488, 1489, 1490, 1494, 1495, 1496, 1498, 1502, 1504, 1506, 1507, 1510, 1511, 1547, 1561, 1562, 1563, 1564, 1597, 4134, 4135, 4154, 4329, 4534, 23499, 40536, 40645, 40646, 40647, 40648, 40649, 40650, 40660, 40665, 40666, 40669, 40680, 40681, 40690, 40693, 40701, 40705, 40706, 40710, 40713, 40714, 40900, 40910, 40922, 40999, 41005, 41007, 41138, 41142, 41144, 41145, 41146, 41147, 41150, 41156, 41158, 41159, 41160, 41161, 41162, 41228, 41430, 41521, 41538, 41976, 42172, 42477]
@@ -372,11 +371,14 @@ group_meta = []
 aquisition_function_value = []
 
 
+#path2files = '/home/neutatz/phd2/decAutoML2weeks_compare2default/single_cpu_machine1_4D_start_and_class_imbalance'
+path2files = '/tmp'
+
 if continue_from_checkpoint:
-    X_meta = pickle.load(open('/tmp/felix_X_compare_scaled.p', 'rb'))
-    y_meta = pickle.load(open('/tmp/felix_y_compare_scaled.p', 'rb'))
-    group_meta = pickle.load(open('/tmp/felix_group_compare_scaled.p', 'rb'))
-    aquisition_function_value = pickle.load(open('/tmp/felix_acquisition function value_scaled.p', 'rb'))
+    X_meta = pickle.load(open(path2files + '/felix_X_compare_scaled.p', 'rb'))
+    y_meta = pickle.load(open(path2files + '/felix_y_compare_scaled.p', 'rb'))
+    group_meta = pickle.load(open(path2files + '/felix_group_compare_scaled.p', 'rb'))
+    aquisition_function_value = pickle.load(open(path2files + '/felix_acquisition function value_scaled.p', 'rb'))
 else:
     #cold start - random sampling
     study_random = optuna.create_study(direction='maximize', sampler=RandomSampler(seed=42))
@@ -423,40 +425,43 @@ class Objective(object):
         objective = uncertainty
         return objective
 
-def sample_and_evaluate(dictionary_with_all_data):
-    random_seed = int(time.time())
+def get_best_trial(model_uncertainty):
+    sampler = TPESampler()
+    study_uncertainty = optuna.create_study(direction='maximize', sampler=sampler)
+    my_objective = Objective(model_uncertainty)
+    study_uncertainty.optimize(my_objective, n_trials=200, n_jobs=1)
+    return study_uncertainty.best_trial
 
+def sample_and_evaluate(my_id1):
     my_lock.acquire()
-    X_meta = dictionary_with_all_data['X_meta']
-    y_meta = dictionary_with_all_data['y_meta']
+    X_meta = dictionary['X_meta']
+    y_meta = dictionary['y_meta']
     my_lock.release()
 
-    model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=random_seed, n_jobs=1)
+    model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
     model_uncertainty.fit(X_meta, y_meta)
 
-    sampler = TPESampler(seed=random_seed)
-    study_uncertainty = optuna.create_study(direction='maximize', sampler=sampler)
-    study_uncertainty.optimize(Objective(model_uncertainty), n_trials=200, n_jobs=1)
-
-    features_of_sampled_point = study_uncertainty.best_trial.user_attrs['features']
-
+    best_trial = get_best_trial(model_uncertainty)
+    features_of_sampled_point = best_trial.user_attrs['features']
     new_y = predict_range(model_uncertainty, features_of_sampled_point)[0]
-    print('new_y: ' + str(new_y))
 
     #add estimates
     my_lock.acquire()
-    X_meta = dictionary_with_all_data['X_meta']
-    dictionary_with_all_data['X_meta'] = np.vstack((X_meta, features_of_sampled_point))
-    y_meta = dictionary_with_all_data['y_meta']
-    y_meta.append(new_y)
-    dictionary_with_all_data['y_meta'] = y_meta
-    group_meta = dictionary_with_all_data['group_meta']
-    group_meta.append(study_uncertainty.best_trial.params['dataset_id'])
-    dictionary_with_all_data['group_meta'] = group_meta
 
-    aquisition_function_value = dictionary_with_all_data['aquisition_function_value']
-    aquisition_function_value.append(study_uncertainty.best_trial.value)
-    dictionary_with_all_data['aquisition_function_value'] = aquisition_function_value
+    X_meta = dictionary['X_meta']
+    dictionary['X_meta'] = np.vstack((X_meta, features_of_sampled_point))
+
+    y_meta = dictionary['y_meta']
+    y_meta.append(new_y)
+    dictionary['y_meta'] = y_meta
+
+    group_meta = dictionary['group_meta']
+    group_meta.append(best_trial.params['dataset_id'])
+    dictionary['group_meta'] = group_meta
+
+    aquisition_function_value = dictionary['aquisition_function_value']
+    aquisition_function_value.append(best_trial.value)
+    dictionary['aquisition_function_value'] = aquisition_function_value
 
     my_lock.release()
 
@@ -476,23 +481,20 @@ def sample_and_evaluate(dictionary_with_all_data):
         with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
             pickle.dump(aquisition_function_value, pickle_model_file)
 
-    result = run_AutoML(study_uncertainty.best_trial)
+    result = run_AutoML(best_trial)
     actual_y = result['objective']
 
     my_lock.acquire()
-    X_meta = dictionary_with_all_data['X_meta']
+    X_meta = dictionary['X_meta']
     X_meta_i = np.where((X_meta == features_of_sampled_point).all(axis=1))[0][0]
 
-    print('X_meta_i: ' + str(X_meta_i))
-
-    y_meta = dictionary_with_all_data['y_meta']
+    y_meta = dictionary['y_meta']
     y_meta[X_meta_i] = actual_y #update y to the actual evaluated score
-    dictionary_with_all_data['y_meta'] = y_meta
+    dictionary['y_meta'] = y_meta
     my_lock.release()
 
+    return 0
 
-mgr = mp.Manager()
-dictionary = mgr.dict()
 
 dictionary['X_meta'] = X_meta
 dictionary['y_meta'] = y_meta
@@ -500,5 +502,5 @@ dictionary['group_meta'] = group_meta
 dictionary['aquisition_function_value'] = aquisition_function_value
 
 with MyPool(processes=topk) as pool:
-    while True:
-        pool.apply_async(sample_and_evaluate, args=(dictionary,))
+    results = pool.map_async(sample_and_evaluate, range(100000))
+    results.wait()
