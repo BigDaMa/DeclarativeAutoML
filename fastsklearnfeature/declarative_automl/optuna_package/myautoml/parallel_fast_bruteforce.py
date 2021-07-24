@@ -66,7 +66,7 @@ feature_names, feature_names_new = get_feature_names(my_list_constraints)
 random_runs = (4 * len(feature_names_new))
 
 
-def run_AutoML(trial, return_trial=False):
+def run_AutoML(trial):
     space = trial.user_attrs['space']
 
     print(trial.params)
@@ -125,7 +125,10 @@ def run_AutoML(trial, return_trial=False):
     if 'data_random_seed' in trial.user_attrs:
         my_random_seed = trial.user_attrs['data_random_seed']
 
-    X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data(dataset_id, randomstate=my_random_seed)
+    try:
+        X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data(dataset_id, randomstate=my_random_seed)
+    except:
+        return {'objective': 0.0}
 
     # sample features based on seed
 
@@ -201,10 +204,7 @@ def run_AutoML(trial, return_trial=False):
     dynamic_values = np.array(dynamic_params)
 
     if np.sum(dynamic_values) == 0:
-        if return_trial:
-            return {'objective': 0.0, 'trial': trial}
-        else:
-            return {'objective': 0.0}
+        return {'objective': 0.0}
 
     static_params = []
     for random_i in range(5):
@@ -241,10 +241,7 @@ def run_AutoML(trial, return_trial=False):
 
     frequency = np.sum(dynamic_values > static_values) / 5.0
 
-    if return_trial:
-        return {'objective': frequency, 'trial': trial}
-    else:
-        return {'objective': frequency}
+    return {'objective': frequency}
 
 
 def run_AutoML_global(trial_id):
@@ -465,7 +462,7 @@ def sample_and_evaluate(my_id1):
 
     my_lock.release()
 
-    if len(y_meta) % topk == 0:
+    if my_id1 % topk == 0:
         with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
             pickle.dump(model_uncertainty, pickle_model_file)
 
