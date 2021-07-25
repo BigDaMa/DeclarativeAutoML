@@ -37,7 +37,7 @@ my_scorer = make_scorer(f1_score)
 
 mp_glob.total_search_time = 6#60
 topk = 28#26 # 20
-continue_from_checkpoint = False
+continue_from_checkpoint = True
 
 my_lock = Lock()
 
@@ -499,5 +499,4 @@ dictionary['group_meta'] = group_meta
 dictionary['aquisition_function_value'] = aquisition_function_value
 
 with MyPool(processes=topk) as pool:
-    results = pool.map_async(sample_and_evaluate, range(100000))
-    results.wait()
+    results = pool.map(sample_and_evaluate, range(100000))
