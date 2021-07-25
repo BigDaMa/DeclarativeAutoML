@@ -37,7 +37,7 @@ my_scorer = make_scorer(f1_score)
 
 mp_glob.total_search_time = 6#60
 topk = 28#26 # 20
-continue_from_checkpoint = True
+continue_from_checkpoint = False
 
 my_lock = Lock()
 
