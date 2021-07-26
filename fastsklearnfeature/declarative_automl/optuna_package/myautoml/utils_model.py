@@ -346,7 +346,7 @@ def optimize_accuracy_under_constraints_weights(trial, metafeature_values_hold, 
 
 def generate_parameters(trial, total_search_time_minutes, my_openml_datasets, sample_data=True):
     # which constraints to use
-    search_time = trial.suggest_int('global_search_time_constraint', 1, max(1, total_search_time_minutes), log=False) * 60
+    search_time = trial.suggest_int('global_search_time_constraint', 1, max(1, total_search_time_minutes), log=False) #* 60
 
     # how much time for each evaluation
     evaluation_time = search_time
@@ -403,7 +403,7 @@ def generate_parameters(trial, total_search_time_minutes, my_openml_datasets, sa
 
 def generate_parameters_2constraints(trial, total_search_time_minutes, my_openml_datasets, sample_data=True):
     # which constraints to use
-    search_time = trial.suggest_int('global_search_time_constraint', 1, max(1, total_search_time_minutes), log=False) * 60
+    search_time = trial.suggest_int('global_search_time_constraint', 1, max(1, total_search_time_minutes), log=False) #* 60
 
     # how much time for each evaluation
     evaluation_time = search_time

@@ -35,7 +35,7 @@ test_holdout_dataset_id = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 4
 my_scorer = make_scorer(f1_score)
 
 
-mp_glob.total_search_time = 6#60
+mp_glob.total_search_time = 6*60#60
 topk = 28#26 # 20
 continue_from_checkpoint = False
 
@@ -72,7 +72,7 @@ def run_AutoML(trial):
     print(trial.params)
 
     #make this a hyperparameter
-    search_time = trial.params['global_search_time_constraint'] * 60
+    search_time = trial.params['global_search_time_constraint']# * 60
 
     evaluation_time = search_time
     if 'global_evaluation_time_constraint' in trial.params:
