@@ -269,7 +269,7 @@ def generate_features(trial, metafeature_values_hold, search_time,
     except Exception as e:
         return None
 
-def optimize_accuracy_under_constraints2(trial, metafeature_values_hold, search_time, model_compare, model_success,
+def optimize_accuracy_under_constraints2(trial, metafeature_values_hold, search_time, model_success,
                                         memory_limit=10,
                                         privacy_limit=None,
                                         evaluation_time=None,
@@ -277,7 +277,6 @@ def optimize_accuracy_under_constraints2(trial, metafeature_values_hold, search_
                                         training_time_limit=None,
                                         inference_time_limit=None,
                                         pipeline_size_limit=None,
-                                        comparison_weight=0,
                                         tune_space=False
                                         ):
     features = generate_features(trial, metafeature_values_hold, search_time,
@@ -291,9 +290,9 @@ def optimize_accuracy_under_constraints2(trial, metafeature_values_hold, search_
                       tune_space=tune_space
                       )
 
-    return predict_range(model_success, features) + comparison_weight * predict_range(model_compare, features)
+    return predict_range(model_success, features)
 
-def batched_objective(x, model_success, model_compare=0, comparison_weight=0):
+def batched_objective(x, model_success):
     print(x)
     return predict_range(model_success, x)
 
@@ -354,7 +353,7 @@ def generate_parameters(trial, total_search_time_minutes, my_openml_datasets, sa
         evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
 
     # how much memory is allowed
-    memory_limit = 10
+    memory_limit = 500
     if trial.suggest_categorical('use_search_memory_constraint', [True, False]):
         memory_limit = trial.suggest_loguniform('global_memory_constraint', 0.00000000000001, 10)
 
@@ -411,7 +410,7 @@ def generate_parameters_2constraints(trial, total_search_time_minutes, my_openml
         evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
 
     # how much memory is allowed
-    memory_limit = 10
+    memory_limit = 500
     if trial.suggest_categorical('use_search_memory_constraint', [False]):
         memory_limit = trial.suggest_loguniform('global_memory_constraint', 0.00000000000001, 10)
 

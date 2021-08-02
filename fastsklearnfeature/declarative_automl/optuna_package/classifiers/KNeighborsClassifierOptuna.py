@@ -15,3 +15,7 @@ class KNeighborsClassifierOptuna(KNeighborsClassifier):
         space_gen.generate_number(self.name + "n_neighbors", 1, depending_node=depending_node, low=1, high=100, is_float=False, is_log=True)
         space_gen.generate_cat(self.name + "weights", ["uniform", "distance"], "uniform", depending_node=depending_node)
         space_gen.generate_cat(self.name + "p", [1, 2], 2, depending_node=depending_node)
+
+    def fit(self, X, y):
+        self.n_neighbors = min(X.shape[0], self.n_neighbors)
+        return super().fit(X=X, y=y)
