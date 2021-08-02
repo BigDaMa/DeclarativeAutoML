@@ -31,6 +31,7 @@ running_ids = []
 finished = []
 
 session = server.new_session(session_name="install", kill_session=True, attach=False)
+session.attached_pane.send_keys('exec bash')
 session.attached_pane.send_keys('conda activate ' + conda_name)
 session.attached_pane.send_keys('cd /home/neutatz/Software/DeclarativeAutoML')
 #session.attached_pane.send_keys('git pull origin main')
@@ -44,6 +45,7 @@ while len(finished) < len(datasets):
     if len(running_ids) < parallelism and data_id < len(datasets):
         session = server.new_session(session_name="data" + str(datasets[data_id]), kill_session=True, attach=False)
         running_ids.append(datasets[data_id])
+        session.attached_pane.send_keys('exec bash')
         session.attached_pane.send_keys('conda activate ' + conda_name)
         session.attached_pane.send_keys('cd /home/neutatz/Software/DeclarativeAutoML')
         session.attached_pane.send_keys('python ' + program + ' -d ' + str(datasets[data_id]) + ' -o ' + str(outputname))
