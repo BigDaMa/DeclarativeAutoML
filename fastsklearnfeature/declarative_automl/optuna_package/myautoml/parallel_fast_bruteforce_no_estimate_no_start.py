@@ -63,7 +63,7 @@ my_list_constraints = ['global_search_time_constraint',
 
 feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
-random_runs = (4 * len(feature_names_new))
+random_runs = 10#(4 * len(feature_names_new))
 
 
 def run_AutoML(trial):
@@ -443,27 +443,6 @@ def sample_and_evaluate(my_id1):
 
     best_trial = get_best_trial(model_uncertainty)
     features_of_sampled_point = best_trial.user_attrs['features']
-    new_y = predict_range(model_uncertainty, features_of_sampled_point)[0]
-
-    #add estimates
-    my_lock.acquire()
-
-    X_meta = dictionary['X_meta']
-    dictionary['X_meta'] = np.vstack((X_meta, features_of_sampled_point))
-
-    y_meta = dictionary['y_meta']
-    y_meta.append(new_y)
-    dictionary['y_meta'] = y_meta
-
-    group_meta = dictionary['group_meta']
-    group_meta.append(best_trial.params['dataset_id'])
-    dictionary['group_meta'] = group_meta
-
-    aquisition_function_value = dictionary['aquisition_function_value']
-    aquisition_function_value.append(best_trial.value)
-    dictionary['aquisition_function_value'] = aquisition_function_value
-
-    my_lock.release()
 
     if my_id1 % topk == 0:
         with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
@@ -485,12 +464,22 @@ def sample_and_evaluate(my_id1):
     actual_y = result['objective']
 
     my_lock.acquire()
+
     X_meta = dictionary['X_meta']
-    X_meta_i = np.where((X_meta == features_of_sampled_point).all(axis=1))[0][0]
+    dictionary['X_meta'] = np.vstack((X_meta, features_of_sampled_point))
 
     y_meta = dictionary['y_meta']
-    y_meta[X_meta_i] = actual_y #update y to the actual evaluated score
+    y_meta.append(actual_y)
     dictionary['y_meta'] = y_meta
+
+    group_meta = dictionary['group_meta']
+    group_meta.append(best_trial.params['dataset_id'])
+    dictionary['group_meta'] = group_meta
+
+    aquisition_function_value = dictionary['aquisition_function_value']
+    aquisition_function_value.append(best_trial.value)
+    dictionary['aquisition_function_value'] = aquisition_function_value
+
     my_lock.release()
 
     return 0

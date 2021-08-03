@@ -35,7 +35,7 @@ test_holdout_dataset_id = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 4
 my_scorer = make_scorer(f1_score)
 
 
-mp_glob.total_search_time = 6#60
+mp_glob.total_search_time = 5*60#60
 topk = 28 # 20
 continue_from_checkpoint = False
 
@@ -64,7 +64,7 @@ def run_AutoML(trial):
     print(trial.params)
 
     #make this a hyperparameter
-    search_time = trial.params['global_search_time_constraint'] * 60
+    search_time = trial.params['global_search_time_constraint'] #* 60
 
     evaluation_time = search_time
     if 'global_evaluation_time_constraint' in trial.params:
@@ -120,7 +120,7 @@ def run_AutoML(trial):
     X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data(dataset_id, randomstate=my_random_seed)
 
     # sample features based on seed
-
+    '''
     if 'random_feature_selection' in trial.params:
         random_feature_selection = trial.params['random_feature_selection']
         rand_feature_ids = np.arange(X_train.shape[1])
@@ -132,6 +132,7 @@ def run_AutoML(trial):
         X_test = X_test[:, rand_feature_ids[0:number_of_sampled_features]]
         categorical_indicator = np.array(categorical_indicator)[rand_feature_ids[0:number_of_sampled_features]]
         attribute_names = np.array(attribute_names)[rand_feature_ids[0:number_of_sampled_features]]
+    '''
 
     # sampling with class imbalancing
     if 'unbalance_data' in trial.params:
@@ -274,6 +275,7 @@ def sample_configuration(trial):
                                                                                             randomstate=my_random_seed)
 
         # increase the diversity of dataset
+        '''
         #sample features based on seed
         random_feature_selection = trial.suggest_uniform('random_feature_selection', 0, 1)
         rand_feature_ids = np.arange(X_train.shape[1])
@@ -288,6 +290,7 @@ def sample_configuration(trial):
 
         if X_train.shape[1] <= 0:
             raise Exception()
+        '''
 
         #sampling with class imbalancing
         class_labels = np.unique(y_train)
