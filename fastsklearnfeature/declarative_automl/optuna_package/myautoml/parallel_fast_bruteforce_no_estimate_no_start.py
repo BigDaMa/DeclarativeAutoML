@@ -444,22 +444,6 @@ def sample_and_evaluate(my_id1):
     best_trial = get_best_trial(model_uncertainty)
     features_of_sampled_point = best_trial.user_attrs['features']
 
-    if my_id1 % topk == 0:
-        with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
-            pickle.dump(model_uncertainty, pickle_model_file)
-
-        with open('/tmp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
-            pickle.dump(X_meta, pickle_model_file)
-
-        with open('/tmp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
-            pickle.dump(y_meta, pickle_model_file)
-
-        with open('/tmp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
-            pickle.dump(group_meta, pickle_model_file)
-
-        with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
-            pickle.dump(aquisition_function_value, pickle_model_file)
-
     result = run_AutoML(best_trial)
     actual_y = result['objective']
 
@@ -481,6 +465,22 @@ def sample_and_evaluate(my_id1):
     dictionary['aquisition_function_value'] = aquisition_function_value
 
     my_lock.release()
+
+    if my_id1 % topk == 0:
+        with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
+            pickle.dump(model_uncertainty, pickle_model_file)
+
+        with open('/tmp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
+            pickle.dump(X_meta, pickle_model_file)
+
+        with open('/tmp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
+            pickle.dump(y_meta, pickle_model_file)
+
+        with open('/tmp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
+            pickle.dump(group_meta, pickle_model_file)
+
+        with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
+            pickle.dump(aquisition_function_value, pickle_model_file)
 
     return 0
 
