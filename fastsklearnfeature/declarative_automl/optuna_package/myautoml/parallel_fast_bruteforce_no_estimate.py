@@ -438,6 +438,8 @@ def sample_and_evaluate(my_id1):
     y_meta = dictionary['y_meta']
     my_lock.release()
 
+    assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+
     model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
     model_uncertainty.fit(X_meta, y_meta)
 
@@ -456,13 +458,19 @@ def sample_and_evaluate(my_id1):
     y_meta.append(actual_y)
     dictionary['y_meta'] = y_meta
 
+    assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+
     group_meta = dictionary['group_meta']
     group_meta.append(best_trial.params['dataset_id'])
     dictionary['group_meta'] = group_meta
 
+    assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
+
     aquisition_function_value = dictionary['aquisition_function_value']
     aquisition_function_value.append(best_trial.value)
     dictionary['aquisition_function_value'] = aquisition_function_value
+
+    assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
 
     my_lock.release()
 
@@ -481,6 +489,7 @@ def sample_and_evaluate(my_id1):
 
         with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
             pickle.dump(aquisition_function_value, pickle_model_file)
+
 
     return 0
 

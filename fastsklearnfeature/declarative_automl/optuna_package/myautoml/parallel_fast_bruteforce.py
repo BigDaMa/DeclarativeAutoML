@@ -36,8 +36,8 @@ my_scorer = make_scorer(f1_score)
 
 
 mp_glob.total_search_time = 5*60#60
-topk = 28#26 # 20
-continue_from_checkpoint = False
+topk = 3#28#26 # 20
+continue_from_checkpoint = True#False
 
 my_lock = Lock()
 
@@ -372,7 +372,8 @@ aquisition_function_value = []
 
 
 #path2files = '/home/neutatz/phd2/decAutoML2weeks_compare2default/single_cpu_machine1_4D_start_and_class_imbalance'
-path2files = '/tmp'
+#path2files = '/tmp'
+path2files = '/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine4'
 
 if continue_from_checkpoint:
     X_meta = pickle.load(open(path2files + '/felix_X_compare_scaled.p', 'rb'))
@@ -438,6 +439,8 @@ def sample_and_evaluate(my_id1):
     y_meta = dictionary['y_meta']
     my_lock.release()
 
+    assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+
     model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
     model_uncertainty.fit(X_meta, y_meta)
 
@@ -455,15 +458,19 @@ def sample_and_evaluate(my_id1):
     y_meta.append(new_y)
     dictionary['y_meta'] = y_meta
 
+    assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+
     group_meta = dictionary['group_meta']
     group_meta.append(best_trial.params['dataset_id'])
     dictionary['group_meta'] = group_meta
+
+    assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
 
     aquisition_function_value = dictionary['aquisition_function_value']
     aquisition_function_value.append(best_trial.value)
     dictionary['aquisition_function_value'] = aquisition_function_value
 
-    my_lock.release()
+    assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
 
     if my_id1 % topk == 0:
         with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
@@ -480,6 +487,7 @@ def sample_and_evaluate(my_id1):
 
         with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
             pickle.dump(aquisition_function_value, pickle_model_file)
+    my_lock.release()
 
     result = run_AutoML(best_trial)
     actual_y = result['objective']
