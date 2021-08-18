@@ -455,9 +455,9 @@ while True:
     #get most uncertain for k datasets and run k runs in parallel
     data2most_uncertain = {}
     for u_trial in study_uncertainty.trials:
-        u_dataset = u_trial.params['dataset_id']
         u_value = u_trial.value
         if u_value >= 0:
+            u_dataset = u_trial.params['dataset_id']
             data2most_uncertain[u_dataset] = (u_trial, u_value)
 
     k_keys_sorted_by_values = heapq.nlargest(topk, data2most_uncertain, key=lambda s: data2most_uncertain[s][1])

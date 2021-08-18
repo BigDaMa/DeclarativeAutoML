@@ -410,7 +410,7 @@ class Objective(object):
     def __call__(self, trial):
         return 0.0
 
-def get_best_trial(model_uncertainty):
+def get_best_trial():
     sampler = RandomSampler()
     study_uncertainty = optuna.create_study(direction='maximize', sampler=sampler)
     my_objective = Objective()
