@@ -472,7 +472,7 @@ while True:
 
 
     with MyPool(processes=topk) as pool:
-        results = pool.map(run_AutoML_global, range(topk))
+        results = pool.map(run_AutoML_global, range(len(mp_glob.my_trials)))
 
     for result_p in results:
         for f_progress in range(len(result_p['feature_l'])):
