@@ -362,7 +362,7 @@ def random_config(trial):
     features = sample_configuration(trial)
     if type(features) == type(None):
         return -1 * np.inf
-    return 0.0
+    return 1.0
 
 
 X_meta = np.empty((0, len(feature_names_new)), dtype=float)
