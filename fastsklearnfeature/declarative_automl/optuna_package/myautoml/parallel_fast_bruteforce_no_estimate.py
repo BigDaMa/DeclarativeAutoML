@@ -493,6 +493,7 @@ def sample_and_evaluate(my_id1):
 
     return 0
 
+assert len(X_meta) == len(y_meta)
 
 dictionary['X_meta'] = X_meta
 dictionary['y_meta'] = y_meta

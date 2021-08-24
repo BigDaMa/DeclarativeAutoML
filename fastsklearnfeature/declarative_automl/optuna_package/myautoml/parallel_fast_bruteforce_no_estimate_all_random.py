@@ -362,7 +362,7 @@ def random_config(trial):
     features = sample_configuration(trial)
     if type(features) == type(None):
         return -1 * np.inf
-    return 1.0
+    return 0.0
 
 
 X_meta = np.empty((0, len(feature_names_new)), dtype=float)
@@ -373,6 +373,7 @@ aquisition_function_value = []
 
 #path2files = '/home/neutatz/phd2/decAutoML2weeks_compare2default/single_cpu_machine1_4D_start_and_class_imbalance'
 path2files = '/tmp'
+#path2files = '/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine4'
 
 if continue_from_checkpoint:
     X_meta = pickle.load(open(path2files + '/felix_X_compare_scaled.p', 'rb'))
@@ -408,7 +409,7 @@ else:
 
 class Objective(object):
     def __call__(self, trial):
-        return 0.0
+        return 1.0
 
 def get_best_trial():
     sampler = RandomSampler()
@@ -424,7 +425,7 @@ def sample_and_evaluate(my_id1):
         y_meta = dictionary['y_meta']
         my_lock.release()
 
-        assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+        #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
 
         model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
         model_uncertainty.fit(X_meta, y_meta)
@@ -444,19 +445,19 @@ def sample_and_evaluate(my_id1):
         y_meta.append(actual_y)
         dictionary['y_meta'] = y_meta
 
-        assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+        #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
 
         group_meta = dictionary['group_meta']
         group_meta.append(best_trial.params['dataset_id'])
         dictionary['group_meta'] = group_meta
 
-        assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
+        #assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
 
         aquisition_function_value = dictionary['aquisition_function_value']
         aquisition_function_value.append(best_trial.value)
         dictionary['aquisition_function_value'] = aquisition_function_value
 
-        assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
+        #assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
 
         my_lock.release()
 
@@ -480,6 +481,7 @@ def sample_and_evaluate(my_id1):
 
     return 0
 
+assert len(X_meta) == len(y_meta)
 
 dictionary['X_meta'] = X_meta
 dictionary['y_meta'] = y_meta
