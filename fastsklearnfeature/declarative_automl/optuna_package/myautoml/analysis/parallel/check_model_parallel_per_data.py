@@ -116,11 +116,11 @@ for test_holdout_dataset_id in [args.dataset]:
                                                              memory_limit=memory_budget,
                                                              privacy_limit=privacy
                                              )
-                new_constraint_evaluation_dynamic.append(ConstraintRun(space, search_dynamic.study.best_trial, result, more=study_prune.best_trial))
+                new_constraint_evaluation_dynamic.append(ConstraintRun(space, search_dynamic.study.best_trial, result, more=mp_global.study_prune.best_trial))
             except:
                 result = 0
 
-                new_constraint_evaluation_dynamic.append(ConstraintRun(space, 'shit happened', result, more=study_prune.best_trial))
+                new_constraint_evaluation_dynamic.append(ConstraintRun(space, 'shit happened', result, more=mp_global.study_prune.best_trial))
 
             print("test result: " + str(result))
             current_dynamic.append(result)
