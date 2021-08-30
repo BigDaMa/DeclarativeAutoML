@@ -6,19 +6,9 @@ from pyrfr import regression
 from smac.configspace import ConfigurationSpace
 from smac.epm.base_rf import BaseModel
 from smac.utils.constants import N_TREES, VERY_SMALL_NUMBER
-import copy
+
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.smac_it.SMACFeatureTransformations import FeatureTransformations
-import pickle
 
-import copy
-import typing
-import warnings
-
-import numpy as np
-
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.exceptions import NotFittedError
 
 __author__ = "Aaron Klein"
 __copyright__ = "Copyright 2015, ML4AAD"
@@ -111,62 +101,12 @@ class CustomRandomForest(BaseModel):
             set n_feats (> pca_dims).
         """
 
-        list_of_params_to_remove = ['dataset_id', 'unbalance_data', 'fraction_ids_class0', 'fraction_ids_class1',
-                                    'sampling_factor_train_only']
-        list_of_params_to_remove_ids = []
-        for param_name in list_of_params_to_remove:
-            list_of_params_to_remove_ids.append(configspace._hyperparameter_idx[param_name])
-        print(list_of_params_to_remove_ids)
-
-        self.mask_remove = np.ones(len(configspace._hyperparameters) + 34, dtype=bool)
-        self.mask_remove[list_of_params_to_remove_ids] = False
-
-        new_bounds = copy.deepcopy(bounds)
-        for nb_new in range(34):
-            new_bounds.append((0, np.nan))
-        nn_bounds = []
-        for bi in range(len(new_bounds)):
-            if self.mask_remove[bi]:
-                nn_bounds.append(new_bounds[bi])
-        new_bounds = nn_bounds
-
-        new_types = copy.deepcopy(types)
-        for nb_new in range(34):
-            new_types.append(0)
-
-        nn_types = []
-        for ti in range(len(new_types)):
-            if self.mask_remove[ti]:
-                nn_types.append(new_types[ti])
-        new_types = nn_types
-
-        save_dict = {}
-        save_dict['configspace'] = configspace
-        save_dict['types'] = types
-        save_dict['bounds'] = bounds
-        save_dict['seed'] = seed
-        save_dict['log_y'] = log_y
-        save_dict['num_trees'] = num_trees
-        save_dict['do_bootstrapping'] = do_bootstrapping
-        save_dict['n_points_per_tree'] = n_points_per_tree
-        save_dict['ratio_features'] = ratio_features
-        save_dict['min_samples_split'] = min_samples_split
-        save_dict['min_samples_leaf'] = min_samples_leaf
-        save_dict['max_depth'] = max_depth
-        save_dict['eps_purity'] = eps_purity
-        save_dict['max_num_nodes'] = max_num_nodes
-        save_dict['instance_features'] = instance_features
-        save_dict['pca_components'] = pca_components
-
-        with open('/tmp/smac_conf.p', "wb") as pickle_model_file:
-            pickle.dump(save_dict, pickle_model_file)
-
-
+        bounds.append((0, np.nan))
 
         super().__init__(
             configspace=configspace,
-            types=new_types,
-            bounds=new_bounds,
+            types=types,
+            bounds=bounds,
             seed=seed,
             instance_features=instance_features,
             pca_components=pca_components,
@@ -196,7 +136,20 @@ class CustomRandomForest(BaseModel):
                        n_points_per_tree, ratio_features, min_samples_split,
                        min_samples_leaf, max_depth, eps_purity, self.seed]
 
-        self.t = FeatureTransformations()
+        #self.t = FeatureTransformations()
+
+    def gen_new(self, X):
+        hname = 'f0'
+        hid = self.configspace._hyperparameter_idx[hname]
+        h_param = self.configspace._hyperparameters[hname]
+        print(X[:, hid])
+        h_original_val = h_param._transform_vector(X)
+        print(h_original_val)
+        print(h_original_val)
+        new_feature = (np.sum(h_original_val, axis=1) > 10).reshape((len(h_original_val), 1))
+
+        X_new = np.hstack((X, new_feature))
+        return X_new
 
     def _train(self, X: np.ndarray, y: np.ndarray) -> 'RandomForestWithInstances':
         """Trains the random forest on X and y.
@@ -215,13 +168,20 @@ class CustomRandomForest(BaseModel):
 
 
         X = self._impute_inactive(X)
-        if X.shape[1] != len(self.bounds):
-            X = self.featureprocessing(X)
+
+        X = self.gen_new(X)
+        print(X.shape)
+
+        #self.t.fit(X)
+        #X = self.t.transform(X, cs=self.configspace)
+
+        print(X)
+
+        print('shape:' + str(X.shape))
+
 
         self.X = X
         self.y = y.flatten()
-
-        print('train shape: ' + str(X.shape))
 
         if self.n_points_per_tree <= 0:
             self.rf_opts.num_data_points_per_tree = self.X.shape[0]
@@ -231,10 +191,6 @@ class CustomRandomForest(BaseModel):
         self.rf.options = self.rf_opts
         data = self._init_data_container(self.X, self.y)
         self.rf.fit(data, rng=self.rng)
-
-        with open('/tmp/smac_model.p', "wb") as pickle_model_file:
-            pickle.dump(self.rf, pickle_model_file)
-
         return self
 
     def _init_data_container(self, X: np.ndarray, y: np.ndarray) -> regression.default_data_container:
@@ -267,18 +223,8 @@ class CustomRandomForest(BaseModel):
             data.add_data_point(row_X, row_y)
         return data
 
-
-    def featureprocessing(self, X, metafeatures=None):
-        print(X.shape)
-        self.t.fit(X)
-        X = self.t.transform(X, cs=self.configspace, metafeatures_pre=metafeatures)
-        print(X.shape)
-        print(len(self.mask_remove))
-        X = X[:, self.mask_remove]
-        return X
-
     def _predict(self, X: np.ndarray,
-                 cov_return_type: typing.Optional[str] = 'diagonal_cov', metafeatures=None) \
+                 cov_return_type: typing.Optional[str] = 'diagonal_cov') \
             -> typing.Tuple[np.ndarray, np.ndarray]:
         """Predict means and variances for given X.
 
@@ -299,15 +245,18 @@ class CustomRandomForest(BaseModel):
         if len(X.shape) != 2:
             raise ValueError(
                 'Expected 2d array, got %dd array!' % len(X.shape))
-        #if X.shape[1] != len(self.types):
-        #    raise ValueError('Rows in X should have %d entries but have %d!' % (len(self.types), X.shape[1]))
+        if X.shape[1] != len(self.types):
+            raise ValueError('Rows in X should have %d entries but have %d!' % (len(self.types), X.shape[1]))
         if cov_return_type != 'diagonal_cov':
             raise ValueError("'cov_return_type' can only take 'diagonal_cov' for this model")
 
         X = self._impute_inactive(X)
 
-        if X.shape[1] != len(self.bounds):
-            X = self.featureprocessing(X, metafeatures)
+        X = self.gen_new(X)
+        print(X.shape)
+
+        #self.t.fit(X)
+        #X = self.t.transform(X, cs=self.configspace)
 
         if self.log_y:
             all_preds = []
@@ -344,60 +293,6 @@ class CustomRandomForest(BaseModel):
 
         return means.reshape((-1, 1)), vars_.reshape((-1, 1))
 
-    def predict(self, X: np.ndarray,
-                cov_return_type: typing.Optional[str] = 'diagonal_cov') \
-            -> typing.Tuple[np.ndarray, typing.Optional[np.ndarray]]:
-        """
-        Predict means and variances for given X.
-
-        Parameters
-        ----------
-        X : np.ndarray of shape = [n_samples, n_features (config + instance features)]
-            Training samples
-        cov_return_type: typing.Optional[str]
-            Specifies what to return along with the mean. (Applies to only Gaussian Process for now)
-            Can take 4 values: [None, diagonal_std, diagonal_cov, full_cov]
-            * None - only mean is returned
-            * diagonal_std - standard deviation at test points is returned
-            * diagonal_cov - diagonal of the covariance matrix is returned
-            * full_cov - whole covariance matrix between the test points is returned
-
-        Returns
-        -------
-        means : np.ndarray of shape = [n_samples, n_objectives]
-            Predictive mean
-        vars : None or np.ndarray of shape = [n_samples, n_objectives] or [n_samples, n_samples]
-            Predictive variance or standard deviation
-        """
-        if len(X.shape) != 2:
-            raise ValueError('Expected 2d array, got %dd array!' % len(X.shape))
-        #if X.shape[1] != self.n_params + self.n_feats:
-        #    raise ValueError('Rows in X should have %d entries but have %d!' %
-        #                     (self.n_params + self.n_feats, X.shape[1]))
-
-        if self._apply_pca:
-            try:
-                X_feats = X[:, -self.n_feats:]
-                X_feats = self.scaler.transform(X_feats)
-                X_feats = self.pca.transform(X_feats)
-                X = np.hstack((X[:, :self.n_params], X_feats))
-            except NotFittedError:
-                pass  # PCA not fitted if only one training sample
-
-        #if X.shape[1] != len(self.types):
-        #    raise ValueError('Rows in X should have %d entries but have %d!' % (len(self.types), X.shape[1]))
-
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', 'Predicted variances smaller than 0. Setting those variances to 0.')
-            mean, var = self._predict(X, cov_return_type)
-
-        if len(mean.shape) == 1:
-            mean = mean.reshape((-1, 1))
-        if var is not None and len(var.shape) == 1:
-            var = var.reshape((-1, 1))
-
-        return mean, var
-
     def predict_marginalized_over_instances(self, X: np.ndarray) -> typing.Tuple[np.ndarray, np.ndarray]:
         """Predict mean and variance marginalized over all instances.
 
@@ -425,10 +320,6 @@ class CustomRandomForest(BaseModel):
             Predictive variance
         """
 
-        X = self._impute_inactive(X)
-        if X.shape[1] != len(self.bounds):
-            X = self.featureprocessing(X)
-
         if self.instance_features is None or \
                 len(self.instance_features) == 0:
             mean_, var = self.predict(X)
@@ -446,8 +337,13 @@ class CustomRandomForest(BaseModel):
                              (len(self.bounds),
                               X.shape[1]))
 
-        #X = self._impute_inactive(X)
+        X = self._impute_inactive(X)
 
+        X = self.gen_new(X)
+        print(X.shape)
+
+        #self.t.fit(X)
+        #X = self.t.transform(X, cs=self.configspace)
 
         dat_ = np.zeros((X.shape[0], self.rf_opts.num_trees))  # marginalized predictions for each tree
         for i, x in enumerate(X):

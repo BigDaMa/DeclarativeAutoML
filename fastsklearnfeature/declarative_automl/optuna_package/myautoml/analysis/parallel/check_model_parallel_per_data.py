@@ -12,6 +12,11 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model i
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.util_classes import ConstraintEvaluation, ConstraintRun
 from anytree import RenderTree
 import argparse
+import openml
+import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.my_global_vars as mp_global
+
+openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
+openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
 
 my_scorer = make_scorer(f1_score)
 
@@ -79,8 +84,8 @@ for test_holdout_dataset_id in [args.dataset]:
 
         for repeat in range(5):
 
-            study_prune = optuna.create_study(direction='maximize')
-            study_prune.optimize(lambda trial: optimize_accuracy_under_constraints2(trial=trial,
+            mp_global.study_prune = optuna.create_study(direction='maximize')
+            mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_constraints2(trial=trial,
                                                                                    metafeature_values_hold=metafeature_values_hold,
                                                                                    search_time=search_time_frozen,
                                                                                    model_success=model_success,
@@ -91,7 +96,7 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                                    tune_space=True,
                                                                                    ), n_trials=1000, n_jobs=1)
 
-            space = study_prune.best_trial.user_attrs['space']
+            space = mp_global.study_prune.best_trial.user_attrs['space']
 
 
 
@@ -100,7 +105,7 @@ for test_holdout_dataset_id in [args.dataset]:
                     print("%s%s" % (pre, node.name))
 
             try:
-                result, search_dynamic = utils_run_AutoML(study_prune.best_trial,
+                result, search_dynamic = utils_run_AutoML(mp_global.study_prune.best_trial,
                                                              X_train=X_train_hold,
                                                              X_test=X_test_hold,
                                                              y_train=y_train_hold,

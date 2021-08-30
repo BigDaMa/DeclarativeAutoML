@@ -19,7 +19,7 @@ if args.tool == 1:
     outputname = 'autosklearn'
 
 program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/check_model_parallel_per_data.py'
-outputname = 'bench2'
+outputname = 'faststore'
 
 conda_name = 'AutoMLD'
 

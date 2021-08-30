@@ -33,7 +33,7 @@ for test_holdout_dataset_id in [args.dataset]:
     dynamic_approach = []
     static_approach = []
 
-    for minutes_to_search in [60]:#range(1, 6):
+    for minutes_to_search in range(1, 6):
 
         current_dynamic = []
         current_static = []

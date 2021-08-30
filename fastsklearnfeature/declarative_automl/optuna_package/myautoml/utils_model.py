@@ -24,6 +24,8 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.feature_trans
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.feature_transformation.FeatureTransformationsNew import FeatureTransformations as FT
 
 import multiprocessing as mp
+import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.my_global_vars as mp_global
+
 
 metafeature_names_new = ['ClassEntropy', 'ClassProbabilityMax', 'ClassProbabilityMean', 'ClassProbabilityMin', 'ClassProbabilitySTD',
      'DatasetRatio', 'InverseDatasetRatio', 'LogDatasetRatio', 'LogInverseDatasetRatio', 'LogNumberOfFeatures',
@@ -198,9 +200,6 @@ def generate_features(trial, metafeature_values_hold, search_time,
         if tune_space:
             space.sample_parameters(trial)
 
-        if save_data:
-            trial.set_user_attr('space', copy.deepcopy(space))
-
         if type(evaluation_time) == type(None):
             evaluation_time = search_time
             if trial.suggest_categorical('use_evaluation_time_constraint', [True, False]):
@@ -279,7 +278,7 @@ def optimize_accuracy_under_constraints2(trial, metafeature_values_hold, search_
                                         pipeline_size_limit=None,
                                         tune_space=False
                                         ):
-    features = generate_features(trial, metafeature_values_hold, search_time,
+    features, space = generate_features(trial, metafeature_values_hold, search_time,
                       memory_limit=memory_limit,
                       privacy_limit=privacy_limit,
                       evaluation_time=evaluation_time,
@@ -287,10 +286,19 @@ def optimize_accuracy_under_constraints2(trial, metafeature_values_hold, search_
                       training_time_limit=training_time_limit,
                       inference_time_limit=inference_time_limit,
                       pipeline_size_limit=pipeline_size_limit,
-                      tune_space=tune_space
+                      tune_space=tune_space,
+                      save_data=False
                       )
 
-    return predict_range(model_success, features)
+    success_val = predict_range(model_success, features)
+
+    try:
+        if success_val > mp_global.study_prune.best_trial.value:
+            trial.set_user_attr('space', copy.deepcopy(space))
+    except:
+        pass
+
+    return success_val
 
 def batched_objective(x, model_success):
     print(x)
@@ -353,7 +361,7 @@ def generate_parameters(trial, total_search_time_minutes, my_openml_datasets, sa
         evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
 
     # how much memory is allowed
-    memory_limit = 500
+    memory_limit = 10
     if trial.suggest_categorical('use_search_memory_constraint', [True, False]):
         memory_limit = trial.suggest_loguniform('global_memory_constraint', 0.00000000000001, 10)
 
@@ -410,7 +418,7 @@ def generate_parameters_2constraints(trial, total_search_time_minutes, my_openml
         evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
 
     # how much memory is allowed
-    memory_limit = 500
+    memory_limit = 10
     if trial.suggest_categorical('use_search_memory_constraint', [False]):
         memory_limit = trial.suggest_loguniform('global_memory_constraint', 0.00000000000001, 10)
 
