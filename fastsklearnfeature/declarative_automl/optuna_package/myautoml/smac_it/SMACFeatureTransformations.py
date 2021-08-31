@@ -105,17 +105,17 @@ class FeatureTransformations(BaseEstimator, TransformerMixin):
             if type(metafeatures_pre) == type(None):
                 d_id = int(X[i, _hyperparameter_idx['dataset_id']])
                 data_id = int(cs._hyperparameters['dataset_id'].choices[d_id])
-                metafeatures = self.get_metadata_features(data_id, X[i,:], cs, catch_exception)
+                metafeatures = self.get_metadata_features(data_id, X[i, :], cs, catch_exception)
             else:
                 metafeatures = metafeatures_pre
 
             #products
-            product_cvs = np.multiply(X[i, _hyperparameter_idx['global_cv']], X[i, _hyperparameter_idx['global_number_cv']])
-            product_hold_out_test = np.multiply(np.multiply(X[i, _hyperparameter_idx['hold_out_fraction']], metafeatures [:, metafeature_names.index('NumberOfInstances')]), X[i, _hyperparameter_idx['sample_fraction']])
-            product_hold_out_training = np.multiply(np.multiply((1.0 - X[i, _hyperparameter_idx['hold_out_fraction']]), metafeatures [:, metafeature_names.index('NumberOfInstances')]), X[i, _hyperparameter_idx['sample_fraction']])
-            product_sampled_data = np.multiply(metafeatures [:, metafeature_names.index('NumberOfInstances')], X[i, _hyperparameter_idx['sample_fraction']])
+            product_cvs = np.multiply(extract_value(X[i, :], cs, 'global_cv'), extract_value(X[i, :], cs, 'global_number_cv'))
+            product_hold_out_test = np.multiply(np.multiply(extract_value(X[i, :], cs, 'hold_out_fraction'), extract_value(X[i, :], cs, 'NumberOfInstances'), extract_value(X[i, :], cs, 'sample_fraction')))
+            product_hold_out_training = np.multiply(np.multiply((1.0 - extract_value(X[i, :], cs, 'hold_out_fraction')), metafeatures [:, metafeature_names.index('NumberOfInstances')]), extract_value(X[i, :], cs, 'sample_fraction'))
+            product_sampled_data = np.multiply(metafeatures [:, metafeature_names.index('NumberOfInstances')], extract_value(X[i, :], cs, 'sample_fraction'))
 
-            number_of_evaluations = np.divide(X[i, _hyperparameter_idx['global_evaluation_time_constraint']], X[i, _hyperparameter_idx['global_search_time_constraint']])
+            number_of_evaluations = np.divide(extract_value(X[i, :], cs, 'global_evaluation_time_constraint'), extract_value(X[i, :], cs, 'global_search_time_constraint'))
 
             '''
             #logs

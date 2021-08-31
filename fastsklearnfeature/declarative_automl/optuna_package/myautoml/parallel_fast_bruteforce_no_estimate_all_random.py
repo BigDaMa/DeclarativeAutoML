@@ -43,12 +43,7 @@ my_scorer = make_scorer(f1_score)
 
 mp_glob.total_search_time = 5*60#60
 topk = 28#26 # 20
-continue_from_checkpoint = True#False
-
-my_lock = Lock()
-
-mgr = mp.Manager()
-dictionary = mgr.dict()
+continue_from_checkpoint = False
 
 
 my_openml_datasets = [3, 4, 13, 15, 24, 25, 29, 31, 37, 38, 40, 43, 44, 49, 50, 51, 52, 53, 55, 56, 59, 151, 152, 153, 161, 162, 164, 172, 179, 310, 311, 312, 316, 333, 334, 335, 336, 337, 346, 444, 446, 448, 450, 451, 459, 461, 463, 464, 465, 466, 467, 470, 472, 476, 479, 481, 682, 683, 747, 803, 981, 993, 1037, 1038, 1039, 1040, 1042, 1045, 1046, 1048, 1049, 1050, 1053, 1054, 1055, 1056, 1059, 1060, 1061, 1062, 1063, 1064, 1065, 1066, 1067, 1068, 1069, 1071, 1073, 1075, 1085, 1101, 1104, 1107, 1111, 1112, 1114, 1116, 1119, 1120, 1121, 1122, 1123, 1124, 1125, 1126, 1127, 1128, 1129, 1130, 1131, 1132, 1133, 1134, 1135, 1136, 1137, 1138, 1139, 1140, 1141, 1142, 1143, 1144, 1145, 1146, 1147, 1148, 1149, 1150, 1151, 1152, 1153, 1154, 1155, 1156, 1157, 1158, 1159, 1160, 1161, 1162, 1163, 1164, 1165, 1166, 1167, 1169, 1216, 1235, 1236, 1237, 1238, 1240, 1412, 1441, 1442, 1443, 1444, 1447, 1448, 1449, 1450, 1451, 1452, 1453, 1455, 1458, 1460, 1461, 1462, 1463, 1464, 1467, 1471, 1473, 1479, 1480, 1484, 1485, 1486, 1487, 1488, 1489, 1490, 1494, 1495, 1496, 1498, 1502, 1504, 1506, 1507, 1510, 1511, 1547, 1561, 1562, 1563, 1564, 1597, 4134, 4135, 4154, 4329, 4534, 23499, 40536, 40645, 40646, 40647, 40648, 40649, 40650, 40660, 40665, 40666, 40669, 40680, 40681, 40690, 40693, 40701, 40705, 40706, 40710, 40713, 40714, 40900, 40910, 40922, 40999, 41005, 41007, 41138, 41142, 41144, 41145, 41146, 41147, 41150, 41156, 41158, 41159, 41160, 41161, 41162, 41228, 41430, 41521, 41538, 41976, 42172, 42477]
@@ -68,9 +63,6 @@ my_list_constraints = ['global_search_time_constraint',
                            'pipeline_size_constraint']
 
 feature_names, feature_names_new = get_feature_names(my_list_constraints)
-
-random_runs = (4 * len(feature_names_new))
-
 
 def run_AutoML(trial):
     space = trial.user_attrs['space']
@@ -386,113 +378,49 @@ if continue_from_checkpoint:
     y_meta = pickle.load(open(path2files + '/felix_y_compare_scaled.p', 'rb'))
     group_meta = pickle.load(open(path2files + '/felix_group_compare_scaled.p', 'rb'))
     aquisition_function_value = pickle.load(open(path2files + '/felix_acquisition function value_scaled.p', 'rb'))
-else:
-    #cold start - random sampling
-    study_random = optuna.create_study(direction='maximize', sampler=RandomSampler(seed=42))
-    study_random.optimize(random_config, n_trials=random_runs, n_jobs=1)
 
-    mp_glob.my_trials = []
-    trial_id2aqval = {}
-    counter_trial_id = 0
-    for u_trial in study_random.trials:
-        if u_trial.value == 0.0: #prune failed configurations
-            mp_glob.my_trials.append(u_trial)
-            trial_id2aqval[counter_trial_id] = 0.0
-            counter_trial_id += 1
+#cold start - random sampling
+study_random = optuna.create_study(direction='maximize', sampler=RandomSampler(seed=42))
+study_random.optimize(random_config, timeout=60*1, n_jobs=1)
 
-    with MyPool(processes=topk) as pool:
-        results = pool.map(run_AutoML_global, range(len(mp_glob.my_trials)))
+mp_glob.my_trials = []
+trial_id2aqval = {}
+counter_trial_id = 0
+for u_trial in study_random.trials:
+    if u_trial.value == 0.0: #prune failed configurations
+        mp_glob.my_trials.append(u_trial)
+        trial_id2aqval[counter_trial_id] = 0.0
+        counter_trial_id += 1
 
-    for result_p in results:
-        for f_progress in range(len(result_p['feature_l'])):
-            X_meta = np.vstack((X_meta, result_p['feature_l'][f_progress]))
-            y_meta.append(result_p['target_l'][f_progress])
-            group_meta.append(result_p['group_l'])
-            aquisition_function_value.append(trial_id2aqval[result_p['trial_id_l']])
+with MyPool(processes=topk) as pool:
+    results = pool.map(run_AutoML_global, range(len(mp_glob.my_trials)))
 
-    print('done')
+for result_p in results:
+    for f_progress in range(len(result_p['feature_l'])):
+        X_meta = np.vstack((X_meta, result_p['feature_l'][f_progress]))
+        y_meta.append(result_p['target_l'][f_progress])
+        group_meta.append(result_p['group_l'])
+        aquisition_function_value.append(trial_id2aqval[result_p['trial_id_l']])
 
+print('done')
 
-class Objective(object):
-    def __call__(self, trial):
-        return 1.0
-
-def get_best_trial():
-    sampler = RandomSampler()
-    study_uncertainty = optuna.create_study(direction='maximize', sampler=sampler)
-    my_objective = Objective()
-    study_uncertainty.optimize(my_objective, n_trials=1, n_jobs=1)
-    return study_uncertainty.best_trial
-
-def sample_and_evaluate(my_id1):
-    try:
-        my_lock.acquire()
-        X_meta = dictionary['X_meta']
-        y_meta = dictionary['y_meta']
-        my_lock.release()
-
-        #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
-
-        model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
-        model_uncertainty.fit(X_meta, y_meta)
-
-        best_trial = get_best_trial()
-        features_of_sampled_point = best_trial.user_attrs['features']
-
-        result = run_AutoML(best_trial)
-        actual_y = result['objective']
-
-        my_lock.acquire()
-
-        X_meta = dictionary['X_meta']
-        dictionary['X_meta'] = np.vstack((X_meta, features_of_sampled_point))
-
-        y_meta = dictionary['y_meta']
-        y_meta.append(actual_y)
-        dictionary['y_meta'] = y_meta
-
-        #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
-
-        group_meta = dictionary['group_meta']
-        group_meta.append(best_trial.params['dataset_id'])
-        dictionary['group_meta'] = group_meta
-
-        #assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
-
-        aquisition_function_value = dictionary['aquisition_function_value']
-        aquisition_function_value.append(best_trial.value)
-        dictionary['aquisition_function_value'] = aquisition_function_value
-
-        #assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
-
-        my_lock.release()
-
-        if my_id1 % topk == 0:
-            with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
-                pickle.dump(model_uncertainty, pickle_model_file)
-
-            with open('/tmp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
-                pickle.dump(X_meta, pickle_model_file)
-
-            with open('/tmp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
-                pickle.dump(y_meta, pickle_model_file)
-
-            with open('/tmp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
-                pickle.dump(group_meta, pickle_model_file)
-
-            with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
-                pickle.dump(aquisition_function_value, pickle_model_file)
-    except:
-        pass
-
-    return 0
 
 assert len(X_meta) == len(y_meta)
 
-dictionary['X_meta'] = X_meta
-dictionary['y_meta'] = y_meta
-dictionary['group_meta'] = group_meta
-dictionary['aquisition_function_value'] = aquisition_function_value
+model_uncertainty = RandomForestRegressor(n_estimators=1000, n_jobs=1)
+model_uncertainty.fit(X_meta, y_meta)
 
-with MyPool(processes=topk) as pool:
-    results = pool.map(sample_and_evaluate, range(100000))
+with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
+    pickle.dump(model_uncertainty, pickle_model_file)
+
+with open('/tmp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
+    pickle.dump(X_meta, pickle_model_file)
+
+with open('/tmp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
+    pickle.dump(y_meta, pickle_model_file)
+
+with open('/tmp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
+    pickle.dump(group_meta, pickle_model_file)
+
+with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
+    pickle.dump(aquisition_function_value, pickle_model_file)
