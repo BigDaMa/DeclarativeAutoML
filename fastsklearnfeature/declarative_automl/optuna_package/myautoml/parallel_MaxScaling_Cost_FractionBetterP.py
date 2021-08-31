@@ -23,6 +23,10 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model i
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import generate_parameters_2constraints
 from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import GridSearchCV
+import openml
+
+openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
+openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
 
 def predict_range(model, X):
     y_pred = model.predict(X)

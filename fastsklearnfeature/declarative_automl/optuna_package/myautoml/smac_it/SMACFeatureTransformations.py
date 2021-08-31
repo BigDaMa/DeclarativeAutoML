@@ -23,56 +23,64 @@ def extract_value(x, cs, name):
 
 class FeatureTransformations(BaseEstimator, TransformerMixin):
 
-    def get_metadata_features(self, dataset_id, x, cs):
-        X_train, _, y_train, _, categorical_indicator, attribute_names = get_data(dataset_id, randomstate=42)
+    def get_metadata_features(self, dataset_id, x, cs, catch_exception=False):
+        metafeature_values = np.zeros((1, 29))
+        try:
+            X_train, _, y_train, _, categorical_indicator, attribute_names = get_data(dataset_id, randomstate=42)
 
-        '''
-        random_feature_selection = x['random_feature_selection']
-        rand_feature_ids = np.arange(X_train.shape[1])
-        np.random.seed(my_random_seed)
-        np.random.shuffle(rand_feature_ids)
-        number_of_sampled_features = int(X_train.shape[1] * random_feature_selection)
+            '''
+            random_feature_selection = x['random_feature_selection']
+            rand_feature_ids = np.arange(X_train.shape[1])
+            np.random.seed(my_random_seed)
+            np.random.shuffle(rand_feature_ids)
+            number_of_sampled_features = int(X_train.shape[1] * random_feature_selection)
+    
+            X_train = X_train[:, rand_feature_ids[0:number_of_sampled_features]]
+            X_test = X_test[:, rand_feature_ids[0:number_of_sampled_features]]
+            categorical_indicator = np.array(categorical_indicator)[rand_feature_ids[0:number_of_sampled_features]]
+            attribute_names = np.array(attribute_names)[rand_feature_ids[0:number_of_sampled_features]]
+            '''
 
-        X_train = X_train[:, rand_feature_ids[0:number_of_sampled_features]]
-        X_test = X_test[:, rand_feature_ids[0:number_of_sampled_features]]
-        categorical_indicator = np.array(categorical_indicator)[rand_feature_ids[0:number_of_sampled_features]]
-        attribute_names = np.array(attribute_names)[rand_feature_ids[0:number_of_sampled_features]]
-        '''
+            # sampling with class imbalancing
+            my_random_seed = 41
+            class_labels = np.unique(y_train)
 
-        # sampling with class imbalancing
-        my_random_seed = 41
-        class_labels = np.unique(y_train)
+            ids_class0 = np.array((y_train == class_labels[0]).nonzero()[0])
+            ids_class1 = np.array((y_train == class_labels[1]).nonzero()[0])
 
-        ids_class0 = np.array((y_train == class_labels[0]).nonzero()[0])
-        ids_class1 = np.array((y_train == class_labels[1]).nonzero()[0])
+            np.random.seed(my_random_seed)
+            np.random.shuffle(ids_class0)
+            np.random.seed(my_random_seed)
+            np.random.shuffle(ids_class1)
 
-        np.random.seed(my_random_seed)
-        np.random.shuffle(ids_class0)
-        np.random.seed(my_random_seed)
-        np.random.shuffle(ids_class1)
+            if extract_value(x, cs, 'unbalance_data'):
+                fraction_ids_class0 = extract_value(x, cs, 'fraction_ids_class0')
+                fraction_ids_class1 = extract_value(x, cs, 'fraction_ids_class1')
+            else:
+                sampling_factor_train_only = extract_value(x, cs, 'sampling_factor_train_only')
+                fraction_ids_class0 = sampling_factor_train_only
+                fraction_ids_class1 = sampling_factor_train_only
 
-        if extract_value(x, cs, 'unbalance_data'):
-            fraction_ids_class0 = extract_value(x, cs, 'fraction_ids_class0')
-            fraction_ids_class1 = extract_value(x, cs, 'fraction_ids_class1')
-        else:
-            sampling_factor_train_only = extract_value(x, cs, 'sampling_factor_train_only')
-            fraction_ids_class0 = sampling_factor_train_only
-            fraction_ids_class1 = sampling_factor_train_only
+            number_class0 = int(fraction_ids_class0 * len(ids_class0))
+            number_class1 = int(fraction_ids_class1 * len(ids_class1))
 
-        number_class0 = int(fraction_ids_class0 * len(ids_class0))
-        number_class1 = int(fraction_ids_class1 * len(ids_class1))
+            all_sampled_training_ids = []
+            all_sampled_training_ids.extend(ids_class0[0:number_class0])
+            all_sampled_training_ids.extend(ids_class1[0:number_class1])
 
-        all_sampled_training_ids = []
-        all_sampled_training_ids.extend(ids_class0[0:number_class0])
-        all_sampled_training_ids.extend(ids_class1[0:number_class1])
+            X_train = X_train[all_sampled_training_ids, :]
+            y_train = y_train[all_sampled_training_ids]
 
-        X_train = X_train[all_sampled_training_ids, :]
-        y_train = y_train[all_sampled_training_ids]
+            metafeature_values = data2features(X_train, y_train, categorical_indicator)
 
-        metafeature_values = data2features(X_train, y_train, categorical_indicator)
-        return metafeature_values
+            return metafeature_values
+        except:
+            if catch_exception:
+                return metafeature_values
+            else:
+                raise Exception('here happened something')
 
-    def transform(self, X, cs, metafeatures_pre=None):
+    def transform(self, X, cs, metafeatures_pre=None, catch_exception=False):
         _hyperparameter_idx = cs._hyperparameter_idx
 
         metafeature_names = ['ClassEntropy', 'ClassProbabilityMax', 'ClassProbabilityMean', 'ClassProbabilityMin',
@@ -97,7 +105,7 @@ class FeatureTransformations(BaseEstimator, TransformerMixin):
             if type(metafeatures_pre) == type(None):
                 d_id = int(X[i, _hyperparameter_idx['dataset_id']])
                 data_id = int(cs._hyperparameters['dataset_id'].choices[d_id])
-                metafeatures = self.get_metadata_features(data_id, X[i,:], cs)
+                metafeatures = self.get_metadata_features(data_id, X[i,:], cs, catch_exception)
             else:
                 metafeatures = metafeatures_pre
 

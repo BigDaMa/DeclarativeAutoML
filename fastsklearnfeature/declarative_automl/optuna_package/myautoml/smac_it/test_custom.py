@@ -24,7 +24,7 @@ def opt(x):
 
 # Scenario object
 scenario = Scenario({"run_obj": "quality",  # we optimize quality (alternatively runtime)
-                     "runcount-limit": 200,  # max. number of function evaluations; for this example set to a low number
+                     "runcount-limit": 500,  # max. number of function evaluations; for this example set to a low number
                      "cs": cs,  # configuration space
                      "deterministic": "true"
                      })

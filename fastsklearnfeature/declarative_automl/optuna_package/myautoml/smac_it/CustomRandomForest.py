@@ -216,7 +216,7 @@ class CustomRandomForest(BaseModel):
 
         X = self._impute_inactive(X)
         if X.shape[1] != len(self.bounds):
-            X = self.featureprocessing(X)
+            X = self.featureprocessing(X, catch_exception=True)
 
         self.X = X
         self.y = y.flatten()
@@ -268,10 +268,10 @@ class CustomRandomForest(BaseModel):
         return data
 
 
-    def featureprocessing(self, X, metafeatures=None):
+    def featureprocessing(self, X, metafeatures=None, catch_exception=False):
         print(X.shape)
         self.t.fit(X)
-        X = self.t.transform(X, cs=self.configspace, metafeatures_pre=metafeatures)
+        X = self.t.transform(X, cs=self.configspace, metafeatures_pre=metafeatures, catch_exception=catch_exception)
         print(X.shape)
         print(len(self.mask_remove))
         X = X[:, self.mask_remove]
@@ -427,7 +427,7 @@ class CustomRandomForest(BaseModel):
 
         X = self._impute_inactive(X)
         if X.shape[1] != len(self.bounds):
-            X = self.featureprocessing(X)
+            X = self.featureprocessing(X, catch_exception=True)
 
         if self.instance_features is None or \
                 len(self.instance_features) == 0:

@@ -145,11 +145,11 @@ if __name__ == '__main__':
             X = X[:, np.newaxis]
 
         results = np.empty((X.shape[0], 1))
-        results[:] = 0.0 #np.nan # TODO: what should the default value be?
+        results[:] = 0.0
         for di in range(X.shape[0]):
             try:
                 m, var_ = model.predict(X[di])
-                results[di] = var_ #TODO: is the aquisition function minimizing or maximizing?
+                results[di] = var_
             except:
                 pass
         return results
@@ -176,7 +176,7 @@ if __name__ == '__main__':
 
     # Scenario object
     scenario = Scenario({"run_obj": "quality",  # we optimize quality (alternatively runtime)
-                         "runcount-limit": 100,  # max. number of function evaluations; for this example set to a low number
+                         "runcount-limit": 300,  # max. number of function evaluations; for this example set to a low number
                          "cs": cs,  # configuration space
                          "deterministic": "true"
                          })

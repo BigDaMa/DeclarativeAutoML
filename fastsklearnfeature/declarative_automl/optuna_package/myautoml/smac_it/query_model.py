@@ -11,6 +11,11 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model i
 from sklearn.metrics import make_scorer
 from sklearn.metrics import f1_score
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalance import MyAutoML
+import openml
+
+
+openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
+openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
 
 model = pickle.load(open('/tmp/smac_model.p', "rb"))
 conf = pickle.load(open('/tmp/smac_conf.p', "rb"))
@@ -35,7 +40,7 @@ new_val = False
 print(first._inverse_transform(new_val)) # real value => vector
 
 
-dataset_id = 55
+dataset_id = 448#55
 X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data(dataset_id, randomstate=42)
 metafeature_values = data2features(X_train, y_train, categorical_indicator)
 
@@ -136,7 +141,7 @@ def query_model(trial, search_time=60, global_memory_constraint=None, privacy_co
 
     try:
         print(study_prune.best_trial)
-        if success > study_prune.best_trial.value:
+        if success < study_prune.best_trial.value:
             trial.set_user_attr('space', copy.deepcopy(space))
     except:
         pass
@@ -146,7 +151,7 @@ def query_model(trial, search_time=60, global_memory_constraint=None, privacy_co
 
 
 
-study_prune = optuna.create_study(direction='maximize')
+study_prune = optuna.create_study(direction='minimize')
 study_prune.optimize(lambda trial: query_model(trial=trial, search_time=60), n_trials=1000, n_jobs=1)
 
 space = study_prune.best_trial.user_attrs['space']

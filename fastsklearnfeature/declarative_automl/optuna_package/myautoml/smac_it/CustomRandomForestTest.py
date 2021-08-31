@@ -6,9 +6,12 @@ from pyrfr import regression
 from smac.configspace import ConfigurationSpace
 from smac.epm.base_rf import BaseModel
 from smac.utils.constants import N_TREES, VERY_SMALL_NUMBER
-
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.exceptions import NotFittedError
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.smac_it.SMACFeatureTransformations import FeatureTransformations
-
+import typing
+import warnings
 
 __author__ = "Aaron Klein"
 __copyright__ = "Copyright 2015, ML4AAD"
@@ -102,6 +105,7 @@ class CustomRandomForest(BaseModel):
         """
 
         bounds.append((0, np.nan))
+        types.append(0)
 
         super().__init__(
             configspace=configspace,
@@ -245,8 +249,6 @@ class CustomRandomForest(BaseModel):
         if len(X.shape) != 2:
             raise ValueError(
                 'Expected 2d array, got %dd array!' % len(X.shape))
-        if X.shape[1] != len(self.types):
-            raise ValueError('Rows in X should have %d entries but have %d!' % (len(self.types), X.shape[1]))
         if cov_return_type != 'diagonal_cov':
             raise ValueError("'cov_return_type' can only take 'diagonal_cov' for this model")
 
@@ -293,6 +295,61 @@ class CustomRandomForest(BaseModel):
 
         return means.reshape((-1, 1)), vars_.reshape((-1, 1))
 
+    def predict(self, X: np.ndarray,
+                cov_return_type: typing.Optional[str] = 'diagonal_cov') \
+            -> typing.Tuple[np.ndarray, typing.Optional[np.ndarray]]:
+        """
+        Predict means and variances for given X.
+
+        Parameters
+        ----------
+        X : np.ndarray of shape = [n_samples, n_features (config + instance features)]
+            Training samples
+        cov_return_type: typing.Optional[str]
+            Specifies what to return along with the mean. (Applies to only Gaussian Process for now)
+            Can take 4 values: [None, diagonal_std, diagonal_cov, full_cov]
+            * None - only mean is returned
+            * diagonal_std - standard deviation at test points is returned
+            * diagonal_cov - diagonal of the covariance matrix is returned
+            * full_cov - whole covariance matrix between the test points is returned
+
+        Returns
+        -------
+        means : np.ndarray of shape = [n_samples, n_objectives]
+            Predictive mean
+        vars : None or np.ndarray of shape = [n_samples, n_objectives] or [n_samples, n_samples]
+            Predictive variance or standard deviation
+        """
+        if len(X.shape) != 2:
+            raise ValueError('Expected 2d array, got %dd array!' % len(X.shape))
+        #if X.shape[1] != self.n_params + self.n_feats:
+        #    raise ValueError('Rows in X should have %d entries but have %d!' %
+        #                     (self.n_params + self.n_feats, X.shape[1]))
+
+        if self._apply_pca:
+            print('PCA')
+            try:
+                X_feats = X[:, -self.n_feats:]
+                X_feats = self.scaler.transform(X_feats)
+                X_feats = self.pca.transform(X_feats)
+                X = np.hstack((X[:, :self.n_params], X_feats))
+            except NotFittedError:
+                pass  # PCA not fitted if only one training sample
+
+        #if X.shape[1] != len(self.types):
+        #    raise ValueError('Rows in X should have %d entries but have %d!' % (len(self.types), X.shape[1]))
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', 'Predicted variances smaller than 0. Setting those variances to 0.')
+            mean, var = self._predict(X, cov_return_type)
+
+        if len(mean.shape) == 1:
+            mean = mean.reshape((-1, 1))
+        if var is not None and len(var.shape) == 1:
+            var = var.reshape((-1, 1))
+
+        return mean, var
+
     def predict_marginalized_over_instances(self, X: np.ndarray) -> typing.Tuple[np.ndarray, np.ndarray]:
         """Predict mean and variance marginalized over all instances.
 
@@ -332,11 +389,6 @@ class CustomRandomForest(BaseModel):
         if len(X.shape) != 2:
             raise ValueError(
                 'Expected 2d array, got %dd array!' % len(X.shape))
-        if X.shape[1] != len(self.bounds):
-            raise ValueError('Rows in X should have %d entries but have %d!' %
-                             (len(self.bounds),
-                              X.shape[1]))
-
         X = self._impute_inactive(X)
 
         X = self.gen_new(X)

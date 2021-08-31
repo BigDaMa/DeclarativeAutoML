@@ -16,7 +16,16 @@ class FeatureAgglomerationOptuna(FeatureAgglomeration):
         else:
             self.affinity = trial.suggest_categorical(self.name + "affinity", ["euclidean", "manhattan", "cosine"])
 
-        self.pooling_func = trial.suggest_categorical(self.name + "pooling_func", [np.mean, np.median, np.max])
+        pooling_func_name = trial.suggest_categorical(self.name + "pooling_func", ['mean', 'median', 'max'])
+
+        if pooling_func_name == 'mean':
+            self.pooling_func = np.mean
+
+        if pooling_func_name == 'median':
+            self.pooling_func = np.median
+
+        if pooling_func_name == 'max':
+            self.pooling_func = np.max
 
         self.sparse = False
 
@@ -31,6 +40,6 @@ class FeatureAgglomerationOptuna(FeatureAgglomeration):
         space_gen.generate_number(self.name + 'n_components_fraction', 0.5, depending_node=depending_node, low=0.0, high=1.0)
         space_gen.generate_cat(self.name + "linkage", ["ward", "complete", "average"], "ward", depending_node=depending_node)
         space_gen.generate_cat(self.name + "affinity", ["euclidean", "manhattan", "cosine"], "euclidean", depending_node=depending_node)
-        space_gen.generate_cat(self.name + "pooling_func", [np.mean, np.median, np.max], np.mean, depending_node=depending_node)
+        space_gen.generate_cat(self.name + "pooling_func", ["mean", "median", "max"], "mean", depending_node=depending_node)
 
 

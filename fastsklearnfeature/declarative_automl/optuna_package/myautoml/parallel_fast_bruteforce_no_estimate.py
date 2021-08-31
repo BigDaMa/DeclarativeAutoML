@@ -23,6 +23,10 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model i
 from optuna.samplers import TPESampler
 import multiprocessing as mp
 from multiprocessing import Lock
+import openml
+
+openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
+openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
 
 def predict_range(model, X):
     y_pred = model.predict(X)

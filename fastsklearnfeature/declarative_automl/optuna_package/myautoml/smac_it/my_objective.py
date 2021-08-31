@@ -9,6 +9,7 @@ from sklearn.metrics import f1_score
 
 def run_AutoML(x):
     my_scorer = make_scorer(f1_score)
+    repetitions = 1
 
     # which hyperparameters to use
     gen = SpaceGenerator()
@@ -115,7 +116,7 @@ def run_AutoML(x):
         return 0.0
 
     dynamic_params = []
-    for random_i in range(1):
+    for random_i in range(repetitions):
         search = MyAutoML(cv=cv,
                           number_of_cvs=number_of_cvs,
                           n_jobs=1,
@@ -147,7 +148,7 @@ def run_AutoML(x):
         return 0.0
 
     static_params = []
-    for random_i in range(1):
+    for random_i in range(repetitions):
         # default params
         gen_new = SpaceGenerator()
         space_new = gen_new.generate_params()
@@ -182,4 +183,4 @@ def run_AutoML(x):
 
     frequency = np.sum(dynamic_values > static_values) / 5.0
 
-    return frequency
+    return -1.0 * frequency
