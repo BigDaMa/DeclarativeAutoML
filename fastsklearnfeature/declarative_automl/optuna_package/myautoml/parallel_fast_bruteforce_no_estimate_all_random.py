@@ -406,14 +406,20 @@ else:
 
 class Objective(object):
     def __call__(self, trial):
+        features = sample_configuration(trial)
+        if type(features) == type(None):
+            return -1 * np.inf
         return 1.0
 
 def get_best_trial():
-    sampler = RandomSampler()
-    study_uncertainty = optuna.create_study(direction='maximize', sampler=sampler)
-    my_objective = Objective()
-    study_uncertainty.optimize(my_objective, n_trials=1, n_jobs=1)
-    return study_uncertainty.best_trial
+    while True:
+        sampler = RandomSampler()
+        study_uncertainty = optuna.create_study(direction='maximize', sampler=sampler)
+        my_objective = Objective()
+        study_uncertainty.optimize(my_objective, n_trials=1, n_jobs=1)
+
+        if study_uncertainty.best_value == 1.0:
+            return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
     try:
@@ -423,11 +429,12 @@ def sample_and_evaluate(my_id1):
         my_lock.release()
 
         #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+        model_uncertainty = None
+        if my_id1 % topk == 0:
+            model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
+            model_uncertainty.fit(X_meta, y_meta)
 
-        model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
-        model_uncertainty.fit(X_meta, y_meta)
-
-        print('model was trained')
+            print('model was trained')
 
         best_trial = get_best_trial()
         features_of_sampled_point = best_trial.user_attrs['features']
