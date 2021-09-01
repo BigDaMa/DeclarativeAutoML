@@ -9,7 +9,7 @@ from sklearn.metrics import f1_score
 
 def run_AutoML(x):
     my_scorer = make_scorer(f1_score)
-    repetitions = 1
+    repetitions = 5
 
     # which hyperparameters to use
     gen = SpaceGenerator()

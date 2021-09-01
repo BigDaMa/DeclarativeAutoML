@@ -20,9 +20,12 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model i
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import ifNull
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import generate_parameters
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import generate_parameters_2constraints
-from optuna.samplers import TPESampler
 import multiprocessing as mp
 from multiprocessing import Lock
+import openml
+
+openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
+openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
 
 def predict_range(model, X):
     y_pred = model.predict(X)
@@ -31,13 +34,12 @@ def predict_range(model, X):
 #test data
 
 test_holdout_dataset_id = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 448, 1458, 162, 1101, 1561, 1061, 1506, 1235, 4135, 151, 51, 41138, 40645, 1510, 1158, 312, 38, 52, 1216, 41007, 1130]
-
 my_scorer = make_scorer(f1_score)
 
 
 mp_glob.total_search_time = 5*60#60
 topk = 28#26 # 20
-continue_from_checkpoint = True
+continue_from_checkpoint = False
 
 my_lock = Lock()
 
@@ -63,7 +65,7 @@ my_list_constraints = ['global_search_time_constraint',
 
 feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
-random_runs = (4 * len(feature_names_new))
+random_runs = (2 * len(feature_names_new))
 
 
 def run_AutoML(trial):
@@ -472,9 +474,6 @@ def sample_and_evaluate(my_id1):
         my_lock.release()
 
         if my_id1 % topk == 0:
-            with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
-                pickle.dump(model_uncertainty, pickle_model_file)
-
             with open('/tmp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
                 pickle.dump(X_meta, pickle_model_file)
 
@@ -486,6 +485,9 @@ def sample_and_evaluate(my_id1):
 
             with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
                 pickle.dump(aquisition_function_value, pickle_model_file)
+
+            with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
+                pickle.dump(model_uncertainty, pickle_model_file)
     except:
         pass
 
