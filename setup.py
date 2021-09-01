@@ -33,7 +33,8 @@ setup(
                       "libtmux",
                       "matplotlib",
                       "imbalanced-learn==0.8.0",
-                      "smac==0.13.1"
+                      "smac==0.13.1",
+                      "pyDOE==0.3.8"
                       ],
     packages=find_packages(exclude=('tests', 'docs'))
 )
