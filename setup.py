@@ -34,7 +34,9 @@ setup(
                       "matplotlib",
                       "imbalanced-learn==0.8.0",
                       "smac==0.13.1",
-                      "pyDOE==0.3.8"
+                      "pyDOE==0.3.8",
+                      "emcee==3.0.2",
+                      "scikit-optimize==0.8.1"
                       ],
     packages=find_packages(exclude=('tests', 'docs'))
 )
