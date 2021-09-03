@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
     # Scenario object
     scenario = Scenario({"run_obj": "quality",  # we optimize quality (alternatively runtime)
-                         "runcount-limit": 10000,  # max. number of function evaluations; for this example set to a low number
+                         "runcount-limit": 100000,  # max. number of function evaluations; for this example set to a low number
                          "cs": cs,  # configuration space
                          "deterministic": "true"
                          })
