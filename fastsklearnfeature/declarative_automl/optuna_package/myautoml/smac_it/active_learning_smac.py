@@ -55,8 +55,8 @@ if __name__ == '__main__':
 
 
     #smac config space
-
     cs = get_space_2_constraints(total_search_time, my_openml_datasets)
+
 
     print(cs.get_hyperparameter_names())
     print(cs.get_idx_by_hyperparameter_name('dataset_id'))
@@ -120,7 +120,7 @@ if __name__ == '__main__':
                                       'min_samples_split': 2,
                                       'min_samples_leaf': 1
                                       },
-                    #n_jobs=2
+                    n_jobs=28
                     )
 
     smac.optimize()
