@@ -37,8 +37,6 @@ setup(
                       "pyDOE==0.3.8",
                       "emcee==3.0.2",
                       "scikit-optimize==0.8.1",
-                      "dask==1.2.2",
-                      "distributed=1.28.1"
                       ],
     packages=find_packages(exclude=('tests', 'docs'))
 )
