@@ -120,7 +120,7 @@ if __name__ == '__main__':
                                       'min_samples_split': 2,
                                       'min_samples_leaf': 1
                                       },
-                    n_jobs=28
+                    #n_jobs=28
                     )
 
     smac.optimize()
