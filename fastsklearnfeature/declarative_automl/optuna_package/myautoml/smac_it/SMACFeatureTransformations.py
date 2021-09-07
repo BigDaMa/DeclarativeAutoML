@@ -110,12 +110,38 @@ class FeatureTransformations(BaseEstimator, TransformerMixin):
                 metafeatures = metafeatures_pre
 
             #products
-            product_cvs = np.multiply(extract_value(X[i, :], cs, 'global_cv'), extract_value(X[i, :], cs, 'global_number_cv'))
-            product_hold_out_test = np.multiply(np.multiply(extract_value(X[i, :], cs, 'hold_out_fraction'), extract_value(X[i, :], cs, 'NumberOfInstances'), extract_value(X[i, :], cs, 'sample_fraction')))
-            product_hold_out_training = np.multiply(np.multiply((1.0 - extract_value(X[i, :], cs, 'hold_out_fraction')), metafeatures [:, metafeature_names.index('NumberOfInstances')]), extract_value(X[i, :], cs, 'sample_fraction'))
-            product_sampled_data = np.multiply(metafeatures [:, metafeature_names.index('NumberOfInstances')], extract_value(X[i, :], cs, 'sample_fraction'))
 
-            number_of_evaluations = np.divide(extract_value(X[i, :], cs, 'global_evaluation_time_constraint'), extract_value(X[i, :], cs, 'global_search_time_constraint'))
+            global_cv = 1
+            if 'global_cv' in cs._hyperparameters:
+                global_cv = extract_value(X[i, :], cs, 'global_cv')
+
+            global_number_cv = 1
+            if 'global_number_cv' in cs._hyperparameters:
+                global_number_cv = extract_value(X[i, :], cs, 'global_number_cv')
+
+            hold_out_fraction = (100.0 / global_cv) / 100.0
+            if 'hold_out_fraction' in cs._hyperparameters:
+                hold_out_fraction = extract_value(X[i, :], cs, 'hold_out_fraction')
+
+            sample_fraction = 1.0 #TODO:fix for unbalanced data across classes
+            if 'sample_fraction' in cs._hyperparameters:
+                sample_fraction = extract_value(X[i, :], cs, 'sample_fraction')
+
+            global_search_time_constraint = extract_value(X[i, :], cs, 'global_search_time_constraint')
+
+            global_evaluation_time_constraint = copy.deepcopy(global_search_time_constraint)
+            if 'global_evaluation_time_constraint' in cs._hyperparameters:
+                global_evaluation_time_constraint = extract_value(X[i, :], cs, 'global_evaluation_time_constraint')
+
+
+
+
+            product_cvs = np.multiply(global_cv, global_number_cv)
+            product_hold_out_test = np.multiply(np.multiply(hold_out_fraction, metafeatures [:, metafeature_names.index('NumberOfInstances')]), sample_fraction)
+            product_hold_out_training = np.multiply(np.multiply((1.0 - hold_out_fraction), metafeatures [:, metafeature_names.index('NumberOfInstances')]), sample_fraction)
+            product_sampled_data = np.multiply(metafeatures [:, metafeature_names.index('NumberOfInstances')], sample_fraction)
+
+            number_of_evaluations = np.divide(global_evaluation_time_constraint, global_search_time_constraint)
 
             '''
             #logs

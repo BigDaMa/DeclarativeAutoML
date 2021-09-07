@@ -46,7 +46,7 @@ def run_AutoML(x):
 
     cv = 1
     number_of_cvs = 1
-    hold_out_fraction = None
+    hold_out_fraction = 0.0
     if x['use_hold_out'] == False:
         cv = x['global_cv']
         if x['use_multiple_cvs']:
