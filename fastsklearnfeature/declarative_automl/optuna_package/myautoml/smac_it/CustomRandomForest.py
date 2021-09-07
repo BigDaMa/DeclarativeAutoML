@@ -115,7 +115,8 @@ class CustomRandomForest(BaseModel):
                                     'sampling_factor_train_only']
         list_of_params_to_remove_ids = []
         for param_name in list_of_params_to_remove:
-            list_of_params_to_remove_ids.append(configspace._hyperparameter_idx[param_name])
+            if param_name in configspace._hyperparameter_idx:
+                list_of_params_to_remove_ids.append(configspace._hyperparameter_idx[param_name])
         print(list_of_params_to_remove_ids)
 
         self.mask_remove = np.ones(len(configspace._hyperparameters) + 34, dtype=bool)

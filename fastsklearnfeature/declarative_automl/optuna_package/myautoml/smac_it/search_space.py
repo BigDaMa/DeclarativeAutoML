@@ -158,3 +158,15 @@ def get_space_2_constraints(total_search_time, my_openml_datasets):
     space.generate_SMAC(cs)
 
     return cs
+
+def get_space_minimal(total_search_time, my_openml_datasets):
+    cs = ConfigurationSpace()
+    cs.add_hyperparameter(UniformIntegerHyperparameter('global_search_time_constraint', 10, total_search_time, default_value=10))
+    cs.add_hyperparameter(CategoricalHyperparameter('dataset_id', my_openml_datasets, default_value=my_openml_datasets[0]))
+
+    use_hold_out_p = CategoricalHyperparameter('use_hold_out', [True], default_value=True)
+    hold_out_fraction_p = UniformFloatHyperparameter('hold_out_fraction', 0, 1, default_value=1)
+
+    cs.add_hyperparameters([hold_out_fraction_p, use_hold_out_p])
+
+    return cs

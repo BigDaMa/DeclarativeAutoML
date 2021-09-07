@@ -9,38 +9,39 @@ from sklearn.metrics import f1_score
 
 def run_AutoML(x):
     my_scorer = make_scorer(f1_score)
-    repetitions = 5
+    repetitions = 1
 
     # which hyperparameters to use
     gen = SpaceGenerator()
     space = gen.generate_params()
-    space.sample_parameters_SMAC(x)
+
+    #space.sample_parameters_SMAC(x)
 
     # make this a hyperparameter
     search_time = x['global_search_time_constraint']
 
     evaluation_time = search_time
-    if x['use_evaluation_time_constraint']:
+    if 'use_evaluation_time_constraint' in x and x['use_evaluation_time_constraint']:
         evaluation_time = x['global_evaluation_time_constraint']
 
     memory_limit = 10
-    if x['use_search_memory_constraint']:
+    if 'use_search_memory_constraint' in x and x['use_search_memory_constraint']:
         memory_limit = x['global_memory_constraint']
 
     privacy_limit = None
-    if x['use_privacy_constraint']:
+    if 'use_privacy_constraint' in x and x['use_privacy_constraint']:
         privacy_limit = x['privacy_constraint']
 
     training_time_limit = search_time
-    if x['use_training_time_constraint']:
+    if 'use_training_time_constraint' in x and x['use_training_time_constraint']:
         training_time_limit = x['training_time_constraint']
 
     inference_time_limit = 60
-    if x['use_inference_time_constraint']:
+    if 'use_inference_time_constraint' in x and x['use_inference_time_constraint']:
         inference_time_limit = x['inference_time_constraint']
 
     pipeline_size_limit = 350000000
-    if x['use_pipeline_size_constraint']:
+    if 'use_pipeline_size_constraint' in x and x['use_pipeline_size_constraint']:
         pipeline_size_limit = x['pipeline_size_constraint']
 
     cv = 1
@@ -54,7 +55,7 @@ def run_AutoML(x):
         hold_out_fraction = x['hold_out_fraction']
 
     sample_fraction = 1.0
-    if x['use_sampling']:
+    if 'use_sampling' in x and x['use_sampling']:
         sample_fraction = x['sample_fraction']
 
     dataset_id = x['dataset_id']  # get same random seed
@@ -83,33 +84,34 @@ def run_AutoML(x):
         '''
 
         # sampling with class imbalancing
-        class_labels = np.unique(y_train)
+        if 'unbalance_data' in x:
+            class_labels = np.unique(y_train)
 
-        ids_class0 = np.array((y_train == class_labels[0]).nonzero()[0])
-        ids_class1 = np.array((y_train == class_labels[1]).nonzero()[0])
+            ids_class0 = np.array((y_train == class_labels[0]).nonzero()[0])
+            ids_class1 = np.array((y_train == class_labels[1]).nonzero()[0])
 
-        np.random.seed(my_random_seed)
-        np.random.shuffle(ids_class0)
-        np.random.seed(my_random_seed)
-        np.random.shuffle(ids_class1)
+            np.random.seed(my_random_seed)
+            np.random.shuffle(ids_class0)
+            np.random.seed(my_random_seed)
+            np.random.shuffle(ids_class1)
 
-        if x['unbalance_data']:
-            fraction_ids_class0 = x['fraction_ids_class0']
-            fraction_ids_class1 = x['fraction_ids_class1']
-        else:
-            sampling_factor_train_only = x['sampling_factor_train_only']
-            fraction_ids_class0 = sampling_factor_train_only
-            fraction_ids_class1 = sampling_factor_train_only
+            if x['unbalance_data']:
+                fraction_ids_class0 = x['fraction_ids_class0']
+                fraction_ids_class1 = x['fraction_ids_class1']
+            else:
+                sampling_factor_train_only = x['sampling_factor_train_only']
+                fraction_ids_class0 = sampling_factor_train_only
+                fraction_ids_class1 = sampling_factor_train_only
 
-        number_class0 = int(fraction_ids_class0 * len(ids_class0))
-        number_class1 = int(fraction_ids_class1 * len(ids_class1))
+            number_class0 = int(fraction_ids_class0 * len(ids_class0))
+            number_class1 = int(fraction_ids_class1 * len(ids_class1))
 
-        all_sampled_training_ids = []
-        all_sampled_training_ids.extend(ids_class0[0:number_class0])
-        all_sampled_training_ids.extend(ids_class1[0:number_class1])
+            all_sampled_training_ids = []
+            all_sampled_training_ids.extend(ids_class0[0:number_class0])
+            all_sampled_training_ids.extend(ids_class1[0:number_class1])
 
-        X_train = X_train[all_sampled_training_ids, :]
-        y_train = y_train[all_sampled_training_ids]
+            X_train = X_train[all_sampled_training_ids, :]
+            y_train = y_train[all_sampled_training_ids]
 
 
     except:
