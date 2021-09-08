@@ -14,6 +14,15 @@ from smac.intensification.simple_intensifier import SimpleIntensifier
 import pickle
 import openml
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.smac_it.my_objective import run_AutoML
+import argparse
+
+# Initiate the parser
+parser = argparse.ArgumentParser()
+parser.add_argument("--psmacfolder", "-p", help="Psmac folder")
+parser.add_argument("--random", "-r", help="random seed", type=int)
+args = parser.parse_args()
+
+#args.psmacfolder = '/home/neutatz/phd2/psmac_folder/'
 
 if __name__ == '__main__':
     openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
@@ -93,22 +102,19 @@ if __name__ == '__main__':
         def _compute(self, X: np.ndarray) -> np.ndarray:
             return my_aquisition(X, self.model)
 
-
-
-
     # Scenario object
     scenario = Scenario({"run_obj": "quality",  # we optimize quality (alternatively runtime)
                          "runcount-limit": 100000,  # max. number of function evaluations; for this example set to a low number
                          "cs": cs,  # configuration space
                          "deterministic": "true",
-                         "input_psmac_dirs": "/home/neutatz/phd2/psmac_folder/run_*",
+                         "input_psmac_dirs": args.psmacfolder + "run_*",
                          "shared_model": True,
-                         "output_dir": "/home/neutatz/phd2/psmac_folder/"
+                         "output_dir": args.psmacfolder
                          })
 
 
     smac = SMAC4HPO(scenario=scenario,
-                    rng=np.random.RandomState(49),
+                    rng=np.random.RandomState(args.random),
                     tae_runner=run_AutoML,
                     runhistory2epm=RunHistory2EPM4Cost,
                     acquisition_function=MyAquisitionFunction,
