@@ -2,7 +2,7 @@ import libtmux
 import time
 
 program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/smac_it/minimal/active_learning_smac_minimal.py'
-my_folder = '/home/neutatz/data/pshare/'
+my_folder = '/home/neutatz/data/pshare1/'
 
 conda_name = 'AutoMLD'
 
