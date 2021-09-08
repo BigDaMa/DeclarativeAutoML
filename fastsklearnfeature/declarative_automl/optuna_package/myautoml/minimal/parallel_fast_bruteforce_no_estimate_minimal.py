@@ -77,7 +77,7 @@ def run_AutoML(trial):
     #make this a hyperparameter
     search_time = trial.params['global_search_time_constraint']# * 60
 
-    evaluation_time = search_time
+    evaluation_time = int(0.1 * search_time)
     if 'global_evaluation_time_constraint' in trial.params:
         evaluation_time = trial.params['global_evaluation_time_constraint']
 
