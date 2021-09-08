@@ -9,7 +9,7 @@ from sklearn.metrics import f1_score
 
 def run_AutoML(x):
     my_scorer = make_scorer(f1_score)
-    repetitions = 1
+    repetitions = 5
 
     # which hyperparameters to use
     gen = SpaceGenerator()
@@ -20,7 +20,7 @@ def run_AutoML(x):
     # make this a hyperparameter
     search_time = x['global_search_time_constraint']
 
-    evaluation_time = search_time
+    evaluation_time = int(0.1 * search_time)
     if 'use_evaluation_time_constraint' in x and x['use_evaluation_time_constraint']:
         evaluation_time = x['global_evaluation_time_constraint']
 

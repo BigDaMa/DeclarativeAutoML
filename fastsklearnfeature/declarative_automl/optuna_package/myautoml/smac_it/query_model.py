@@ -17,8 +17,10 @@ import openml
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
 
-model = pickle.load(open('/tmp/smac_model.p', "rb"))
-conf = pickle.load(open('/tmp/smac_conf.p', "rb"))
+path2 = "/home/neutatz/phd2/decAutoML2weeks_compare2default/psmac_sep8"
+
+model = pickle.load(open(path2 + '/smac_model.p', "rb"))
+conf = pickle.load(open(path2 + '/smac_conf.p', "rb"))
 
 new_model = CustomRandomForest(**conf)
 new_model.rf = model

@@ -1,63 +1,32 @@
-import pickle
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.smac_it.CustomRandomForest import CustomRandomForest
-import numpy as np
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalance import MyAutoML
 import optuna
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_data
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import data2features
-import copy
-from anytree import RenderTree
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import utils_run_AutoML
 from sklearn.metrics import make_scorer
 from sklearn.metrics import f1_score
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalance import MyAutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
+import pickle
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_data
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import data2features
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import utils_run_AutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_feature_names
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.util_classes import ConstraintEvaluation, ConstraintRun
+from anytree import RenderTree
+import argparse
 import openml
-
-
-openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
-openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
-
-path2 = "/home/neutatz/phd2/decAutoML2weeks_compare2default/psmac_sep8"
-
-model = pickle.load(open(path2 + '/smac_model.p', "rb"))
-conf = pickle.load(open(path2 + '/smac_conf.p', "rb"))
-
-new_model = CustomRandomForest(**conf)
-new_model.rf = model
-
-cs = conf['configspace']
-
-print(list(cs._hyperparameters.keys()))
-
-first = cs._hyperparameters[cs._idx_to_hyperparameter[1]]
-print(first)
-
-val = first._sample(rs=np.random.RandomState(seed=42))
-
-print(val)
-print(first._transform(val)) # vector => real value
-
-
-new_val = False
-print(first._inverse_transform(new_val)) # real value => vector
-
-
-dataset_id = 448#55
-X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data(dataset_id, randomstate=42)
-metafeature_values = data2features(X_train, y_train, categorical_indicator)
-
+import fastsklearnfeature.declarative_automl.optuna_package.myautoml.smac_it.minimal.parallel.my_global_vars as mp_global
+import numpy as np
+import copy
 
 def query_model(trial, search_time=60, global_memory_constraint=None, privacy_constraint=None, training_time_constraint=None, inference_time_constraint=None, pipeline_size_constraint=None):
     gen = SpaceGenerator()
     space = gen.generate_params()
     #space.sample_parameters(trial)
 
-    scaled_vector = np.zeros((1, len(cs._hyperparameters)))
+    scaled_vector = np.zeros((1, len(mp_global.cs._hyperparameters)))
     scaled_vector[:] = np.nan
 
     for param_str, real_val in trial.params.items():
-        scaled_val = cs._hyperparameters[param_str]._inverse_transform(real_val)
-        vector_id = cs._hyperparameter_idx[param_str]
+        scaled_val = mp_global.cs._hyperparameters[param_str]._inverse_transform(real_val)
+        vector_id = mp_global.cs._hyperparameter_idx[param_str]
 
         scaled_vector[0, vector_id] = scaled_val
 
@@ -65,16 +34,16 @@ def query_model(trial, search_time=60, global_memory_constraint=None, privacy_co
     param_dict['global_search_time_constraint'] = search_time
     param_dict['use_evaluation_time_constraint'] = trial.suggest_categorical('use_evaluation_time_constraint', [False])
 
-    evaluation_time = search_time
+    evaluation_time = int(0.1 * search_time)
     if param_dict['use_evaluation_time_constraint']:
         evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
     param_dict['global_evaluation_time_constraint'] = evaluation_time
+    trial.set_user_attr('evaluation_time', evaluation_time)
 
     # how many cvs should be used
     cv = 1
     number_of_cvs = 1
     hold_out_fraction = None
-
     param_dict['use_hold_out'] = trial.suggest_categorical('use_hold_out', [True])
     if param_dict['use_hold_out']:
         hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0, 1)
@@ -133,80 +102,21 @@ def query_model(trial, search_time=60, global_memory_constraint=None, privacy_co
         param_dict['pipeline_size_constraint'] = pipeline_size_constraint
 
     for param_str, real_val in param_dict.items():
-        if param_str in cs._hyperparameter_idx:
+        if param_str in mp_global.cs._hyperparameter_idx:
             print(param_str)
-            scaled_val = cs._hyperparameters[param_str]._inverse_transform(real_val)
-            vector_id = cs._hyperparameter_idx[param_str]
+            scaled_val = mp_global.cs._hyperparameters[param_str]._inverse_transform(real_val)
+            vector_id = mp_global.cs._hyperparameter_idx[param_str]
 
             scaled_vector[0, vector_id] = scaled_val
 
-    success = new_model._predict(X=scaled_vector, metafeatures=metafeature_values)[0][0][0]
+    success = mp_global.new_model._predict(X=scaled_vector, metafeatures=mp_global.metafeature_values)[0][0][0]
 
 
     try:
-        print(study_prune.best_trial)
-        if success < study_prune.best_trial.value:
+        print(mp_global.study_prune.best_trial)
+        if success < mp_global.study_prune.best_trial.value:
             trial.set_user_attr('space', copy.deepcopy(space))
     except:
         pass
 
     return success
-
-
-
-
-study_prune = optuna.create_study(direction='minimize')
-study_prune.optimize(lambda trial: query_model(trial=trial, search_time=60), n_trials=1000, n_jobs=1)
-
-space = study_prune.best_trial.user_attrs['space']
-
-for pre, _, node in RenderTree(space.parameter_tree):
-    if node.status == True:
-        print("%s%s" % (pre, node.name))
-
-my_scorer=make_scorer(f1_score)
-
-search_dynamic = None
-result = 0
-try:
-    result, search_dynamic = utils_run_AutoML(study_prune.best_trial,
-                                                 X_train=X_train,
-                                                 X_test=X_test,
-                                                 y_train=y_train,
-                                                 y_test=y_test,
-                                                 categorical_indicator=categorical_indicator,
-                                                 my_scorer=my_scorer,
-                                                 search_time=60,
-                                                 memory_limit=10
-                                 )
-except:
-    result = 0
-
-print(result)
-
-gen_new = SpaceGenerator()
-space_new = gen_new.generate_params()
-for pre, _, node in RenderTree(space_new.parameter_tree):
-    if node.status == True:
-        print("%s%s" % (pre, node.name))
-
-test_score = 0.0
-search_default = None
-try:
-    search_default = MyAutoML(n_jobs=1,
-                      time_search_budget=60,
-                      space=space_new,
-                      evaluation_budget=60,
-                      main_memory_budget_gb=10,
-                      hold_out_fraction=0.33
-                      )
-
-    best_result = search_default.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
-
-    test_score = my_scorer(search_default.get_best_pipeline(), X_test, y_test)
-
-except:
-    test_score = 0.0
-
-print('my system: ' + str(result))
-print('default system: ' + str(test_score))
