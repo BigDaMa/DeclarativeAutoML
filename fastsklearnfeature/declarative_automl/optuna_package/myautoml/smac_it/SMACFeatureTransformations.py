@@ -123,7 +123,7 @@ class FeatureTransformations(BaseEstimator, TransformerMixin):
             if 'hold_out_fraction' in cs._hyperparameters:
                 hold_out_fraction = extract_value(X[i, :], cs, 'hold_out_fraction')
 
-            sample_fraction = 1.0 #TODO:fix for unbalanced data across classes
+            sample_fraction = 1.0
             if 'sample_fraction' in cs._hyperparameters:
                 sample_fraction = extract_value(X[i, :], cs, 'sample_fraction')
 
@@ -139,7 +139,7 @@ class FeatureTransformations(BaseEstimator, TransformerMixin):
             product_cvs = np.multiply(global_cv, global_number_cv)
             product_hold_out_test = np.multiply(np.multiply(hold_out_fraction, metafeatures [:, metafeature_names.index('NumberOfInstances')]), sample_fraction)
             product_hold_out_training = np.multiply(np.multiply((1.0 - hold_out_fraction), metafeatures [:, metafeature_names.index('NumberOfInstances')]), sample_fraction)
-            product_sampled_data = np.multiply(metafeatures [:, metafeature_names.index('NumberOfInstances')], sample_fraction)
+            product_sampled_data = np.multiply(metafeatures[:, metafeature_names.index('NumberOfInstances')], sample_fraction)
 
             number_of_evaluations = np.divide(global_evaluation_time_constraint, global_search_time_constraint)
 

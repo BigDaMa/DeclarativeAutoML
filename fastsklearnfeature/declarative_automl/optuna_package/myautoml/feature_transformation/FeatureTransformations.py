@@ -5,10 +5,14 @@ import copy
 class FeatureTransformations(BaseEstimator, TransformerMixin):
 
     def transform(self, X, feature_names):
+        hold_out_fraction = feature_names.index('hold_out_fraction')
+        if feature_names.index('global_cv') * feature_names.index('global_number_cv') > 1:
+            hold_out_fraction = (100.0 / feature_names.index('global_cv')) / 100.0
+
         #products
         product_cvs = np.multiply(X[:, feature_names.index('global_cv')], X[:, feature_names.index('global_number_cv')])
-        product_hold_out_test = np.multiply(np.multiply(X[:, feature_names.index('hold_out_fraction')], X[:, feature_names.index('NumberOfInstances')]), X[:, feature_names.index('sample_fraction')])
-        product_hold_out_training = np.multiply(np.multiply((1.0 - X[:, feature_names.index('hold_out_fraction')]), X[:, feature_names.index('NumberOfInstances')]), X[:, feature_names.index('sample_fraction')])
+        product_hold_out_test = np.multiply(np.multiply(hold_out_fraction, X[:, feature_names.index('NumberOfInstances')]), X[:, feature_names.index('sample_fraction')])
+        product_hold_out_training = np.multiply(np.multiply((1.0 - hold_out_fraction), X[:, feature_names.index('NumberOfInstances')]), X[:, feature_names.index('sample_fraction')])
         product_sampled_data = np.multiply(X[:, feature_names.index('NumberOfInstances')], X[:, feature_names.index('sample_fraction')])
 
         number_of_evaluations = np.divide(X[:, feature_names.index('global_evaluation_time_constraint')], X[:, feature_names.index('global_search_time_constraint')])

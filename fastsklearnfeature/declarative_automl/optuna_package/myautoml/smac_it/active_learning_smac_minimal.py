@@ -100,26 +100,29 @@ if __name__ == '__main__':
     scenario = Scenario({"run_obj": "quality",  # we optimize quality (alternatively runtime)
                          "runcount-limit": 100000,  # max. number of function evaluations; for this example set to a low number
                          "cs": cs,  # configuration space
-                         "deterministic": "true"
+                         "deterministic": "true",
+                         "input_psmac_dirs": "/home/neutatz/phd2/psmac_folder/run_*",
+                         "shared_model": True,
+                         "output_dir": "/home/neutatz/phd2/psmac_folder/"
                          })
 
 
     smac = SMAC4HPO(scenario=scenario,
-                    rng=np.random.RandomState(42),
+                    rng=np.random.RandomState(49),
                     tae_runner=run_AutoML,
                     runhistory2epm=RunHistory2EPM4Cost,
                     acquisition_function=MyAquisitionFunction,
                     initial_design=LHDesign,
                     initial_design_kwargs={'n_configs_x_params': 2},
                     model=CustomRandomForest,
-                    intensifier=SimpleIntensifier,
+                    #intensifier=SimpleIntensifier,
                     model_kwargs={'num_trees': 1000,
                                       'do_bootstrapping': True,
                                       'ratio_features': 1.0,
                                       'min_samples_split': 2,
                                       'min_samples_leaf': 1
                                       },
-                    n_jobs=28
+                    #n_jobs=28
                     )
 
     smac.optimize()
