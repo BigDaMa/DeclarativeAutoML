@@ -6,7 +6,7 @@ my_folder = '/home/neutatz/data/pshare/'
 
 conda_name = 'AutoMLD'
 
-parallelism = 2#15#multiprocessing.cpu_count()
+parallelism = 28#15#multiprocessing.cpu_count()
 server = libtmux.Server()
 
 session = server.new_session(session_name="install", kill_session=True, attach=False)
