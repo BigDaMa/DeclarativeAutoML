@@ -42,7 +42,7 @@ new_val = False
 print(first._inverse_transform(new_val)) # real value => vector
 
 
-dataset_id = 448#55
+dataset_id = 55#448#55
 X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data(dataset_id, randomstate=42)
 metafeature_values = data2features(X_train, y_train, categorical_indicator)
 
@@ -143,12 +143,8 @@ def query_model(trial, search_time=60, global_memory_constraint=None, privacy_co
     success = new_model._predict(X=scaled_vector, metafeatures=metafeature_values)[0][0][0]
 
 
-    try:
-        print(study_prune.best_trial)
-        if success < study_prune.best_trial.value:
+    if trial.number == 0 or success < study_prune.best_trial.value:
             trial.set_user_attr('space', copy.deepcopy(space))
-    except:
-        pass
 
     return success
 

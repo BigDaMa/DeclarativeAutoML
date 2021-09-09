@@ -1,17 +1,4 @@
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalance import MyAutoML
-import optuna
-from sklearn.metrics import make_scorer
-from sklearn.metrics import f1_score
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
-import pickle
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_data
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import data2features
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import utils_run_AutoML
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_feature_names
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.util_classes import ConstraintEvaluation, ConstraintRun
-from anytree import RenderTree
-import argparse
-import openml
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.smac_it.minimal.parallel.my_global_vars as mp_global
 import numpy as np
 import copy
@@ -112,11 +99,7 @@ def query_model(trial, search_time=60, global_memory_constraint=None, privacy_co
     success = mp_global.new_model._predict(X=scaled_vector, metafeatures=mp_global.metafeature_values)[0][0][0]
 
 
-    try:
-        print(mp_global.study_prune.best_trial)
-        if success < mp_global.study_prune.best_trial.value:
-            trial.set_user_attr('space', copy.deepcopy(space))
-    except:
-        pass
+    if trial.number == 0 or success < mp_global.study_prune.best_trial.value:
+        trial.set_user_attr('space', copy.deepcopy(space))
 
     return success

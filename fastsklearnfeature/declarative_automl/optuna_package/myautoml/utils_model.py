@@ -269,6 +269,125 @@ def generate_features(trial, metafeature_values_hold, search_time,
     except Exception as e:
         return None
 
+
+def generate_features_minimum(trial, metafeature_values_hold, search_time,
+                                        memory_limit=10,
+                                        privacy_limit=None,
+                                        evaluation_time=None,
+                                        hold_out_fraction=None,
+                                        training_time_limit=None,
+                                        inference_time_limit=None,
+                                        pipeline_size_limit=None,
+                                        tune_space=False,
+                                        save_data=True
+                                        ):
+    try:
+        gen = SpaceGenerator()
+        space = gen.generate_params()
+
+        if type(evaluation_time) == type(None):
+            evaluation_time = int(0.1 * search_time)
+            if trial.suggest_categorical('use_evaluation_time_constraint', [False]):
+                evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
+        else:
+            trial.set_user_attr('evaluation_time', evaluation_time)
+
+        # how many cvs should be used
+        cv = 1
+        number_of_cvs = 1
+        if type(hold_out_fraction) == type(None):
+            hold_out_fraction = None
+            if trial.suggest_categorical('use_hold_out', [True]):
+                hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0, 1)
+            else:
+                cv = trial.suggest_int('global_cv', 2, 20, log=False)  # todo: calculate minimum number of splits based on y
+                number_of_cvs = 1
+                if trial.suggest_categorical('use_multiple_cvs', [True, False]):
+                    number_of_cvs = trial.suggest_int('global_number_cv', 2, 10, log=False)
+        else:
+            trial.set_user_attr('hold_out_fraction', hold_out_fraction)
+
+
+        sample_fraction = 1.0
+        if trial.suggest_categorical('use_sampling', [False]):
+            sample_fraction = trial.suggest_uniform('sample_fraction', 0, 1)
+
+
+
+        my_list_constraints_values = [search_time,
+                                      evaluation_time,
+                                      memory_limit,
+                                      cv,
+                                      number_of_cvs,
+                                      ifNull(privacy_limit, constant_value=1000),
+                                      ifNull(hold_out_fraction),
+                                      sample_fraction,
+                                      ifNull(training_time_limit, constant_value=search_time),
+                                      ifNull(inference_time_limit, constant_value=60),
+                                      ifNull(pipeline_size_limit, constant_value=350000000),
+                                      ]
+
+        my_list_constraints = ['global_search_time_constraint',
+                               'global_evaluation_time_constraint',
+                               'global_memory_constraint',
+                               'global_cv',
+                               'global_number_cv',
+                               'privacy',
+                               'hold_out_fraction',
+                               'sample_fraction',
+                               'training_time_constraint',
+                               'inference_time_constraint',
+                               'pipeline_size_constraint']
+
+        features = space2features(space, my_list_constraints_values, metafeature_values_hold)
+        feature_names, _ = get_feature_names(my_list_constraints)
+        features = FeatureTransformations().fit(features).transform(features, feature_names=feature_names)
+
+        if save_data:
+            trial.set_user_attr('features', features)
+
+        if not save_data:
+            return features, space
+        else:
+            return features
+    except Exception as e:
+        return None
+
+
+
+def optimize_accuracy_under_minimal(trial, metafeature_values_hold, search_time, model_success,
+                                        memory_limit=10,
+                                        privacy_limit=None,
+                                        evaluation_time=None,
+                                        hold_out_fraction=None,
+                                        training_time_limit=None,
+                                        inference_time_limit=None,
+                                        pipeline_size_limit=None,
+                                        tune_space=False
+                                        ):
+    features, space = generate_features_minimum(trial, metafeature_values_hold, search_time,
+                      memory_limit=memory_limit,
+                      privacy_limit=privacy_limit,
+                      evaluation_time=evaluation_time,
+                      hold_out_fraction=hold_out_fraction,
+                      training_time_limit=training_time_limit,
+                      inference_time_limit=inference_time_limit,
+                      pipeline_size_limit=pipeline_size_limit,
+                      tune_space=tune_space,
+                      save_data=False
+                      )
+
+    success_val = predict_range(model_success, features)
+
+    try:
+        if success_val > mp_global.study_prune.best_trial.value:
+            trial.set_user_attr('space', copy.deepcopy(space))
+    except:
+        pass
+
+    return success_val
+
+
 def optimize_accuracy_under_constraints2(trial, metafeature_values_hold, search_time, model_success,
                                         memory_limit=10,
                                         privacy_limit=None,
@@ -471,7 +590,7 @@ def generate_parameters_minimal(trial, total_search_time_minutes, my_openml_data
     search_time = trial.suggest_int('global_search_time_constraint', 10, max(10, total_search_time_minutes), log=False) #* 60
 
     # how much time for each evaluation
-    evaluation_time = search_time
+    evaluation_time = int(0.1 * search_time)
     if trial.suggest_categorical('use_evaluation_time_constraint', [False]):
         evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
 

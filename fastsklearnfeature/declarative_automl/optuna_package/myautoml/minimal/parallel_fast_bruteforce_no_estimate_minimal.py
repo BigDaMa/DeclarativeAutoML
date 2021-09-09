@@ -66,7 +66,7 @@ my_list_constraints = ['global_search_time_constraint',
 
 feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
-random_runs = (2 * len(feature_names_new))
+random_runs = (2 * 30)
 
 
 def run_AutoML(trial):
@@ -245,7 +245,6 @@ def run_AutoML(trial):
     static_values.sort()
 
     frequency = np.sum(dynamic_values > static_values) / 5.0
-
     return {'objective': frequency}
 
 
