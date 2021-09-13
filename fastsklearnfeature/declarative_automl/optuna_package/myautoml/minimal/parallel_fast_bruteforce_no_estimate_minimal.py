@@ -70,6 +70,8 @@ random_runs = (2 * 30)
 
 
 def run_AutoML(trial):
+    repetitions_count = 10
+
     space = trial.user_attrs['space']
 
     print(trial.params)
@@ -181,7 +183,7 @@ def run_AutoML(trial):
 
 
     dynamic_params = []
-    for random_i in range(5):
+    for random_i in range(repetitions_count):
         search = MyAutoML(cv=cv,
                           number_of_cvs=number_of_cvs,
                           n_jobs=1,
@@ -212,7 +214,7 @@ def run_AutoML(trial):
         return {'objective': 0.0}
 
     static_params = []
-    for random_i in range(5):
+    for random_i in range(repetitions_count):
         # default params
         gen_new = SpaceGenerator()
         space_new = gen_new.generate_params()
@@ -244,7 +246,7 @@ def run_AutoML(trial):
     dynamic_values.sort()
     static_values.sort()
 
-    frequency = np.sum(dynamic_values > static_values) / 5.0
+    frequency = np.sum(dynamic_values > static_values) / float(repetitions_count)
     return {'objective': frequency}
 
 

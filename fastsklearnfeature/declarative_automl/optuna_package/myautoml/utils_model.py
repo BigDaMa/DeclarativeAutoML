@@ -285,12 +285,11 @@ def generate_features_minimum(trial, metafeature_values_hold, search_time,
         gen = SpaceGenerator()
         space = gen.generate_params()
 
-        if type(evaluation_time) == type(None):
-            evaluation_time = int(0.1 * search_time)
-            if trial.suggest_categorical('use_evaluation_time_constraint', [False]):
-                evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
-        else:
-            trial.set_user_attr('evaluation_time', evaluation_time)
+
+        evaluation_time = int(0.1 * search_time)
+        if trial.suggest_categorical('use_evaluation_time_constraint', [False]):
+            evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
+        trial.set_user_attr('evaluation_time', evaluation_time)
 
         # how many cvs should be used
         cv = 1
@@ -379,11 +378,8 @@ def optimize_accuracy_under_minimal(trial, metafeature_values_hold, search_time,
 
     success_val = predict_range(model_success, features)
 
-    try:
-        if success_val > mp_global.study_prune.best_trial.value:
-            trial.set_user_attr('space', copy.deepcopy(space))
-    except:
-        pass
+    if trial.number == 0 or success_val > mp_global.study_prune.best_trial.value:
+        trial.set_user_attr('space', copy.deepcopy(space))
 
     return success_val
 
