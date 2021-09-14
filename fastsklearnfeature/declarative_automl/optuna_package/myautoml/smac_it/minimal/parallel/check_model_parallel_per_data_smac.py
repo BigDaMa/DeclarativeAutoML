@@ -34,8 +34,8 @@ args = parser.parse_args()
 print(args.dataset)
 
 
-args.dataset = 448
-args.outputname = 'testtest'
+#args.dataset = 448
+#args.outputname = 'testtest'
 
 print(args)
 
@@ -52,7 +52,7 @@ for test_holdout_dataset_id in [args.dataset]:
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine4/my_great_model_compare_scaled.p', "rb"))
     #model_success = pickle.load(open('/tmp/my_great_model_compare_scaled.p', "rb"))
 
-    path2 = "/home/neutatz/phd2/decAutoML2weeks_compare2default/psmac_sep8"
+    path2 = "/home/neutatz/phd2/decAutoML2weeks_compare2default/smac_big_sep13"
 
     conf = pickle.load(open(path2 + '/smac_conf.p', "rb"))
     model = pickle.load(open(path2 + '/smac_model.p', "rb"))
@@ -83,7 +83,7 @@ for test_holdout_dataset_id in [args.dataset]:
     new_constraint_evaluation_dynamic_all = []
     new_constraint_evaluation_default_all = []
 
-    for minutes_to_search in range(1, 2):
+    for minutes_to_search in [1]:
 
         current_dynamic = []
         current_static = []
@@ -97,7 +97,7 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                  constraint={'search_time': minutes_to_search},
                                                                  system_def='default')
 
-        for repeat in range(5):
+        for repeat in range(10):
 
             mp_global.study_prune = optuna.create_study(direction='minimize')
             mp_global.study_prune.optimize(lambda trial: query_model(trial=trial, search_time=search_time_frozen), n_trials=1000, n_jobs=1)

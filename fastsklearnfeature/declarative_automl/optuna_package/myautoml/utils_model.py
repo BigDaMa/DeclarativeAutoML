@@ -109,7 +109,6 @@ def get_data(data_id, randomstate=42):
 def plot_most_important_features(rf_random, names_features, title='importance', verbose=True, k=25):
 
     assert len(rf_random.feature_importances_) == len(names_features), 'mismatch'
-    print('no error')
 
     importances = {}
     for name_i in range(len(names_features)):

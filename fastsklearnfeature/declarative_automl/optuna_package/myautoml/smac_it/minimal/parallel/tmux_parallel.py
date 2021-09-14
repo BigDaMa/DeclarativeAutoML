@@ -7,8 +7,8 @@ datasets = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 448, 1458, 162, 
 
 
 
-program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/check_model_parallel_per_data_minimum.py'
-outputname = 'random'
+program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/smac_it/minimal/parallel/check_model_parallel_per_data_smac.py'
+outputname = 'smac'
 
 conda_name = 'AutoMLD'
 

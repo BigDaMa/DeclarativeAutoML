@@ -30,8 +30,8 @@ parser.add_argument("--outputname", "-o", help="Name of the output file")
 args = parser.parse_args()
 print(args.dataset)
 
-args.dataset = 448
-args.outputname = 'testtest'
+#args.dataset = 448
+#args.outputname = 'testtest'
 
 
 
@@ -48,8 +48,8 @@ for test_holdout_dataset_id in [args.dataset]:
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/training_sampling_min_2Drandom_machine2/my_great_model_compare_scaled.p', "rb"))
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine1/my_great_model_compare_scaled.p', "rb"))
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine4/my_great_model_compare_scaled.p', "rb"))
-    #model_success = pickle.load(open('/tmp/my_great_model_compare_scaled.p', "rb"))
-    model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/sep9_machine2_minimal/my_great_model_compare_scaled.p', "rb"))
+    model_success = pickle.load(open('/tmp/my_great_model_compare_scaled.p', "rb"))
+    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/sep13_v3_minimal/my_great_model_compare_scaled.p', "rb"))
 
     my_list_constraints = ['global_search_time_constraint',
                            'global_evaluation_time_constraint',
@@ -87,7 +87,7 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                  constraint={'search_time': minutes_to_search},
                                                                  system_def='default')
 
-        for repeat in range(5):
+        for repeat in range(10):
 
             mp_global.study_prune = optuna.create_study(direction='maximize')
             mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal(trial=trial,

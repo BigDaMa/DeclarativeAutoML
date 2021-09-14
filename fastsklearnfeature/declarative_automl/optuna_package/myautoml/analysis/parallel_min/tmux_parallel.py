@@ -7,23 +7,12 @@ datasets = [1134, 1495, 41147, 316, 1085, 1046, 1111, 55, 1116, 448, 1458, 162, 
 
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--tool", "-t", help="Tool mine(0), autosklearn(1)", type=int)
-args = parser.parse_args()
-if args.tool == 0:
-    program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/check_model_parallel_per_data_minimum.py'
-    outputname = 'mine'
-
-if args.tool == 1:
-    program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/checkAutosklearn_parallel.py'
-    outputname = 'autosklearn'
-
-program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel/check_model_parallel_per_data_minimum.py'
-outputname = 'random'
+program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel_min/check_model_parallel_per_data_minimum.py'
+outputname = '1min_min_v12'
 
 conda_name = 'AutoMLD'
 
-parallelism = 2#15#multiprocessing.cpu_count()
+parallelism = 15#15#multiprocessing.cpu_count()
 server = libtmux.Server()
 
 data_id = 0
