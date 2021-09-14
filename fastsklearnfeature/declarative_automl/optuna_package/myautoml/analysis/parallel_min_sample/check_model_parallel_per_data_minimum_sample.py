@@ -6,7 +6,7 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Spa
 import pickle
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_data
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import data2features
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import optimize_accuracy_under_minimal
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import optimize_accuracy_under_minimal_sample
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import utils_run_AutoML
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_feature_names
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.util_classes import ConstraintEvaluation, ConstraintRun
@@ -49,7 +49,7 @@ for test_holdout_dataset_id in [args.dataset]:
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine1/my_great_model_compare_scaled.p', "rb"))
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine4/my_great_model_compare_scaled.p', "rb"))
     model_success = pickle.load(open('/tmp/my_great_model_compare_scaled.p', "rb"))
-    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/sep13_v3_minimal/my_great_model_compare_scaled.p', "rb"))
+    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/sep14_sampling/my_great_model_compare_scaled.p', "rb"))
 
     my_list_constraints = ['global_search_time_constraint',
                            'global_evaluation_time_constraint',
@@ -90,7 +90,7 @@ for test_holdout_dataset_id in [args.dataset]:
         for repeat in range(10):
 
             mp_global.study_prune = optuna.create_study(direction='maximize')
-            mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal(trial=trial,
+            mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample(trial=trial,
                                                                                    metafeature_values_hold=metafeature_values_hold,
                                                                                    search_time=search_time_frozen,
                                                                                    model_success=model_success,
