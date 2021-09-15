@@ -87,7 +87,12 @@ def data2features(X_train, y_train, categorical_indicator):
     return metafeature_values
 
 
-def get_data(data_id, randomstate=42):
+def get_data(data_id, randomstate=42, task_id=None):
+    task = None
+    if type(task_id) != type(None):
+        task = openml.tasks.get_task(task_id)
+        data_id = task.get_dataset().dataset_id
+
     dataset = openml.datasets.get_dataset(dataset_id=data_id)
 
     X, y, categorical_indicator, attribute_names = dataset.get_data(
@@ -95,13 +100,22 @@ def get_data(data_id, randomstate=42):
         target=dataset.default_target_attribute
     )
 
-
-
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X,
-                                                                                y,
-                                                                                random_state=randomstate,
-                                                                                stratify=y,
-                                                                                train_size=0.6)
+    X_train = None
+    X_test = None
+    y_train = None
+    y_test = None
+    if type(task_id) != type(None):
+        train_indices, test_indices = task.get_train_test_split_indices()
+        X_train = X[train_indices]
+        y_train = y[train_indices]
+        X_test = X[test_indices]
+        y_test = y[test_indices]
+    else:
+        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X,
+                                                                                    y,
+                                                                                    random_state=randomstate,
+                                                                                    stratify=y,
+                                                                                    train_size=0.66)
 
     return X_train, X_test, y_train, y_test, categorical_indicator, attribute_names
 
