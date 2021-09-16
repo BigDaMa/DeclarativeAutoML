@@ -12,6 +12,7 @@ from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.Sim
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.QuadraticDiscriminantAnalysisOptuna import QuadraticDiscriminantAnalysisOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.KNeighborsClassifierOptuna import KNeighborsClassifierOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.HistGradientBoostingClassifierOptuna import HistGradientBoostingClassifierOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.PassiveAggressiveOptuna import PassiveAggressiveOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateLogisticRegressionOptuna import PrivateLogisticRegressionOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateGaussianNBOptuna import PrivateGaussianNBOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
@@ -267,20 +268,24 @@ class MyAutoML:
 
                 class_weighting = False
                 custom_weighting = False
-                custom_weight = 0.5
+                custom_weight = 'balanced'
 
                 if isinstance(classifier, KNeighborsClassifierOptuna) or \
                         isinstance(classifier, QuadraticDiscriminantAnalysisOptuna) or \
                         isinstance(classifier, HistGradientBoostingClassifierOptuna) or \
                         isinstance(classifier, PrivateLogisticRegressionOptuna) or \
-                        isinstance(classifier, PrivateGaussianNBOptuna):
+                        isinstance(classifier, PrivateGaussianNBOptuna) or \
+                        isinstance(classifier, PassiveAggressiveOptuna):
                     pass
                 else:
                     class_weighting = self.space.suggest_categorical('class_weighting', [True, False])
                     if class_weighting:
                         custom_weighting = self.space.suggest_categorical('custom_weighting', [True, False])
                         if custom_weighting:
-                            custom_weight = self.space.suggest_uniform('custom_weight', 0.00000001, 1.0)
+                            unique_counts = np.unique(y)
+                            custom_weight = {}
+                            for unique_i in range(len(unique_counts)):
+                                custom_weight[unique_counts[unique_i]] = self.space.suggest_uniform('custom_class_weight' + str(unique_i), 0.0, 1.0)
 
                 if class_weighting:
                     classifier.set_weight(custom_weight)
@@ -407,12 +412,14 @@ class MyAutoML:
 
 
 if __name__ == "__main__":
-    auc = make_scorer(roc_auc_score, greater_is_better=True, needs_threshold=True)
+    #auc = make_scorer(roc_auc_score, greater_is_better=True, needs_threshold=True)
+    from sklearn.metrics import balanced_accuracy_score
+    auc = make_scorer(balanced_accuracy_score)
 
     #dataset = openml.datasets.get_dataset(1114)
 
     #dataset = openml.datasets.get_dataset(1116)
-    dataset = openml.datasets.get_dataset(51)
+    dataset = openml.datasets.get_dataset(187) #51
 
     X, y, categorical_indicator, attribute_names = dataset.get_data(
         dataset_format='array',
@@ -433,10 +440,10 @@ if __name__ == "__main__":
         print("%s%s: %s" % (pre, node.name, node.status))
 
     search = MyAutoML(n_jobs=1,
-                      time_search_budget=10*60,
+                      time_search_budget=4*60,
                       space=space,
                       main_memory_budget_gb=40,
-                      hold_out_fraction=0.5)
+                      hold_out_fraction=0.3)
 
     begin = time.time()
 

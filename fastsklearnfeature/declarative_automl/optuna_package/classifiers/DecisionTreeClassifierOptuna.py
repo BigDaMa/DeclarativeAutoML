@@ -19,7 +19,7 @@ class DecisionTreeClassifierOptuna(DecisionTreeClassifier):
         self.min_impurity_decrease = 0.0
         self.classes_ = np.unique(y.astype(int))
 
-    def fit(self, X, y, sample_weight=None, check_input=True, X_idx_sorted=None):
+    def fit(self, X, y, sample_weight=None):
 
         #set max depth
         max_depth_factor = None
@@ -30,12 +30,9 @@ class DecisionTreeClassifierOptuna(DecisionTreeClassifier):
         self.max_depth = max_depth_factor
 
         if hasattr(self, 'custom_weight'):
-            class_weight = 'balanced'
-            if self.custom_weight != 0.5:
-                class_weight = calculate_class_weight(y, self.custom_weight)
-            return super().fit(X, y, sample_weight=compute_sample_weight(class_weight=class_weight, y=y), check_input=check_input, X_idx_sorted=X_idx_sorted)
+            return super().fit(X, y, sample_weight=compute_sample_weight(class_weight=self.custom_weight, y=y))
         else:
-            return super().fit(X, y, sample_weight=sample_weight, check_input=check_input, X_idx_sorted=X_idx_sorted)
+            return super().fit(X, y)
 
     def set_weight(self, custom_weight):
         self.custom_weight = custom_weight

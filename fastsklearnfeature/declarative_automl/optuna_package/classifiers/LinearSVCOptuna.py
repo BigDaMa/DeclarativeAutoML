@@ -40,9 +40,6 @@ class LinearSVCOptuna(LinearSVC):
 
     def fit(self, X, y=None, sample_weight=None):
         if hasattr(self, 'custom_weight'):
-            class_weight = 'balanced'
-            if self.custom_weight != 0.5:
-                class_weight = calculate_class_weight(y, self.custom_weight)
-            return super().fit(X, y, sample_weight=compute_sample_weight(class_weight=class_weight, y=y))
+            return super().fit(X, y, sample_weight=compute_sample_weight(class_weight=self.custom_weight, y=y))
         else:
             return super().fit(X, y)

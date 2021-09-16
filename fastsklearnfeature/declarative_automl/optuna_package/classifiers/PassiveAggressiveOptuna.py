@@ -28,14 +28,3 @@ class PassiveAggressiveOptuna(PassiveAggressiveClassifier):
         space_gen.generate_number(self.name + "max_iter", 1000, depending_node=depending_node, low=10, high=1024, is_float=False)
 
 
-    def set_weight(self, custom_weight):
-        self.custom_weight = custom_weight
-
-    def fit(self, X, y=None):
-        if hasattr(self, 'custom_weight'):
-            self.class_weight = 'balanced'
-            if self.custom_weight != 0.5:
-                self.class_weight = calculate_class_weight(y, self.custom_weight)
-            return super().fit(X, y)
-        else:
-            return super().fit(X, y)
