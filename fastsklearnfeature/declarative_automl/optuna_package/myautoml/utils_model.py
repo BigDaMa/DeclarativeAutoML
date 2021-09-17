@@ -415,7 +415,7 @@ def generate_features_minimum_sample(trial, metafeature_values_hold, search_time
                                       cv,
                                       number_of_cvs,
                                       ifNull(privacy_limit, constant_value=1000),
-                                      ifNull(hold_out_fraction),
+                                      ifNull(hold_out_fraction), #TODO:fix this
                                       sample_fraction,
                                       ifNull(training_time_limit, constant_value=search_time),
                                       ifNull(inference_time_limit, constant_value=60),

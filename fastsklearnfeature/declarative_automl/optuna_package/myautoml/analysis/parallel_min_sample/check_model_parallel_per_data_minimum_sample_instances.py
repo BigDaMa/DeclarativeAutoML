@@ -14,6 +14,7 @@ import argparse
 import openml
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.my_global_vars as mp_global
 from sklearn.metrics import balanced_accuracy_score
+from sklearn.ensemble import RandomForestRegressor
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -70,7 +71,15 @@ for test_holdout_dataset_id in [args.dataset]:
     new_constraint_evaluation_dynamic_all = []
     new_constraint_evaluation_default_all = []
 
-    for minutes_to_search in [1]:#range(1, 6):
+    for instance_fraction in [0.25, 0.5, 0.75, 1.0]:#range(1, 6):
+
+        model_X = pickle.load(open('/tmp/felix_X_compare_scaled.p', "rb"))
+        model_y = pickle.load(open('/tmp/felix_y_compare_scaled.p', "rb"))[0:len(model_X)]
+
+        model_success = RandomForestRegressor(n_estimators=1000, n_jobs=1)
+        model_success.fit(model_X[0:int(instance_fraction * len(model_X))], model_y[0:int(instance_fraction * len(model_X))])
+
+        minutes_to_search = 1
 
         current_dynamic = []
         current_static = []
@@ -78,10 +87,10 @@ for test_holdout_dataset_id in [args.dataset]:
         search_time_frozen = minutes_to_search * 60
 
         new_constraint_evaluation_dynamic = ConstraintEvaluation(dataset=test_holdout_dataset_id,
-                                                                 constraint={'search_time': minutes_to_search},
+                                                                 constraint={'instance_fraction': instance_fraction},
                                                                  system_def='dynamic')
         new_constraint_evaluation_default = ConstraintEvaluation(dataset=test_holdout_dataset_id,
-                                                                 constraint={'search_time': minutes_to_search},
+                                                                 constraint={'instance_fraction': instance_fraction},
                                                                  system_def='default')
 
         for repeat in range(10):
