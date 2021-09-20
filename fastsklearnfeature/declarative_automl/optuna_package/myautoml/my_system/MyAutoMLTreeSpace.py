@@ -98,8 +98,8 @@ class MyAutoMLSpace:
         else:
             return self.name2node[str(name)].default_element
 
-    def suggest_uniform(self, name, low, high):
-        if self.name2node[str(name)].status:
+    def suggest_uniform(self, name, low, high, check=True):
+        if check == False or self.name2node[str(name)].status:
             return self.trial.suggest_uniform(name, low, high)
         else:
             return self.name2node[str(name)].default_element

@@ -17,13 +17,15 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model i
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import MyPool
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_feature_names
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import ifNull
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import generate_parameters
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import generate_parameters_2constraints
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import generate_parameters_minimal_sample
 from optuna.samplers import TPESampler
 import multiprocessing as mp
 from multiprocessing import Lock
 import openml
 from sklearn.metrics import balanced_accuracy_score
+import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.my_global_vars as mp_global
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import optimize_accuracy_under_minimal_sample
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import utils_run_AutoML
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -32,20 +34,21 @@ def predict_range(model, X):
     y_pred = model.predict(X)
     return y_pred
 
+my_openml_tasks = [75126, 75125, 75121, 75120, 75116, 75115, 75114, 189859, 189878, 189786, 167204, 190156, 75156, 166996, 190157, 190158, 168791, 146597, 167203, 167085, 190154, 75098, 190159, 75169, 126030, 146594, 211723, 189864, 189863, 189858, 75236, 190155, 211720, 167202, 75108, 146679, 146592, 166866, 167205, 2356, 75225, 146576, 166970, 258, 75154, 146574, 275, 273, 75221, 75180, 166944, 166951, 189828, 3049, 75139, 167100, 75232, 126031, 189899, 75146, 288, 146600, 166953, 232, 75133, 75092, 75129, 211722, 75100, 2120, 189844, 271, 75217, 146601, 75212, 75153, 75109, 189870, 75179, 146596, 75215, 189840, 3044, 168785, 189779, 75136, 75199, 75235, 189841, 189845, 189869, 254, 166875, 75093, 75159, 146583, 75233, 75089, 167086, 167087, 166905, 167088, 167089, 167097, 167106, 189875, 167090, 211724, 75234, 75187, 2125, 75184, 166897, 2123, 75174, 75196, 189829, 262, 236, 75178, 75219, 75185, 126021, 211721, 3047, 75147, 189900, 75118, 146602, 166906, 189836, 189843, 75112, 75195, 167101, 167094, 75149, 340, 166950, 260, 146593, 75142, 75161, 166859, 166915, 279, 245, 167096, 253, 146578, 267, 2121, 75141, 336, 166913, 75176, 256, 75166, 2119, 75171, 75143, 75134, 166872, 166932, 146603, 126028, 3055, 75148, 75223, 3054, 167103, 75173, 166882, 3048, 3053, 2122, 75163, 167105, 75131, 126024, 75192, 75213, 146575, 166931, 166957, 166956, 75250, 146577, 146586, 166959, 75210, 241, 166958, 189902, 75237, 189846, 75157, 189893, 189890, 189887, 189884, 189883, 189882, 189881, 189880, 167099, 189894]
+
 my_scorer = make_scorer(balanced_accuracy_score)
 
 
-mp_glob.total_search_time = 5*60#60
+mp_glob.total_search_time = 1*60#60
 topk = 28#26 # 20
 continue_from_checkpoint = False
+
+starting_time_tt = time.time()
 
 my_lock = Lock()
 
 mgr = mp.Manager()
 dictionary = mgr.dict()
-
-
-my_openml_tasks = [75126, 75125, 75121, 75120, 75116, 75115, 75114, 189859, 189878, 189786, 167204, 190156, 75156, 166996, 190157, 190158, 168791, 146597, 167203, 167085, 190154, 75098, 190159, 75169, 126030, 146594, 211723, 189864, 189863, 189858, 75236, 190155, 211720, 167202, 75108, 146679, 146592, 166866, 167205, 2356, 75225, 146576, 166970, 258, 75154, 146574, 275, 273, 75221, 75180, 166944, 166951, 189828, 3049, 75139, 167100, 75232, 126031, 189899, 75146, 288, 146600, 166953, 232, 75133, 75092, 75129, 211722, 75100, 2120, 189844, 271, 75217, 146601, 75212, 75153, 75109, 189870, 75179, 146596, 75215, 189840, 3044, 168785, 189779, 75136, 75199, 75235, 189841, 189845, 189869, 254, 166875, 75093, 75159, 146583, 75233, 75089, 167086, 167087, 166905, 167088, 167089, 167097, 167106, 189875, 167090, 211724, 75234, 75187, 2125, 75184, 166897, 2123, 75174, 75196, 189829, 262, 236, 75178, 75219, 75185, 126021, 211721, 3047, 75147, 189900, 75118, 146602, 166906, 189836, 189843, 75112, 75195, 167101, 167094, 75149, 340, 166950, 260, 146593, 75142, 75161, 166859, 166915, 279, 245, 167096, 253, 146578, 267, 2121, 75141, 336, 166913, 75176, 256, 75166, 2119, 75171, 75143, 75134, 166872, 166932, 146603, 126028, 3055, 75148, 75223, 3054, 167103, 75173, 166882, 3048, 3053, 2122, 75163, 167105, 75131, 126024, 75192, 75213, 146575, 166931, 166957, 166956, 75250, 146577, 146586, 166959, 75210, 241, 166958, 189902, 75237, 189846, 75157, 189893, 189890, 189887, 189884, 189883, 189882, 189881, 189880, 167099, 189894]
 
 
 my_list_constraints = ['global_search_time_constraint',
@@ -62,18 +65,14 @@ my_list_constraints = ['global_search_time_constraint',
 
 feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
-random_runs = (4 * len(feature_names_new))
+random_runs = (2 * 30)
 
 
-def run_AutoML(trial):
-    space = trial.user_attrs['space']
+def extract_from_trial(trial):
+    # make this a hyperparameter
+    search_time = trial.params['global_search_time_constraint']  # * 60
 
-    print(trial.params)
-
-    #make this a hyperparameter
-    search_time = trial.params['global_search_time_constraint']# * 60
-
-    evaluation_time = search_time
+    evaluation_time = int(0.1 * search_time)
     if 'global_evaluation_time_constraint' in trial.params:
         evaluation_time = trial.params['global_evaluation_time_constraint']
 
@@ -112,18 +111,29 @@ def run_AutoML(trial):
         sample_fraction = trial.params['sample_fraction']
 
     if 'dataset_id' in trial.params:
-        task_id = trial.params['dataset_id'] #get same random seed
-
-    for pre, _, node in RenderTree(space.parameter_tree):
-        if node.status == True:
-            print("%s%s" % (pre, node.name))
+        task_id = trial.params['dataset_id']  # get same random seed
 
     my_random_seed = int(time.time())
     if 'data_random_seed' in trial.user_attrs:
         my_random_seed = trial.user_attrs['data_random_seed']
 
+
+    X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data('data',
+                                                                                            randomstate=my_random_seed,
+                                                                                            task_id=task_id)
+
+    return search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, my_random_seed, X_train, X_test, y_train, y_test, categorical_indicator, attribute_names
+
+
+def run_AutoML(trial, model=None):
+    repetitions_count = 10
+
+    space = trial.user_attrs['space']
+
+    print(trial.params)
+
     try:
-        X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data('data', randomstate=my_random_seed, task_id=task_id)
+        search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, my_random_seed, X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = extract_from_trial(trial)
     except:
         return {'objective': 0.0}
 
@@ -141,7 +151,7 @@ def run_AutoML(trial):
         categorical_indicator = np.array(categorical_indicator)[rand_feature_ids[0:number_of_sampled_features]]
         attribute_names = np.array(attribute_names)[rand_feature_ids[0:number_of_sampled_features]]
     '''
-
+    '''
     # sampling with class imbalancing
     if 'unbalance_data' in trial.params:
         class_labels = np.unique(y_train)
@@ -171,10 +181,11 @@ def run_AutoML(trial):
 
         X_train = X_train[all_sampled_training_ids, :]
         y_train = y_train[all_sampled_training_ids]
+    '''
 
 
     dynamic_params = []
-    for random_i in range(5):
+    for random_i in range(repetitions_count):
         search = MyAutoML(cv=cv,
                           number_of_cvs=number_of_cvs,
                           n_jobs=1,
@@ -204,8 +215,62 @@ def run_AutoML(trial):
     if np.sum(dynamic_values) == 0:
         return {'objective': 0.0}
 
+
+
+    if type(model) != type(None):
+        metafeature_values = data2features(X_train, y_train, categorical_indicator)
+        mp_global.study_prune = optuna.create_study(direction='maximize')
+        mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample(trial=trial,
+                                                                                            metafeature_values_hold=metafeature_values,
+                                                                                            search_time=search_time,
+                                                                                            model_success=model,
+                                                                                            memory_limit=memory_limit,
+                                                                                            privacy_limit=privacy_limit,
+                                                                                            # evaluation_time=int(0.1*search_time_frozen),
+                                                                                            # hold_out_fraction=0.33,
+                                                                                            tune_space=True,
+                                                                                            ), n_trials=1000, n_jobs=1)
+
+        space = mp_global.study_prune.best_trial.user_attrs['space']
+
+        my_list_constraints_values = [search_time,
+                                      evaluation_time,
+                                      memory_limit,
+                                      cv,
+                                      number_of_cvs,
+                                      ifNull(privacy_limit, constant_value=1000),
+                                      ifNull(hold_out_fraction),
+                                      sample_fraction,
+                                      training_time_limit,
+                                      inference_time_limit,
+                                      pipeline_size_limit]
+        features = space2features(space, my_list_constraints_values, metafeature_values)
+        features = FeatureTransformations().fit(features).transform(features, feature_names=feature_names)
+
+        tune_params = []
+        for random_i in range(repetitions_count):
+            try:
+                result, search_dynamic = utils_run_AutoML(mp_global.study_prune.best_trial,
+                                                          X_train=X_train,
+                                                          X_test=X_test,
+                                                          y_train=y_train,
+                                                          y_test=y_test,
+                                                          categorical_indicator=categorical_indicator,
+                                                          my_scorer=my_scorer,
+                                                          search_time=search_time,
+                                                          memory_limit=memory_limit,
+                                                          privacy_limit=privacy_limit
+                                                          )
+            except:
+                result = 0
+            tune_params.append(result)
+
+        tune_values = np.array(tune_params)
+        tune_params.sort()
+
+
     static_params = []
-    for random_i in range(5):
+    for random_i in range(repetitions_count):
         # default params
         gen_new = SpaceGenerator()
         space_new = gen_new.generate_params()
@@ -237,9 +302,14 @@ def run_AutoML(trial):
     dynamic_values.sort()
     static_values.sort()
 
-    frequency = np.sum(dynamic_values > static_values) / 5.0
 
-    return {'objective': frequency}
+    frequency = np.sum(dynamic_values > static_values) / float(repetitions_count)
+
+    if type(model) != type(None):
+        frequency_tune = np.sum(tune_values > static_values) / float(repetitions_count)
+        return {'objective': frequency, 'objective_tune': frequency_tune, 'features_tune': features}
+    else:
+        return {'objective': frequency}
 
 
 def run_AutoML_global(trial_id):
@@ -268,11 +338,11 @@ def sample_configuration(trial):
     try:
         gen = SpaceGenerator()
         space = gen.generate_params()
-        space.sample_parameters(trial)
+        #space.sample_parameters(trial) # no tuning of the space
 
         trial.set_user_attr('space', copy.deepcopy(space))
 
-        search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, task_id = generate_parameters_2constraints(
+        search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, task_id = generate_parameters_minimal_sample(
             trial, mp_glob.total_search_time, my_openml_tasks)
 
         my_random_seed = int(time.time())
@@ -298,6 +368,7 @@ def sample_configuration(trial):
         '''
 
         #sampling with class imbalancing
+        '''
         class_labels = np.unique(y_train)
 
         ids_class0 = np.array((y_train == class_labels[0]).nonzero()[0])
@@ -308,7 +379,7 @@ def sample_configuration(trial):
         np.random.seed(my_random_seed)
         np.random.shuffle(ids_class1)
 
-        if trial.suggest_categorical('unbalance_data', [True, False]):
+        if trial.suggest_categorical('unbalance_data', [True, False]): 
             fraction_ids_class0 = trial.suggest_uniform('fraction_ids_class0', 0, 1)
             fraction_ids_class1 = trial.suggest_uniform('fraction_ids_class1', 0, 1)
         else:
@@ -328,6 +399,7 @@ def sample_configuration(trial):
 
         X_train = X_train[all_sampled_training_ids, :]
         y_train = y_train[all_sampled_training_ids]
+        '''
 
 
         trial.set_user_attr('data_random_seed', my_random_seed)
@@ -428,7 +500,34 @@ def get_best_trial(model_uncertainty):
     study_uncertainty.optimize(my_objective, n_trials=200, n_jobs=1)
     return study_uncertainty.best_trial
 
+def get_optimal_space(trial, model):
+    try:
+        search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, my_random_seed, X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = extract_from_trial(trial)
+    except:
+        return {'objective': 0.0}
+
+    metafeature_values_hold = data2features(X_train, y_train, categorical_indicator)
+
+    mp_global.study_prune = optuna.create_study(direction='maximize')
+    mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample(trial=trial,
+                                                                                        metafeature_values_hold=metafeature_values_hold,
+                                                                                        search_time=search_time,
+                                                                                        model_success=model,
+                                                                                        memory_limit=memory_limit,
+                                                                                        privacy_limit=privacy_limit,
+                                                                                        # evaluation_time=int(0.1*search_time_frozen),
+                                                                                        # hold_out_fraction=0.33,
+                                                                                        tune_space=True,
+                                                                                        ), n_trials=1000, n_jobs=1)
+
+    space = mp_global.study_prune.best_trial.user_attrs['space']
+
+    return space
+
 def sample_and_evaluate(my_id1):
+    if time.time() - starting_time_tt > 60*60*24:
+        return -1
+
     my_lock.acquire()
     X_meta = dictionary['X_meta']
     y_meta = dictionary['y_meta']
@@ -442,8 +541,9 @@ def sample_and_evaluate(my_id1):
     best_trial = get_best_trial(model_uncertainty)
     features_of_sampled_point = best_trial.user_attrs['features']
 
-    result = run_AutoML(best_trial)
+    result = run_AutoML(best_trial, model=model_uncertainty)
     actual_y = result['objective']
+
 
     my_lock.acquire()
 
@@ -465,8 +565,32 @@ def sample_and_evaluate(my_id1):
     aquisition_function_value = dictionary['aquisition_function_value']
     aquisition_function_value.append(best_trial.value)
     dictionary['aquisition_function_value'] = aquisition_function_value
+    # assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
 
-    #assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
+    if 'objective_tune' in result:
+        tune_y = result['objective_tune']
+        tune_features = result['features_tune']
+
+        X_meta = dictionary['X_meta']
+        dictionary['X_meta'] = np.vstack((X_meta, tune_features))
+
+        y_meta = dictionary['y_meta']
+        y_meta.append(tune_y)
+        dictionary['y_meta'] = y_meta
+
+        # assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+
+        group_meta = dictionary['group_meta']
+        group_meta.append(best_trial.params['dataset_id'])
+        dictionary['group_meta'] = group_meta
+
+        # assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
+
+        aquisition_function_value = dictionary['aquisition_function_value']
+        aquisition_function_value.append(best_trial.value)
+        dictionary['aquisition_function_value'] = aquisition_function_value
+
+        #assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
 
     my_lock.release()
 

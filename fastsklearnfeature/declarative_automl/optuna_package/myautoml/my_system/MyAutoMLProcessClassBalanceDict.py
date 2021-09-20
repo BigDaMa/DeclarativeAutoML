@@ -281,7 +281,7 @@ class MyAutoML:
                         unique_counts = np.unique(y)
                         custom_weight = {}
                         for unique_i in range(len(unique_counts)):
-                            custom_weight[unique_counts[unique_i]] = self.space.suggest_uniform('custom_class_weight' + str(unique_i), 0.0, 1.0)
+                            custom_weight[unique_counts[unique_i]] = self.space.suggest_uniform('custom_class_weight' + str(unique_i), 0.0, 1.0, check=False)
 
                 if class_weighting:
                     classifier.set_weight(custom_weight)
