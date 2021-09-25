@@ -381,6 +381,9 @@ def generate_features_minimum_sample(trial, metafeature_values_hold, search_time
         gen = SpaceGenerator()
         space = gen.generate_params()
 
+        if trial.suggest_categorical('use_space_search_param', [False, True]):
+            space.sample_parameters(trial)
+
 
         evaluation_time = int(0.1 * search_time)
         if trial.suggest_categorical('use_evaluation_time_constraint', [False]):
