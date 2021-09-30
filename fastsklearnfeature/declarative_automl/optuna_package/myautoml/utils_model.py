@@ -375,18 +375,25 @@ def generate_features_minimum_sample(trial, metafeature_values_hold, search_time
                                         inference_time_limit=None,
                                         pipeline_size_limit=None,
                                         tune_space=False,
-                                        save_data=True
+                                        save_data=True,
+                                        tune_eval_time=False,
+                                        tune_val_fraction=False,
+                                        tune_cv=False
                                         ):
     try:
         gen = SpaceGenerator()
         space = gen.generate_params()
 
-        if trial.suggest_categorical('use_space_search_param', [False, True]):
-            space.sample_parameters(trial)
+        if tune_space:
+            if trial.suggest_categorical('use_space_search_param', [False, True]):
+                space.sample_parameters(trial)
 
 
         evaluation_time = int(0.1 * search_time)
-        if trial.suggest_categorical('use_evaluation_time_constraint', [False]):
+        cat_eval_list = [False]
+        if tune_eval_time:
+            cat_eval_list = [False, True]
+        if trial.suggest_categorical('use_evaluation_time_constraint', cat_eval_list):
             evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
         trial.set_user_attr('evaluation_time', evaluation_time)
 
@@ -394,9 +401,17 @@ def generate_features_minimum_sample(trial, metafeature_values_hold, search_time
         cv = 1
         number_of_cvs = 1
         if type(hold_out_fraction) == type(None):
+
+            cat_holdout_list = [True]
+            if tune_cv:
+                cat_holdout_list = [True, False]
+
             hold_out_fraction = None
-            if trial.suggest_categorical('use_hold_out', [True]):
-                hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.33, 0.33)
+            if trial.suggest_categorical('use_hold_out', cat_holdout_list):
+                if tune_val_fraction:
+                    hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.0, 1.0)
+                else:
+                    hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.33, 0.33)
             else:
                 cv = trial.suggest_int('global_cv', 2, 20, log=False)  # todo: calculate minimum number of splits based on y
                 number_of_cvs = 1
@@ -407,10 +422,12 @@ def generate_features_minimum_sample(trial, metafeature_values_hold, search_time
 
 
         sample_fraction = 1.0
-        if trial.suggest_categorical('use_sampling', [True]):
+        if trial.suggest_categorical('use_sampling', [True, False]):
             sample_fraction = trial.suggest_uniform('sample_fraction', 0, 1)
 
-
+        hold_out_fraction_feature = hold_out_fraction
+        if cv * number_of_cvs > 1:
+            hold_out_fraction_feature = (100.0 / cv) / 100.0
 
         my_list_constraints_values = [search_time,
                                       evaluation_time,
@@ -418,7 +435,7 @@ def generate_features_minimum_sample(trial, metafeature_values_hold, search_time
                                       cv,
                                       number_of_cvs,
                                       ifNull(privacy_limit, constant_value=1000),
-                                      ifNull(hold_out_fraction), #TODO:fix this
+                                      hold_out_fraction_feature,
                                       sample_fraction,
                                       ifNull(training_time_limit, constant_value=search_time),
                                       ifNull(inference_time_limit, constant_value=60),
@@ -489,7 +506,11 @@ def optimize_accuracy_under_minimal_sample(trial, metafeature_values_hold, searc
                                         training_time_limit=None,
                                         inference_time_limit=None,
                                         pipeline_size_limit=None,
-                                        tune_space=False
+                                        tune_space=False,
+                                        tune_eval_time=False,
+                                        tune_val_fraction=False,
+                                        tune_cv=False
+
                                         ):
     features, space = generate_features_minimum_sample(trial, metafeature_values_hold, search_time,
                       memory_limit=memory_limit,
@@ -500,7 +521,10 @@ def optimize_accuracy_under_minimal_sample(trial, metafeature_values_hold, searc
                       inference_time_limit=inference_time_limit,
                       pipeline_size_limit=pipeline_size_limit,
                       tune_space=tune_space,
-                      save_data=False
+                      save_data=False,
+                      tune_eval_time=tune_eval_time,
+                      tune_val_fraction=tune_val_fraction,
+                      tune_cv=tune_cv
                       )
 
     success_val = predict_range(model_success, features)
