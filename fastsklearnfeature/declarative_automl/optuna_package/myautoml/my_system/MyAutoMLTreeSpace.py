@@ -38,6 +38,42 @@ class MyAutoMLSpace:
         return numeric_node
 
 
+    def generate_additional_features_v1(self, node=None, start=False):
+        # count active hyperparameters
+        sum_active_hp = 0
+        if start:
+            node = self.parameter_tree
+        else:
+            sum_active_hp += node.status
+        if node.status:
+            for child in node.children:
+                sum_active_hp += self.generate_additional_features_v1(node=child)
+        return sum_active_hp
+
+    def generate_additional_features_v2(self, node=None, start=False, sum_list=list()):
+        # count active hyperparameters
+        sum_active_hp = 0
+        if start:
+            node = self.parameter_tree
+        else:
+            sum_active_hp += node.status
+
+        for child in node.children:
+            sum_active_hp += self.generate_additional_features_v2(node=child, start=False, sum_list=sum_list)
+        sum_list.append(sum_active_hp)
+        return sum_active_hp
+
+    def generate_additional_features_v2_name(self, node=None, start=False, sum_list=list()):
+        if start:
+            node = self.parameter_tree
+
+        for child in node.children:
+            self.generate_additional_features_v2_name(node=child, start=False, sum_list=sum_list)
+        sum_list.append(node.name + '_SUM')
+
+
+
+
     def recursive_sampling(self, node, trial):
         for child in node.children:
             if node.status:

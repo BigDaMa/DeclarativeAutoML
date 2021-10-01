@@ -66,6 +66,18 @@ def get_feature_names(my_list_constraints=None):
     feature_names_new = FeatureTransformations().get_new_feature_names(feature_names)
     return feature_names, feature_names_new
 
+def get_feature_names2(my_list_constraints=None):
+    feature_names = copy.deepcopy(my_list)
+
+    new_list_names_f = list()
+    mspace.generate_additional_features_v2_name(start=True, sum_list=new_list_names_f)
+    feature_names.extend(copy.deepcopy(new_list_names_f))
+    feature_names.extend(copy.deepcopy(my_list_constraints))
+    feature_names.extend(copy.deepcopy(metafeature_names_new))
+
+    feature_names_new = FeatureTransformations().get_new_feature_names(feature_names)
+    return feature_names, feature_names_new
+
 def get_feature_names_new(my_list_constraints=None):
     feature_names = []
     feature_names.extend(copy.deepcopy(my_list_constraints))
@@ -176,6 +188,25 @@ def space2features(space, my_list_constraints_values, metafeature_values):
         tuple_constraints[t, constraint_i] = my_list_constraints_values[constraint_i] #current_trial.params[my_list_constraints[constraint_i]]
 
     return np.hstack((tuple_param, tuple_constraints, metafeature_values))
+
+def space2features_v2(space, my_list_constraints_values, metafeature_values):
+    tuple_param = np.zeros((1, len(my_list)))
+    tuple_constraints = np.zeros((1, len(my_list_constraints_values)))
+    t = 0
+    for parameter_i in range(len(my_list)):
+        tuple_param[t, parameter_i] = space.name2node[my_list[parameter_i]].status
+
+    new_list = list()
+    space.generate_additional_features_v2(start=True, sum_list=new_list)
+    tuple_param_sum = np.zeros((1, len(new_list)))
+    for parameter_sum_i in range(len(new_list)):
+        tuple_param_sum[t, parameter_sum_i] = new_list[parameter_sum_i]
+
+    for constraint_i in range(len(my_list_constraints_values)):
+        tuple_constraints[t, constraint_i] = my_list_constraints_values[constraint_i] #current_trial.params[my_list_constraints[constraint_i]]
+
+    return np.hstack((tuple_param, tuple_param_sum, tuple_constraints, metafeature_values))
+
 
 def predict_range(model, X):
     y_pred = model.predict(X)
@@ -834,7 +865,7 @@ def generate_parameters_minimal_sample(trial, total_search_time_minutes, my_open
             number_of_cvs = trial.suggest_int('global_number_cv', 2, 10, log=False)
 
     sample_fraction = 1.0
-    if trial.suggest_categorical('use_sampling', [True]):
+    if trial.suggest_categorical('use_sampling', [True, False]):
         sample_fraction = trial.suggest_uniform('sample_fraction', 0, 1)
 
     dataset_id = None

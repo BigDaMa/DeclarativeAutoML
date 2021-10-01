@@ -433,6 +433,21 @@ if __name__ == "__main__":
     gen = SpaceGenerator()
     space = gen.generate_params()
 
+    #print(space.generate_additional_features_v1(start=True))
+    print(len(space.name2node))
+    #print(space)
+    new_list = list()
+    space.generate_additional_features_v2(start=True, sum_list=new_list)
+    print(new_list)
+    print(len(new_list))
+
+    new_list = list()
+    space.generate_additional_features_v2_name(start=True, sum_list=new_list)
+    print(new_list)
+    print(len(new_list))
+
+
+
     from anytree import RenderTree
 
     for pre, _, node in RenderTree(space.parameter_tree):
