@@ -485,8 +485,8 @@ def generate_features_minimum_sample(trial, metafeature_values_hold, search_time
                                'inference_time_constraint',
                                'pipeline_size_constraint']
 
-        features = space2features_v2(space, my_list_constraints_values, metafeature_values_hold) #todo: fix
-        feature_names, _ = get_feature_names2(my_list_constraints) #todo: fix
+        features = space2features(space, my_list_constraints_values, metafeature_values_hold)
+        feature_names, _ = get_feature_names(my_list_constraints)
         features = FeatureTransformations().fit(features).transform(features, feature_names=feature_names)
 
         if save_data:
