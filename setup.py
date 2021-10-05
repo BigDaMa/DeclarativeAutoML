@@ -20,7 +20,7 @@ setup(
     license=license,
     package_data={'config': ['fastsklearnfeature/configuration/resources']},
     include_package_data=True,
-    install_requires=["numpy",
+    install_requires=["numpy==1.16.5",
                       "pandas==0.25.3",
                       #"scikit-learn==0.24.1",#0.22.1
                       "optuna",
@@ -37,6 +37,7 @@ setup(
                       "pyDOE==0.3.8",
                       "emcee==3.0.2",
                       "scikit-optimize==0.8.1",
+                      "autogluon"
                       ],
     packages=find_packages(exclude=('tests', 'docs'))
 )
