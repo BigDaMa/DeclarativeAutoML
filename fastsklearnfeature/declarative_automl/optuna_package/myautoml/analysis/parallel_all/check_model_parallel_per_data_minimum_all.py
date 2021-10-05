@@ -7,7 +7,7 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model i
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import data2features
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import optimize_accuracy_under_minimal_sample
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import utils_run_AutoML
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_feature_names2
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_feature_names
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.util_classes import ConstraintEvaluation, ConstraintRun
 from anytree import RenderTree
 import argparse
@@ -60,7 +60,7 @@ for test_holdout_dataset_id in [args.dataset]:
                            'inference_time_constraint',
                            'pipeline_size_constraint']
 
-    _, feature_names = get_feature_names2(my_list_constraints)
+    _, feature_names = get_feature_names(my_list_constraints)
 
     #plot_most_important_features(model, feature_names, k=len(feature_names))
 
@@ -70,7 +70,7 @@ for test_holdout_dataset_id in [args.dataset]:
     new_constraint_evaluation_dynamic_all = []
     new_constraint_evaluation_default_all = []
 
-    for minutes_to_search in [1]:#range(1, 6):
+    for minutes_to_search in [1, 5, 10, 60]:#range(1, 6):
 
         current_dynamic = []
         current_static = []

@@ -7,8 +7,8 @@ datasets = [168794, 168797, 168796, 189871, 189861, 167185, 189872, 189908, 7510
 
 
 
-program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel_feature/check_model_parallel_per_data_minimum_sample_ddat_feature.py'
-outputname = 'sample_instances_new2'
+program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel_all/check_model_parallel_per_data_minimum_all.py'
+outputname = 'sample_instances_new2_all'
 
 conda_name = 'AutoMLD'
 
