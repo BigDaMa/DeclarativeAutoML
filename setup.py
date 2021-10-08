@@ -20,7 +20,7 @@ setup(
     license=license,
     package_data={'config': ['fastsklearnfeature/configuration/resources']},
     include_package_data=True,
-    install_requires=["numpy==1.16.5",
+    install_requires=["numpy",#==1.16.5
                       "pandas==0.25.3",
                       #"scikit-learn==0.24.1",#0.22.1
                       "optuna",
