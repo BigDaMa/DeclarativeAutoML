@@ -865,7 +865,7 @@ def generate_parameters_minimal_sample(trial, total_search_time_minutes, my_open
             number_of_cvs = trial.suggest_int('global_number_cv', 2, 10, log=False)
 
     sample_fraction = 1.0
-    if trial.suggest_categorical('use_sampling', [True, False]):
+    if trial.suggest_categorical('use_sampling', [True]):
         sample_fraction = trial.suggest_uniform('sample_fraction', 0, 1)
 
     dataset_id = None
