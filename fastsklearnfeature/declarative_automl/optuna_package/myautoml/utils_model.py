@@ -453,7 +453,7 @@ def generate_features_minimum_sample(trial, metafeature_values_hold, search_time
 
 
         sample_fraction = 1.0
-        if trial.suggest_categorical('use_sampling', [True, False]):
+        if trial.suggest_categorical('use_sampling', [True]):
             sample_fraction = trial.suggest_uniform('sample_fraction', 0, 1)
 
         hold_out_fraction_feature = hold_out_fraction
