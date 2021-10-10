@@ -416,7 +416,7 @@ def generate_features_minimum_sample(trial, metafeature_values_hold, search_time
         space = gen.generate_params()
 
         if tune_space:
-            if trial.suggest_categorical('use_space_search_param', [False, True]):
+            if trial.suggest_categorical('use_space_search_param', [True]):
                 space.sample_parameters(trial)
 
 
