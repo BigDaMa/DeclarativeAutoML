@@ -12,7 +12,7 @@ outputname = 'autosklearn'
 
 conda_name = 'AutoMLD'
 
-parallelism = 20#15#multiprocessing.cpu_count()
+parallelism = 1#15#multiprocessing.cpu_count()
 server = libtmux.Server()
 
 data_id = 0
