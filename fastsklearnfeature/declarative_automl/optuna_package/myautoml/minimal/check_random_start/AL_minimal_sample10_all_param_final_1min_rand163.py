@@ -62,7 +62,9 @@ my_list_constraints = ['global_search_time_constraint',
 
 feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
-random_runs = (2 * 30)
+print(len(feature_names_new))
+
+random_runs = (163)
 
 
 def run_AutoML(trial):
@@ -144,7 +146,7 @@ def run_AutoML(trial):
         attribute_names = np.array(attribute_names)[rand_feature_ids[0:number_of_sampled_features]]
     '''
 
-
+    '''
     # sampling with class imbalancing
     if 'unbalance_data' in trial.params:
         class_labels = np.unique(y_train)
@@ -174,7 +176,7 @@ def run_AutoML(trial):
 
         X_train = X_train[all_sampled_training_ids, :]
         y_train = y_train[all_sampled_training_ids]
-
+    '''
 
     dynamic_params = []
     for random_i in range(repetitions_count):
@@ -299,7 +301,7 @@ def sample_configuration(trial):
             raise Exception()
         '''
 
-
+        '''
         # sampling with class imbalancing
         class_labels = np.unique(y_train)
 
@@ -332,7 +334,7 @@ def sample_configuration(trial):
 
         X_train = X_train[all_sampled_training_ids, :]
         y_train = y_train[all_sampled_training_ids]
-        
+        '''
 
         trial.set_user_attr('data_random_seed', my_random_seed)
 
