@@ -76,7 +76,8 @@ for test_holdout_dataset_id in [args.dataset]:
                 print(result)
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'test', result, more='test'))
-            except:
+            except Exception as e:
+                print(e)
                 result = 0
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'shit happened', result, more='test'))
