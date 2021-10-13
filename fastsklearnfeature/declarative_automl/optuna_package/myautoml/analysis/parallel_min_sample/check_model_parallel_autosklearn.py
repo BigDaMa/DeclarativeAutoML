@@ -20,6 +20,7 @@ parser.add_argument("--outputname", "-o", help="Name of the output file")
 args = parser.parse_args()
 print(args.dataset)
 
+args.dataset = 168794
 
 print(args)
 
@@ -34,7 +35,7 @@ for test_holdout_dataset_id in [args.dataset]:
 
     new_constraint_evaluation_dynamic_all = []
 
-    for minutes_to_search in [1, 5, 10, 60]:#range(1, 6):
+    for minutes_to_search in [1]:#[1, 5, 10, 60]:#range(1, 6):
 
         current_dynamic = []
         search_time_frozen = minutes_to_search * 60
@@ -61,6 +62,8 @@ for test_holdout_dataset_id in [args.dataset]:
                 automl.fit(X_train_hold, y_train_hold, feat_type=feat_type)
                 y_hat = automl.predict(X_test_hold)
                 result = balanced_accuracy_score(y_test_hold, y_hat)
+
+                print(result)
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'test', result, more='test'))
             except:
