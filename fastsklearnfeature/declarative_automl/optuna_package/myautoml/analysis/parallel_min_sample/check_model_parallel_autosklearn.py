@@ -62,17 +62,11 @@ for test_holdout_dataset_id in [args.dataset]:
                     else:
                         feat_type.append('Numerical')
 
-                tmp_path = "/tmp/autosklearn" + str(time.time()) + '_' + str(np.random.randint(100))
-                automl = AutoSklearn2Classifier(time_left_for_this_task=search_time_frozen, metric=scorerr, seed=repeat, memory_limit=1024*250, tmp_folder=tmp_path)
+                tmp_path = "/home/neutatz/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(np.random.randint(100))
+                automl = AutoSklearn2Classifier(time_left_for_this_task=search_time_frozen, metric=scorerr, seed=repeat, memory_limit=1024*250, tmp_folder=tmp_path, delete_tmp_folder_after_terminate=True)
                 automl.fit(X_train_hold, y_train_hold, feat_type=feat_type)
                 y_hat = automl.predict(X_test_hold)
                 result = balanced_accuracy_score(y_test_hold, y_hat)
-
-                try:
-                    shutil.rmtree(tmp_path)
-                except OSError as e:
-                    print("Error: %s - %s." % (e.filename, e.strerror))
-
 
                 print(result)
 
