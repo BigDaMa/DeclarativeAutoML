@@ -9,6 +9,8 @@ from autosklearn.experimental.askl2 import AutoSklearn2Classifier
 import autosklearn
 import shutil
 import glob
+import time
+import numpy as np
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -60,17 +62,16 @@ for test_holdout_dataset_id in [args.dataset]:
                     else:
                         feat_type.append('Numerical')
 
-                automl = AutoSklearn2Classifier(time_left_for_this_task=search_time_frozen, metric=scorerr, seed=repeat, memory_limit=1024*250)
+                tmp_path = "/tmp/autosklearn" + str(time.time()) + '_' + str(np.random.randint(100))
+                automl = AutoSklearn2Classifier(time_left_for_this_task=search_time_frozen, metric=scorerr, seed=repeat, memory_limit=1024*250, tmp_folder=tmp_path)
                 automl.fit(X_train_hold, y_train_hold, feat_type=feat_type)
                 y_hat = automl.predict(X_test_hold)
                 result = balanced_accuracy_score(y_test_hold, y_hat)
 
-                folder_list = glob.glob('/home/neutatz/Software/DeclarativeAutoML/autosklearn_tmp_*/')
-                for my_folder in folder_list:
-                    try:
-                        shutil.rmtree(my_folder)
-                    except OSError as e:
-                        print("Error: %s - %s." % (e.filename, e.strerror))
+                try:
+                    shutil.rmtree(tmp_path)
+                except OSError as e:
+                    print("Error: %s - %s." % (e.filename, e.strerror))
 
 
                 print(result)
