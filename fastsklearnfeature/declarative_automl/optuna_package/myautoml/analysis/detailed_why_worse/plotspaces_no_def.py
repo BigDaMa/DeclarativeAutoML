@@ -37,12 +37,15 @@ significantly_worse = {}
 
 taskids = [168794, 168797, 168796, 189871, 189861, 167185, 189872, 189908, 75105, 167152, 168793, 189860, 189862, 126026, 189866, 189873, 168792, 75193, 168798, 167201, 167149, 167200, 189874, 167181, 167083, 167161, 189865, 189906, 167168, 126029, 167104, 126025, 75097, 168795, 75127, 189905, 189909, 167190, 167184]
 
+number_params = {}
+
 for ttaskid in taskids:
     log_data = pickle.load(open(mmpath + 'log_' + nme + str(ttaskid) + '.p', 'rb'))
 
     for ii in range(len(log_data['dynamic'])):
         print('\n\n')
         constraints_i = ii
+        number_params[constraints_i] = []
 
         dynamic_vals = []
         static_vals = []
@@ -73,6 +76,10 @@ for ttaskid in taskids:
                 count_params += 1
         print(count_params)
 
+        number_params[constraints_i].append(count_params)
+
         print('\n\n')
 
 
+for k,v in number_params.items():
+    print(str(k) + ': ' + str(np.average(v)) + ' +- ' + str(np.std(v)))
