@@ -45,7 +45,9 @@ for ttaskid in taskids:
     for ii in range(len(log_data['dynamic'])):
         print('\n\n')
         constraints_i = ii
-        number_params[constraints_i] = []
+
+        if not constraints_i in number_params:
+            number_params[constraints_i] = []
 
         dynamic_vals = []
         static_vals = []
