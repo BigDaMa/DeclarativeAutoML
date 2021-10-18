@@ -4,6 +4,7 @@ import pickle
 import openml
 import glob
 from scipy import stats as st
+from anytree import RenderTree
 
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
@@ -63,7 +64,15 @@ for ttaskid in taskids:
         dynamic_avg = np.average(dynamic_vals)
         print(dynamic_avg)
 
-        log_data['dynamic'][ii].runs[best_run_id].print_space()
+        #log_data['dynamic'][ii].runs[best_run_id].print_space()
+        
+
+        count_params = 0
+        for pre, _, node in RenderTree(log_data['dynamic'][ii].runs[best_run_id].space):
+            if node.status == True:
+                count_params += 1
+        print(count_params)
+
         print('\n\n')
 
 
