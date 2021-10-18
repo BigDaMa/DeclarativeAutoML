@@ -65,10 +65,10 @@ for ttaskid in taskids:
         print(dynamic_avg)
 
         #log_data['dynamic'][ii].runs[best_run_id].print_space()
-        
+
 
         count_params = 0
-        for pre, _, node in RenderTree(log_data['dynamic'][ii].runs[best_run_id].space):
+        for pre, _, node in RenderTree(log_data['dynamic'][ii].runs[best_run_id].space.parameter_tree):
             if node.status == True:
                 count_params += 1
         print(count_params)
