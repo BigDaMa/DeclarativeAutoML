@@ -1,4 +1,4 @@
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalance import MyAutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalanceDict import MyAutoML
 import optuna
 import time
 from sklearn.metrics import make_scorer
@@ -37,7 +37,7 @@ my_scorer = make_scorer(balanced_accuracy_score)
 
 
 mp_glob.total_search_time = 5*60#60
-topk = 28#26 # 20
+topk = 20#26 # 20
 continue_from_checkpoint = False
 
 starting_time_tt = time.time()
@@ -377,10 +377,17 @@ aquisition_function_value = []
 path2files = '/tmp'
 
 if continue_from_checkpoint:
-    X_meta = pickle.load(open(path2files + '/felix_X_compare_scaled.p', 'rb'))
-    y_meta = pickle.load(open(path2files + '/felix_y_compare_scaled.p', 'rb'))
-    group_meta = pickle.load(open(path2files + '/felix_group_compare_scaled.p', 'rb'))
-    aquisition_function_value = pickle.load(open(path2files + '/felix_acquisition function value_scaled.p', 'rb'))
+    with open(path2files + '/felix_X_compare_scaled.p', 'rb') as handle:
+        X_meta = pickle.load(handle)
+
+    with open(path2files + '/felix_y_compare_scaled.p', 'rb') as handle:
+        y_meta = pickle.load(handle)
+
+    with open(path2files + '/felix_group_compare_scaled.p', 'rb') as handle:
+        group_meta = pickle.load(handle)
+
+    with open(path2files + '/felix_acquisition function value_scaled.p', 'rb') as handle:
+        aquisition_function_value = pickle.load(handle)
 else:
     #cold start - random sampling
     study_random = optuna.create_study(direction='maximize', sampler=RandomSampler(seed=42))

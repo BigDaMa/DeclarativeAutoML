@@ -16,6 +16,7 @@ from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.Pr
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateGaussianNBOptuna import PrivateGaussianNBOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 from sklearn.model_selection import StratifiedKFold
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.PassiveAggressiveOptuna import PassiveAggressiveOptuna
 import pandas as pd
 import time
 import resource
@@ -273,15 +274,19 @@ class MyAutoML:
                         isinstance(classifier, QuadraticDiscriminantAnalysisOptuna) or \
                         isinstance(classifier, HistGradientBoostingClassifierOptuna) or \
                         isinstance(classifier, PrivateLogisticRegressionOptuna) or \
-                        isinstance(classifier, PrivateGaussianNBOptuna):
+                        isinstance(classifier, PrivateGaussianNBOptuna) or \
+                        isinstance(classifier, PassiveAggressiveOptuna):
                     pass
                 else:
                     class_weighting = self.space.suggest_categorical('class_weighting', [True, False])
-                    if custom_weighting:
-                        unique_counts = np.unique(y)
-                        custom_weight = {}
-                        for unique_i in range(len(unique_counts)):
-                            custom_weight[unique_counts[unique_i]] = self.space.suggest_uniform('custom_class_weight' + str(unique_i), 0.0, 1.0, check=False)
+                    if class_weighting:
+                        custom_weighting = self.space.suggest_categorical('custom_weighting', [True, False])
+                        if custom_weighting:
+                            unique_counts = np.unique(y)
+                            custom_weight = {}
+                            for unique_i in range(len(unique_counts)):
+                                custom_weight[unique_counts[unique_i]] = self.space.suggest_uniform(
+                                    'custom_class_weight' + str(unique_i), 0.0, 1.0, check=False)
 
                 if class_weighting:
                     classifier.set_weight(custom_weight)
@@ -408,12 +413,15 @@ class MyAutoML:
 
 
 if __name__ == "__main__":
-    auc = make_scorer(roc_auc_score, greater_is_better=True, needs_threshold=True)
+    # auc = make_scorer(roc_auc_score, greater_is_better=True, needs_threshold=True)
+    from sklearn.metrics import balanced_accuracy_score
 
-    #dataset = openml.datasets.get_dataset(1114)
+    auc = make_scorer(balanced_accuracy_score)
 
-    #dataset = openml.datasets.get_dataset(1116)
-    dataset = openml.datasets.get_dataset(51)
+    # dataset = openml.datasets.get_dataset(1114)
+
+    # dataset = openml.datasets.get_dataset(1116)
+    dataset = openml.datasets.get_dataset(187)  # 51
 
     X, y, categorical_indicator, attribute_names = dataset.get_data(
         dataset_format='array',
@@ -422,11 +430,24 @@ if __name__ == "__main__":
 
     print(X.shape)
 
-
-    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y, train_size=0.6)
+    X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
+                                                                                train_size=0.6)
 
     gen = SpaceGenerator()
     space = gen.generate_params()
+
+    # print(space.generate_additional_features_v1(start=True))
+    print(len(space.name2node))
+    # print(space)
+    new_list = list()
+    space.generate_additional_features_v2(start=True, sum_list=new_list)
+    print(new_list)
+    print(len(new_list))
+
+    new_list = list()
+    space.generate_additional_features_v2_name(start=True, sum_list=new_list)
+    print(new_list)
+    print(len(new_list))
 
     from anytree import RenderTree
 
@@ -434,23 +455,21 @@ if __name__ == "__main__":
         print("%s%s: %s" % (pre, node.name, node.status))
 
     search = MyAutoML(n_jobs=1,
-                      time_search_budget=1*60,
+                      time_search_budget=4 * 60,
                       space=space,
                       main_memory_budget_gb=40,
-                      hold_out_fraction=0.5)
+                      hold_out_fraction=0.3)
 
     begin = time.time()
 
     best_result = search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=auc)
 
     from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import show_progress
+
     show_progress(search, X_test, y_test, auc)
 
-    #importances = optuna.importance.get_param_importances(search.study)
-    #print(importances)
-
-
-
+    # importances = optuna.importance.get_param_importances(search.study)
+    # print(importances)
 
     test_score = auc(search.get_best_pipeline(), X_test, y_test)
 
