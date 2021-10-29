@@ -1,5 +1,5 @@
 from autosklearn.metalearning.metafeatures.metafeatures import calculate_all_metafeatures_with_labels
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalance import MyAutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalanceDict import MyAutoML
 
 import optuna
 import time
