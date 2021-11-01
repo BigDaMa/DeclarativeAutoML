@@ -4,6 +4,8 @@ from anytree import Node
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, \
     UniformFloatHyperparameter, UniformIntegerHyperparameter
 from ConfigSpace.conditions import EqualsCondition
+import time
+import numpy as np
 
 
 class MyAutoMLSpace:
@@ -26,6 +28,16 @@ class MyAutoMLSpace:
             self.name2node[str(name) + '##' + str(element)] = Node(name=str(name) + '##' + str(element), parent=categorical_node, status=True, is_default=is_default)
 
         return categorical_node.children
+
+    def store_auto_sklearn_space(self):
+        my_str = ''
+        for name_str, node in self.name2node.items():
+            my_str += name_str + '=' + str(node.status) + '\n'
+
+        with open('/tmp/space' + str(time.time()) + ':' + + '.properties', "w+") as space_file:
+            space_file.write(my_str)
+
+
 
 
     def generate_number(self, name, default_element, depending_node=None, low=0.0, high=1.0 , is_float=True, is_log=False):
@@ -79,10 +91,10 @@ class MyAutoMLSpace:
             if node.status:
                 child.status = trial.suggest_categorical(child.name, [True, False])
             else:
-                if child.is_default and node.parent.status:
-                    child.status = True
-                else:
-                    child.status = False
+                #if child.is_default and node.parent.status:
+                #    child.status = True
+                #else:
+                child.status = False
             self.recursive_sampling(child, trial)
 
     def sample_parameters(self, x):
