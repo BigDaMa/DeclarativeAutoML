@@ -25,7 +25,7 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.feature_trans
 
 import multiprocessing as mp
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.my_global_vars as mp_global
-
+import logging
 
 metafeature_names_new = ['ClassEntropy', 'ClassProbabilityMax', 'ClassProbabilityMean', 'ClassProbabilityMin', 'ClassProbabilitySTD',
      'DatasetRatio', 'InverseDatasetRatio', 'LogDatasetRatio', 'LogInverseDatasetRatio', 'LogNumberOfFeatures',
@@ -88,7 +88,7 @@ def get_feature_names_new(my_list_constraints=None):
 
 def data2features(X_train, y_train, categorical_indicator):
     metafeatures = calculate_all_metafeatures_with_labels(X_train, y_train, categorical=categorical_indicator,
-                                                          dataset_name='data')
+                                                          dataset_name='data', logger=logging.getLogger('logg_this'))
 
     metafeature_values = np.zeros((1, len(metafeature_names_new)))
     for m_i in range(len(metafeature_names_new)):
