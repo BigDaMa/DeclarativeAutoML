@@ -160,7 +160,9 @@ def run_AutoML(trial):
             time_left_for_this_task=search_time,
             per_run_time_limit=evaluation_time,
             delete_tmp_folder_after_terminate=True,
-            metric=balanced_accuracy
+            metric=balanced_accuracy,
+            seed=random_i,
+            memory_limit=1024 * 250
         )
 
         test_score = 0.0
@@ -185,7 +187,9 @@ def run_AutoML(trial):
             time_left_for_this_task=search_time,
             per_run_time_limit=evaluation_time,
             delete_tmp_folder_after_terminate=True,
-            metric=balanced_accuracy
+            metric=balanced_accuracy,
+            seed=random_i,
+            memory_limit=1024 * 250
         )
 
         test_score = 0.0
