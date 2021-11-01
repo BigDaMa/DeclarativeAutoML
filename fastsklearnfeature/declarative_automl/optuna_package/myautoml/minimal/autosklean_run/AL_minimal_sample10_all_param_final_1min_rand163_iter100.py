@@ -25,6 +25,8 @@ from sklearn.metrics import balanced_accuracy_score
 
 from autosklearn.metrics import balanced_accuracy
 
+from autosklearn.experimental.askl2 import AutoSklearn2Classifier
+
 from autosklearn.flexible.Config import Config
 import sklearn
 
@@ -152,8 +154,8 @@ def run_AutoML(trial):
 
     dynamic_params = []
     Config.config = space.name2node
+    Config.setup()
     for random_i in range(repetitions_count):
-        from autosklearn.experimental.askl2 import AutoSklearn2Classifier
         automl = AutoSklearn2Classifier(
             time_left_for_this_task=search_time,
             per_run_time_limit=evaluation_time,
@@ -177,9 +179,9 @@ def run_AutoML(trial):
     static_params = []
     gen = SpaceGenerator()
     space_all = gen.generate_params()
-    Config.config = space_all.name2node
+    Config.config = dict()
+    Config.setup()
     for random_i in range(repetitions_count):
-        from autosklearn.experimental.askl2 import AutoSklearn2Classifier
         automl = AutoSklearn2Classifier(
             time_left_for_this_task=search_time,
             per_run_time_limit=evaluation_time,
