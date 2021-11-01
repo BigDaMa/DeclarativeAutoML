@@ -51,8 +51,6 @@ from fastsklearnfeature.declarative_automl.optuna_package.autosklearn_flex.compo
 from fastsklearnfeature.declarative_automl.optuna_package.autosklearn_flex.components.data_preprocessors.rescaling.robust_scaler import RobustScalerComponent
 from fastsklearnfeature.declarative_automl.optuna_package.autosklearn_flex.components.data_preprocessors.rescaling.standardize import StandardScalerComponent
 
-import pickle
-
 class SpaceGenerator:
     def __init__(self):
         self.classifier_list = myspace.classifier_list
@@ -150,14 +148,20 @@ class SpaceGenerator:
         return self.space
 
 
-
+'''
+import pickle
 from anytree import RenderTree
 import optuna
 
 def objective(trial):
     gen = SpaceGenerator()
     space = gen.generate_params()
+
+    space.store_auto_sklearn_space()
+
     space.sample_parameters(trial)
+
+
 
     for pre, _, node in RenderTree(space.parameter_tree):
         if node.status:
@@ -170,4 +174,4 @@ def objective(trial):
 
 study = optuna.create_study()
 study.optimize(objective, n_trials=2)
-
+'''

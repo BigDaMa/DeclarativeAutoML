@@ -34,7 +34,7 @@ class MyAutoMLSpace:
         for name_str, node in self.name2node.items():
             my_str += name_str + '=' + str(node.status) + '\n'
 
-        with open('/tmp/space' + str(time.time()) + ':' + + '.properties', "w+") as space_file:
+        with open('/tmp/space.properties', "w+") as space_file:
             space_file.write(my_str)
 
 
