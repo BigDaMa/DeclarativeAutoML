@@ -177,8 +177,6 @@ def run_AutoML(trial):
         return {'objective': 0.0}
 
     static_params = []
-    gen = SpaceGenerator()
-    space_all = gen.generate_params()
     Config.config = dict()
     Config.setup()
     for random_i in range(repetitions_count):
@@ -266,7 +264,8 @@ def sample_configuration(trial):
         features = FeatureTransformations().fit(features).transform(features, feature_names=feature_names)
 
         trial.set_user_attr('features', features)
-    except:
+    except Exception as e:
+        print(e)
         return None
     return features
 
