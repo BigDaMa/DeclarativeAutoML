@@ -25,9 +25,6 @@ from sklearn.metrics import balanced_accuracy_score
 
 from autosklearn.metrics import balanced_accuracy
 
-from autosklearn.experimental.askl2 import AutoSklearn2Classifier
-
-from autosklearn.flexible.Config import Config
 import sklearn
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
@@ -70,7 +67,7 @@ feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
 print(len(feature_names_new))
 
-random_runs = (163)
+random_runs = 163#(163)
 
 
 def run_AutoML(trial):
@@ -152,6 +149,9 @@ def run_AutoML(trial):
                                                                           stratify=y_train,
                                                                           train_size=sample_fraction)
 
+    from autosklearn.experimental.askl2 import AutoSklearn2Classifier
+    from autosklearn.flexible.Config import Config
+
     dynamic_params = []
     Config.config = space.name2node
     Config.setup()
@@ -168,8 +168,9 @@ def run_AutoML(trial):
             automl.fit(X_train_sample.copy(), y_train_sample.copy(), feat_type=feat_type, metric=balanced_accuracy)
             automl.refit(X_train_sample.copy(), y_train_sample.copy())
             test_score = my_scorer(automl, X_test, y_test)
-        except:
-            pass
+            print(test_score)
+        except Exception as e:
+            print(e)
         dynamic_params.append(test_score)
     dynamic_values = np.array(dynamic_params)
 

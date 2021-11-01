@@ -10,7 +10,7 @@ from sklearn.metrics import make_scorer
 from sklearn.metrics import roc_auc_score
 import openml
 import numpy as np
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
+from fastsklearnfeature.declarative_automl.optuna_package.autosklearn_flex.components.Space_GenerationTreeBalance import SpaceGenerator
 import copy
 from optuna.trial import FrozenTrial
 from anytree import RenderTree
@@ -27,13 +27,7 @@ import multiprocessing as mp
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.my_global_vars as mp_global
 import logging
 
-metafeature_names_new = ['ClassEntropy', 'ClassProbabilityMax', 'ClassProbabilityMean', 'ClassProbabilityMin', 'ClassProbabilitySTD',
-     'DatasetRatio', 'InverseDatasetRatio', 'LogDatasetRatio', 'LogInverseDatasetRatio', 'LogNumberOfFeatures',
-     'LogNumberOfInstances', 'NumberOfCategoricalFeatures', 'NumberOfClasses', 'NumberOfFeatures',
-     'NumberOfFeaturesWithMissingValues', 'NumberOfInstances', 'NumberOfInstancesWithMissingValues',
-     'NumberOfMissingValues', 'NumberOfNumericFeatures', 'PercentageOfFeaturesWithMissingValues',
-     'PercentageOfInstancesWithMissingValues', 'PercentageOfMissingValues', 'RatioNominalToNumerical',
-     'RatioNumericalToNominal', 'SymbolsMax', 'SymbolsMean', 'SymbolsMin', 'SymbolsSTD', 'SymbolsSum']
+metafeature_names_new = ['ClassEntropy', 'NumSymbols', 'SymbolsSum', 'SymbolsSTD', 'SymbolsMean', 'SymbolsMax', 'SymbolsMin', 'ClassOccurences', 'ClassProbabilitySTD', 'ClassProbabilityMean', 'ClassProbabilityMax', 'ClassProbabilityMin', 'InverseDatasetRatio', 'DatasetRatio', 'RatioNominalToNumerical', 'RatioNumericalToNominal', 'NumberOfCategoricalFeatures', 'NumberOfNumericFeatures', 'MissingValues', 'NumberOfMissingValues', 'NumberOfFeaturesWithMissingValues', 'NumberOfInstancesWithMissingValues', 'NumberOfFeatures', 'NumberOfClasses', 'NumberOfInstances', 'LogInverseDatasetRatio', 'LogDatasetRatio', 'PercentageOfMissingValues', 'PercentageOfFeaturesWithMissingValues', 'PercentageOfInstancesWithMissingValues', 'LogNumberOfFeatures', 'LogNumberOfInstances']
 
 
 
@@ -87,7 +81,8 @@ def get_feature_names_new(my_list_constraints=None):
     return feature_names, feature_names_new
 
 def data2features(X_train, y_train, categorical_indicator):
-    metafeatures = calculate_all_metafeatures_with_labels(X_train, y_train, categorical=categorical_indicator,
+    categorical = {i: categorical_indicator[i] for i in range(len(categorical_indicator))}
+    metafeatures = calculate_all_metafeatures_with_labels(X_train, y_train, categorical=categorical,
                                                           dataset_name='data', logger=logging.getLogger('logg_this'))
 
     metafeature_values = np.zeros((1, len(metafeature_names_new)))
