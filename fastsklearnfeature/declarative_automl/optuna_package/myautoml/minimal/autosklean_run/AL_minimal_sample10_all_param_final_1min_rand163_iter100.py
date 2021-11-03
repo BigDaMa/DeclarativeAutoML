@@ -40,7 +40,7 @@ my_scorer = make_scorer(balanced_accuracy_score)
 
 
 mp_glob.total_search_time = 1*60#60
-topk = 20#26 # 20
+topk = 28#26 # 20
 continue_from_checkpoint = False
 
 starting_time_tt = time.time()
@@ -77,8 +77,8 @@ def run_AutoML(trial):
 
     print(trial.params)
 
-    #make this a hyperparameter
-    search_time = trial.params['global_search_time_constraint']# * 60
+    # make this a hyperparameter
+    search_time = trial.params['global_search_time_constraint']  # * 60
 
     evaluation_time = int(0.1 * search_time)
     if 'global_evaluation_time_constraint' in trial.params:
@@ -119,7 +119,7 @@ def run_AutoML(trial):
         sample_fraction = trial.params['sample_fraction']
 
     if 'dataset_id' in trial.params:
-        task_id = trial.params['dataset_id'] #get same random seed
+        task_id = trial.params['dataset_id']  # get same random seed
 
     for pre, _, node in RenderTree(space.parameter_tree):
         if node.status == True:
@@ -130,7 +130,9 @@ def run_AutoML(trial):
         my_random_seed = trial.user_attrs['data_random_seed']
 
     try:
-        X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data('data', randomstate=my_random_seed, task_id=task_id)
+        X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data('data',
+                                                                                            randomstate=my_random_seed,
+                                                                                            task_id=task_id)
     except:
         return {'objective': 0.0}
 
