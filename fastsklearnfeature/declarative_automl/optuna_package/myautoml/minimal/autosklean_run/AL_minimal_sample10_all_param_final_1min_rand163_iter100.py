@@ -141,14 +141,6 @@ def run_AutoML(trial):
         else:
             feat_type.append('Numerical')
 
-    X_train_sample = X_train
-    y_train_sample = y_train
-    if sample_fraction < 1.0:
-        X_train_sample, _, y_train_sample, _ = sklearn.model_selection.train_test_split(X_train, y_train,
-                                                                          random_state=42,
-                                                                          stratify=y_train,
-                                                                          train_size=sample_fraction)
-
     from autosklearn.experimental.askl2 import AutoSklearn2Classifier
     from autosklearn.flexible.Config import Config
 
@@ -156,17 +148,25 @@ def run_AutoML(trial):
     Config.config = space.name2node
     Config.setup()
     for random_i in range(repetitions_count):
-        automl = AutoSklearn2Classifier(
-            time_left_for_this_task=search_time,
-            per_run_time_limit=evaluation_time,
-            delete_tmp_folder_after_terminate=True,
-            metric=balanced_accuracy,
-            seed=random_i,
-            memory_limit=1024 * 250
-        )
-
         test_score = 0.0
         try:
+            automl = AutoSklearn2Classifier(
+                time_left_for_this_task=search_time,
+                per_run_time_limit=evaluation_time,
+                delete_tmp_folder_after_terminate=True,
+                metric=balanced_accuracy,
+                seed=random_i,
+                memory_limit=1024 * 250
+            )
+
+            X_train_sample = X_train
+            y_train_sample = y_train
+            if sample_fraction < 1.0:
+                X_train_sample, _, y_train_sample, _ = sklearn.model_selection.train_test_split(X_train, y_train,
+                                                                                                random_state=42,
+                                                                                                stratify=y_train,
+                                                                                                train_size=sample_fraction)
+
             automl.fit(X_train_sample.copy(), y_train_sample.copy(), feat_type=feat_type, metric=balanced_accuracy)
             automl.refit(X_train_sample.copy(), y_train_sample.copy())
             test_score = my_scorer(automl, X_test, y_test)
@@ -183,17 +183,17 @@ def run_AutoML(trial):
     Config.config = dict()
     Config.setup()
     for random_i in range(repetitions_count):
-        automl = AutoSklearn2Classifier(
-            time_left_for_this_task=search_time,
-            per_run_time_limit=evaluation_time,
-            delete_tmp_folder_after_terminate=True,
-            metric=balanced_accuracy,
-            seed=random_i,
-            memory_limit=1024 * 250
-        )
-
         test_score = 0.0
         try:
+            automl = AutoSklearn2Classifier(
+                time_left_for_this_task=search_time,
+                per_run_time_limit=evaluation_time,
+                delete_tmp_folder_after_terminate=True,
+                metric=balanced_accuracy,
+                seed=random_i,
+                memory_limit=1024 * 250
+            )
+
             automl.fit(X_train.copy(), y_train.copy(), feat_type=feat_type, metric=balanced_accuracy)
             automl.refit(X_train.copy(), y_train.copy())
             test_score = my_scorer(automl, X_test, y_test)
