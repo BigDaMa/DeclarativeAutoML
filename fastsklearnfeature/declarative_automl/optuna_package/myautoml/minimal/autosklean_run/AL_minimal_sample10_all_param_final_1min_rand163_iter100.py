@@ -67,7 +67,7 @@ feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
 print(len(feature_names_new))
 
-random_runs = 163#(163)
+random_runs = 10#163#(163)
 
 
 def run_AutoML(trial):
@@ -361,7 +361,7 @@ def get_best_trial(model_uncertainty):
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24:#60*60*24*7:
+    if time.time() - starting_time_tt > 60*60:#60*60*24:#60*60*24*7:
         return -1
 
     my_lock.acquire()
