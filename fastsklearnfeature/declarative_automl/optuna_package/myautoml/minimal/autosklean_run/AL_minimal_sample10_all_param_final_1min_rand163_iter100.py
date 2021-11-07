@@ -364,10 +364,13 @@ def sample_and_evaluate(my_id1):
     if time.time() - starting_time_tt > 60*60*3:#60*60*24:#60*60*24*7:
         return -1
 
-    my_lock.acquire()
-    X_meta = dictionary['X_meta']
-    y_meta = dictionary['y_meta']
-    my_lock.release()
+    X_meta = copy.deepcopy(dictionary['X_meta'])
+    y_meta = copy.deepcopy(dictionary['y_meta'])
+
+    #how many are there
+    my_len = min(len(X_meta), len(y_meta))
+    X_meta = X_meta[0:my_len,:]
+    y_meta = y_meta[0:my_len]
 
     print('X_meta: ' + str(len(X_meta)))
 
@@ -417,7 +420,9 @@ dictionary['group_meta'] = group_meta
 dictionary['aquisition_function_value'] = aquisition_function_value
 
 with MyPool(processes=topk) as pool:
-    results = pool.map(sample_and_evaluate, range(100000))
+    pool.map(sample_and_evaluate, range(100000))
+
+print('storing stuff')
 
 model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
 model_uncertainty.fit(dictionary['X_meta'], dictionary['y_meta'])
