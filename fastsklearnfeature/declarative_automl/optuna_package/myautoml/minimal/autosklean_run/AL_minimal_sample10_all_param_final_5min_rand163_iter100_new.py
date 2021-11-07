@@ -159,7 +159,7 @@ def run_AutoML(trial):
                 metric=balanced_accuracy,
                 seed=random_i,
                 memory_limit=1024 * 250,
-                tmp_folder='/tmp/autosklearn_dynamic_tmp_' + str(time.time()) + '_' + str(np.random.randint(10000)) + '_' + str(random_i)
+                tmp_folder='/home/neutatz/data/autosklearn_folder/autosklearn_dynamic_tmp_' + str(time.time()) + '_' + str(np.random.randint(10000)) + '_' + str(random_i)
             )
 
             X_train_sample = X_train
@@ -195,7 +195,7 @@ def run_AutoML(trial):
                 metric=balanced_accuracy,
                 seed=random_i,
                 memory_limit=1024 * 250,
-                tmp_folder='/tmp/autosklearn_static_tmp_' + str(time.time()) + '_' + str(np.random.randint(10000)) + '_' + str(random_i)
+                tmp_folder='/home/neutatz/data/autosklearn_folder/autosklearn_static_tmp_' + str(time.time()) + '_' + str(np.random.randint(10000)) + '_' + str(random_i)
             )
 
             automl.fit(X_train.copy(), y_train.copy(), feat_type=feat_type, metric=balanced_accuracy)
@@ -427,17 +427,17 @@ print('storing stuff')
 model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
 model_uncertainty.fit(dictionary['X_meta'], dictionary['y_meta'])
 
-with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/autosklearn_folder/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(model_uncertainty, pickle_model_file)
 
-with open('/tmp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/autosklearn_folder/felix_X_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['X_meta'], pickle_model_file)
 
-with open('/tmp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/autosklearn_folder/felix_y_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['y_meta'], pickle_model_file)
 
-with open('/tmp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/autosklearn_folder/felix_group_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['group_meta'], pickle_model_file)
 
-with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/autosklearn_folder/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['aquisition_function_value'], pickle_model_file)
