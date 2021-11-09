@@ -41,7 +41,7 @@ my_scorer = make_scorer(balanced_accuracy_score)
 
 mp_glob.total_search_time = 1*60#60
 topk = 28#26 # 20
-continue_from_checkpoint = False
+continue_from_checkpoint = True
 
 starting_time_tt = time.time()
 
@@ -361,7 +361,7 @@ def get_best_trial(model_uncertainty):
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24:#60*60*24*7:
+    if time.time() - starting_time_tt > 60*60*24*3:#60*60*24*7:
         return -1
 
     X_meta = copy.deepcopy(dictionary['X_meta'])
