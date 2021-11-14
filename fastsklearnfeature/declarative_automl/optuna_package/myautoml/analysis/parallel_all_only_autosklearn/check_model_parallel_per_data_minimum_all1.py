@@ -118,52 +118,32 @@ for test_holdout_dataset_id in [args.dataset]:
                 from autosklearn.experimental.askl2 import AutoSklearn2Classifier
                 from autosklearn.flexible.Config import Config
 
-                if mp_global.study_prune.best_trial.value > 0.5:
-                    Config.config = space.name2node
-                    Config.setup()
-                    automl = AutoSklearn2Classifier(
-                        time_left_for_this_task=search_time_frozen,
-                        per_run_time_limit=int(0.1 * search_time_frozen),
-                        delete_tmp_folder_after_terminate=True,
-                        metric=balanced_accuracy,
-                        seed=repeat,
-                        memory_limit=1024 * 250
-                    )
+                Config.config = space.name2node
+                Config.setup()
+                automl = AutoSklearn2Classifier(
+                    time_left_for_this_task=search_time_frozen,
+                    per_run_time_limit=int(0.1 * search_time_frozen),
+                    delete_tmp_folder_after_terminate=True,
+                    metric=balanced_accuracy,
+                    seed=repeat,
+                    memory_limit=1024 * 250
+                )
 
-                    sample_fraction = mp_global.study_prune.best_trial.params['sample_fraction']
+                sample_fraction = mp_global.study_prune.best_trial.params['sample_fraction']
 
-                    X_train_sample = X_train_hold
-                    y_train_sample = y_train_hold
-                    if sample_fraction < 1.0:
-                        X_train_sample, _, y_train_sample, _ = sklearn.model_selection.train_test_split(X_train_hold,
-                                                                                                        y_train_hold,
-                                                                                                        random_state=42,
-                                                                                                        stratify=y_train_hold,
-                                                                                                        train_size=sample_fraction)
+                X_train_sample = X_train_hold
+                y_train_sample = y_train_hold
+                if sample_fraction < 1.0:
+                    X_train_sample, _, y_train_sample, _ = sklearn.model_selection.train_test_split(X_train_hold,
+                                                                                                    y_train_hold,
+                                                                                                    random_state=42,
+                                                                                                    stratify=y_train_hold,
+                                                                                                    train_size=sample_fraction)
 
-                    automl.fit(X_train_sample.copy(), y_train_sample.copy(), feat_type=feat_type,
-                               metric=balanced_accuracy)
-                    automl.refit(X_train_sample.copy(), y_train_sample.copy())
-                    result = my_scorer(automl, X_test_hold, y_test_hold)
-                else:
-                    Config.config = dict()
-                    Config.setup()
-                    automl = AutoSklearn2Classifier(
-                        time_left_for_this_task=search_time_frozen,
-                        per_run_time_limit=int(0.1 * search_time_frozen),
-                        delete_tmp_folder_after_terminate=True,
-                        metric=balanced_accuracy,
-                        seed=repeat,
-                        memory_limit=1024 * 250
-                    )
-
-                    X_train_sample = X_train_hold
-                    y_train_sample = y_train_hold
-
-                    automl.fit(X_train_sample.copy(), y_train_sample.copy(), feat_type=feat_type, metric=balanced_accuracy)
-                    automl.refit(X_train_sample.copy(), y_train_sample.copy())
-                    result = my_scorer(automl, X_test_hold, y_test_hold)
-
+                automl.fit(X_train_sample.copy(), y_train_sample.copy(), feat_type=feat_type,
+                           metric=balanced_accuracy)
+                automl.refit(X_train_sample.copy(), y_train_sample.copy())
+                result = my_scorer(automl, X_test_hold, y_test_hold)
                 new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
             except:
                 result = 0
