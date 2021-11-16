@@ -115,40 +115,46 @@ class SpaceGenerator:
                      StandardScalerComponent()]
 
         #data preprocessing
+        tune_balancer = self.space.generate_cat('tune_balancer', ['True', 'False'], 'True')
         balancer = Balancing()
-        balancer.generate_hyperparameters(self.space)
+        balancer.generate_hyperparameters(self.space, tune_balancer[0])
 
+        tune_imputation = self.space.generate_cat('tune_imputation', ['True', 'False'], 'True')
         imputer = NumericalImputation()
-        imputer.generate_hyperparameters(self.space)
+        imputer.generate_hyperparameters(self.space, tune_imputation[0])
 
+        tune_encoding = self.space.generate_cat('tune_encoding', ['True', 'False'], 'True')
         for module_name in ['encoding', 'no_encoding', 'one_hot_encoding']:
-            self.space.generate_cat(module_name, ['True', 'False'], 'True')
+            self.space.generate_cat(module_name, ['True', 'False'], 'True', tune_encoding[0])
 
+        tune_coalescenser = self.space.generate_cat('tune_coalescenser', ['True', 'False'], 'True')
         for coalescenser in coalescense:
             module_name = str(coalescenser.__class__.__module__).split('.')[-1]
-            use_coalescenser = self.space.generate_cat(module_name, ['True', 'False'], 'True')
+            use_coalescenser = self.space.generate_cat(module_name, ['True', 'False'], 'True', tune_coalescenser[0])
             coalescenser.generate_hyperparameters(self.space, depending_node=use_coalescenser[0])
 
+        tune_rescaler = self.space.generate_cat('tune_rescaler', ['True', 'False'], 'True')
         for rescaler in rescalers:
             module_name = str(rescaler.__class__.__module__).split('.')[-1]
-            use_rescaler = self.space.generate_cat(module_name, ['True', 'False'], 'True')
+            use_rescaler = self.space.generate_cat(module_name, ['True', 'False'], 'True', tune_rescaler[0])
             rescaler.generate_hyperparameters(self.space, depending_node=use_rescaler[0])
 
+        tune_preprocessor = self.space.generate_cat('tune_preprocessor', ['True', 'False'], 'True')
         for preprocessor in my_preprocessors:
             module_name = str(preprocessor.__class__.__module__).split('.')[-1]
-            use_preprocessor = self.space.generate_cat(module_name, ['True', 'False'], 'True')
+            use_preprocessor = self.space.generate_cat(module_name, ['True', 'False'], 'True', tune_preprocessor[0])
             preprocessor.generate_hyperparameters(self.space, depending_node=use_preprocessor[0])
 
+        tune_classifier = self.space.generate_cat('tune_classifier', ['True', 'False'], 'True')
         for classifier in my_classifiers:
             module_name = str(classifier.__class__.__module__).split('.')[-1]
-            use_classifier = self.space.generate_cat(module_name, ['True', 'False'], 'True')
+            use_classifier = self.space.generate_cat(module_name, ['True', 'False'], 'True', tune_classifier[0])
             classifier.generate_hyperparameters(self.space, depending_node=use_classifier[0])
 
 
         return self.space
 
 
-'''
 import pickle
 from anytree import RenderTree
 import optuna
@@ -174,4 +180,4 @@ def objective(trial):
 
 study = optuna.create_study()
 study.optimize(objective, n_trials=2)
-'''
+

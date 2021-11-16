@@ -97,6 +97,7 @@ class MyAutoMLSpace:
                 child.status = False
             self.recursive_sampling(child, trial)
 
+
     def sample_parameters(self, x):
         # create dependency graph
         self.recursive_sampling(self.parameter_tree, x)

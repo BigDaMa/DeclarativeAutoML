@@ -870,6 +870,61 @@ def generate_parameters_minimal_sample(trial, total_search_time_minutes, my_open
 
     return search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, dataset_id
 
+
+def generate_parameters_minimal_sample_smac(trial, total_search_time_minutes, my_openml_datasets, sample_data=True):
+    # which constraints to use
+    search_time = trial['global_search_time_constraint']
+
+    # how much time for each evaluation
+    evaluation_time = int(0.1 * search_time)
+    #if trial.suggest_categorical('use_evaluation_time_constraint', [False]):
+    #    evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
+
+    # how much memory is allowed
+    memory_limit = 10
+    #if trial.suggest_categorical('use_search_memory_constraint', [False]):
+    #    memory_limit = trial.suggest_loguniform('global_memory_constraint', 0.00000000000001, 10)
+
+    # how much privacy is required
+    privacy_limit = None
+    #if trial.suggest_categorical('use_privacy_constraint', [False]):
+    #    privacy_limit = trial.suggest_loguniform('privacy_constraint', 0.0001, 10)
+
+    training_time_limit = search_time
+    #if trial.suggest_categorical('use_training_time_constraint', [False]):
+    #    training_time_limit = trial.suggest_loguniform('training_time_constraint', 0.005, search_time)
+
+    inference_time_limit = 60
+    #if trial.suggest_categorical('use_inference_time_constraint', [False]):
+    #    inference_time_limit = trial.suggest_loguniform('inference_time_constraint', 0.0004, 60)
+
+    pipeline_size_limit = 350000000
+    #if trial.suggest_categorical('use_pipeline_size_constraint', [False]):
+    #    pipeline_size_limit = trial.suggest_loguniform('pipeline_size_constraint', 2000, 350000000)
+
+
+    # how many cvs should be used
+
+    cv = 1
+    number_of_cvs = 1
+    hold_out_fraction = None
+
+    if True:
+        hold_out_fraction = 0.33
+
+
+    sample_fraction = 1.0
+    if True:
+        sample_fraction = trial['sample_fraction']
+
+    dataset_id = None
+    if sample_data:
+        dataset_id = trial.suggest_categorical('dataset_id', my_openml_datasets)
+
+    return search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, dataset_id
+
+
+
 def generate_parameters_minimal_sample_eval_time(trial, total_search_time_minutes, my_openml_datasets, sample_data=True):
     # which constraints to use
     search_time = trial.suggest_int('global_search_time_constraint', 10, max(10, total_search_time_minutes), log=False) #* 60
