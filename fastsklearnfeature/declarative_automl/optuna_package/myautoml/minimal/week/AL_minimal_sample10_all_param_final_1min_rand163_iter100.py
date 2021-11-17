@@ -11,13 +11,13 @@ from optuna.samplers import RandomSampler
 import pickle
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.mp_global_vars as mp_glob
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.feature_transformation.FeatureTransformations import FeatureTransformations
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_data
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import data2features
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import space2features
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import MyPool
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_feature_names
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import ifNull
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import generate_parameters_minimal_sample
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_data
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import data2features
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import space2features
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import MyPool
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_feature_names
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import ifNull
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import generate_parameters_minimal_sample
 from optuna.samplers import TPESampler
 import multiprocessing as mp
 from multiprocessing import Lock
@@ -37,7 +37,7 @@ my_scorer = make_scorer(balanced_accuracy_score)
 
 
 mp_glob.total_search_time = 1*60#60
-topk = 20#26 # 20
+topk = 28#26 # 20
 continue_from_checkpoint = False
 
 starting_time_tt = time.time()
@@ -130,53 +130,6 @@ def run_AutoML(trial):
         X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data('data', randomstate=my_random_seed, task_id=task_id)
     except:
         return {'objective': 0.0}
-
-    # sample features based on seed
-    '''
-    if 'random_feature_selection' in trial.params:
-        random_feature_selection = trial.params['random_feature_selection']
-        rand_feature_ids = np.arange(X_train.shape[1])
-        np.random.seed(my_random_seed)
-        np.random.shuffle(rand_feature_ids)
-        number_of_sampled_features = int(X_train.shape[1] * random_feature_selection)
-
-        X_train = X_train[:, rand_feature_ids[0:number_of_sampled_features]]
-        X_test = X_test[:, rand_feature_ids[0:number_of_sampled_features]]
-        categorical_indicator = np.array(categorical_indicator)[rand_feature_ids[0:number_of_sampled_features]]
-        attribute_names = np.array(attribute_names)[rand_feature_ids[0:number_of_sampled_features]]
-    '''
-
-    '''
-    # sampling with class imbalancing
-    if 'unbalance_data' in trial.params:
-        class_labels = np.unique(y_train)
-
-        id_classes = []
-        for i_class in range(len(class_labels)):
-            id_class_now = np.array((y_train == class_labels[i_class]).nonzero()[0])
-            np.random.seed(my_random_seed)
-            np.random.shuffle(id_class_now)
-            id_classes.append(id_class_now)
-
-        fraction_ids_class = []
-        if trial.params['unbalance_data']:
-            for i_class in range(len(class_labels)):
-                fraction_ids_class.append(trial.params['fraction_ids_class' + str(i_class)])
-        else:
-            for i_class in range(len(class_labels)):
-                fraction_ids_class.append(trial.params['sampling_factor_train_only'])
-
-        number_class = []
-        for i_class in range(len(class_labels)):
-            number_class.append(int(fraction_ids_class[i_class] * len(id_classes[i_class])))
-
-        all_sampled_training_ids = []
-        for i_class in range(len(class_labels)):
-            all_sampled_training_ids.extend(id_classes[i_class][0:number_class[i_class]])
-
-        X_train = X_train[all_sampled_training_ids, :]
-        y_train = y_train[all_sampled_training_ids]
-    '''
 
     dynamic_params = []
     for random_i in range(repetitions_count):
@@ -282,59 +235,6 @@ def sample_configuration(trial):
         my_random_seed = int(time.time())
 
         X_train, X_test, y_train, y_test, categorical_indicator, attribute_names = get_data('data', randomstate=my_random_seed, task_id=task_id)
-
-        # increase the diversity of dataset
-        '''
-        #sample features based on seed
-        random_feature_selection = trial.suggest_uniform('random_feature_selection', 0, 1)
-        rand_feature_ids = np.arange(X_train.shape[1])
-        np.random.seed(my_random_seed)
-        np.random.shuffle(rand_feature_ids)
-        number_of_sampled_features = int(X_train.shape[1] * random_feature_selection)
-        X_train = X_train[:, rand_feature_ids[0:number_of_sampled_features]]
-        X_test = X_test[:, rand_feature_ids[0:number_of_sampled_features]]
-
-        categorical_indicator = np.array(categorical_indicator)[rand_feature_ids[0:number_of_sampled_features]]
-        attribute_names = np.array(attribute_names)[rand_feature_ids[0:number_of_sampled_features]]
-
-        if X_train.shape[1] <= 0:
-            raise Exception()
-        '''
-
-        '''
-        # sampling with class imbalancing
-        class_labels = np.unique(y_train)
-
-        id_classes = []
-        for i_class in range(len(class_labels)):
-            id_class_now = np.array((y_train == class_labels[i_class]).nonzero()[0])
-            np.random.seed(my_random_seed)
-            np.random.shuffle(id_class_now)
-            id_classes.append(id_class_now)
-
-        fraction_ids_class = []
-        if trial.suggest_categorical('unbalance_data', [True, False]):
-            for i_class in range(len(class_labels)):
-                fraction_ids_class.append(trial.suggest_uniform('fraction_ids_class' + str(i_class), 0, 1))
-        else:
-            sampling_factor_train_only = trial.suggest_uniform('sampling_factor_train_only', 0, 1)
-            for i_class in range(len(class_labels)):
-                fraction_ids_class.append(sampling_factor_train_only)
-
-        number_class = []
-        for i_class in range(len(class_labels)):
-            current_number_class = int(fraction_ids_class[i_class] * len(id_classes[i_class]))
-            if current_number_class == 0:
-                raise Exception()
-            number_class.append(current_number_class)
-
-        all_sampled_training_ids = []
-        for i_class in range(len(class_labels)):
-            all_sampled_training_ids.extend(id_classes[i_class][0:number_class[i_class]])
-
-        X_train = X_train[all_sampled_training_ids, :]
-        y_train = y_train[all_sampled_training_ids]
-        '''
 
         trial.set_user_attr('data_random_seed', my_random_seed)
 
@@ -443,13 +343,16 @@ def get_best_trial(model_uncertainty):
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24*7:
+    if time.time() - starting_time_tt > 60*60*24:
         return -1
 
-    my_lock.acquire()
-    X_meta = dictionary['X_meta']
-    y_meta = dictionary['y_meta']
-    my_lock.release()
+    X_meta = copy.deepcopy(dictionary['X_meta'])
+    y_meta = copy.deepcopy(dictionary['y_meta'])
+
+    # how many are there
+    my_len = min(len(X_meta), len(y_meta))
+    X_meta = X_meta[0:my_len, :]
+    y_meta = y_meta[0:my_len]
 
     #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
 
@@ -487,23 +390,6 @@ def sample_and_evaluate(my_id1):
 
     my_lock.release()
 
-    if my_id1 % topk == 0:
-        with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
-            pickle.dump(model_uncertainty, pickle_model_file)
-
-        with open('/tmp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
-            pickle.dump(X_meta, pickle_model_file)
-
-        with open('/tmp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
-            pickle.dump(y_meta, pickle_model_file)
-
-        with open('/tmp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
-            pickle.dump(group_meta, pickle_model_file)
-
-        with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
-            pickle.dump(aquisition_function_value, pickle_model_file)
-
-
     return 0
 
 assert len(X_meta) == len(y_meta)
@@ -515,3 +401,23 @@ dictionary['aquisition_function_value'] = aquisition_function_value
 
 with MyPool(processes=topk) as pool:
     results = pool.map(sample_and_evaluate, range(100000))
+
+print('storing stuff')
+
+model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
+model_uncertainty.fit(dictionary['X_meta'], dictionary['y_meta'])
+
+with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
+    pickle.dump(model_uncertainty, pickle_model_file)
+
+with open('/tmp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
+    pickle.dump(dictionary['X_meta'], pickle_model_file)
+
+with open('/tmp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
+    pickle.dump(dictionary['y_meta'], pickle_model_file)
+
+with open('/tmp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
+    pickle.dump(dictionary['group_meta'], pickle_model_file)
+
+with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
+    pickle.dump(dictionary['aquisition_function_value'], pickle_model_file)

@@ -274,8 +274,7 @@ class MyAutoML:
                         isinstance(classifier, QuadraticDiscriminantAnalysisOptuna) or \
                         isinstance(classifier, HistGradientBoostingClassifierOptuna) or \
                         isinstance(classifier, PrivateLogisticRegressionOptuna) or \
-                        isinstance(classifier, PrivateGaussianNBOptuna) or \
-                        isinstance(classifier, PassiveAggressiveOptuna):
+                        isinstance(classifier, PrivateGaussianNBOptuna):
                     pass
                 else:
                     class_weighting = self.space.suggest_categorical('class_weighting', [True, False])

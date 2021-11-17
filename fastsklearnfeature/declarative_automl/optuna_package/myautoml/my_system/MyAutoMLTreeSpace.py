@@ -105,12 +105,12 @@ class MyAutoMLSpace:
     def recursive_sampling_SMAC(self, node, x):
         for child in node.children:
             if node.status:
-                child.status = x[child.name]
-            else:
-                if child.is_default and node.parent.status:
-                    child.status = True
+                if child.name in x:
+                    child.status = x[child.name]
                 else:
-                    child.status = False
+                    print('child: ' + str(child.name))
+            else:
+                child.status = False
             self.recursive_sampling_SMAC(child, x)
 
     def sample_parameters_SMAC(self, x):

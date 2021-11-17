@@ -10,7 +10,7 @@ from sklearn.metrics import make_scorer
 from sklearn.metrics import roc_auc_score
 import openml
 import numpy as np
-from fastsklearnfeature.declarative_automl.optuna_package.autosklearn_flex.components.Space_GenerationTreeBalance import SpaceGenerator
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 
 import copy
 from optuna.trial import FrozenTrial
