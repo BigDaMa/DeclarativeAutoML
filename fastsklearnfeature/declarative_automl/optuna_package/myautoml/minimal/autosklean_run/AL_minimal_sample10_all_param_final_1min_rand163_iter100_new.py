@@ -394,36 +394,40 @@ def sample_and_evaluate(my_id1):
     model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
     model_uncertainty.fit(X_meta, y_meta)
 
-    best_trial = get_best_trial(model_uncertainty)
-    features_of_sampled_point = best_trial.user_attrs['features']
+    try:
+        best_trial = get_best_trial(model_uncertainty)
+        features_of_sampled_point = best_trial.user_attrs['features']
 
-    result = run_AutoML(best_trial)
-    actual_y = result['objective']
+        result = run_AutoML(best_trial)
+        actual_y = result['objective']
 
-    my_lock.acquire()
+        my_lock.acquire()
 
-    X_meta = dictionary['X_meta']
-    dictionary['X_meta'] = np.vstack((X_meta, features_of_sampled_point))
+        try:
+            X_meta = dictionary['X_meta']
+            dictionary['X_meta'] = np.vstack((X_meta, features_of_sampled_point))
 
-    y_meta = dictionary['y_meta']
-    y_meta.append(actual_y)
-    dictionary['y_meta'] = y_meta
+            y_meta = dictionary['y_meta']
+            y_meta.append(actual_y)
+            dictionary['y_meta'] = y_meta
 
-    #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+            #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
 
-    group_meta = dictionary['group_meta']
-    group_meta.append(best_trial.params['dataset_id'])
-    dictionary['group_meta'] = group_meta
+            group_meta = dictionary['group_meta']
+            group_meta.append(best_trial.params['dataset_id'])
+            dictionary['group_meta'] = group_meta
 
-    #assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
+            #assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
 
-    aquisition_function_value = dictionary['aquisition_function_value']
-    aquisition_function_value.append(best_trial.value)
-    dictionary['aquisition_function_value'] = aquisition_function_value
-
-    #assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
-
-    my_lock.release()
+            aquisition_function_value = dictionary['aquisition_function_value']
+            aquisition_function_value.append(best_trial.value)
+            dictionary['aquisition_function_value'] = aquisition_function_value
+        except Exception as e:
+            print('caught1: ' + str(e))
+        finally:
+            my_lock.release()
+    except Exception as e:
+        print('caught: ' + str(e))
 
     return 0
 
