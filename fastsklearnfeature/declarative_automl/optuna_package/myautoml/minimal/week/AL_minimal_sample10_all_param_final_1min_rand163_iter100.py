@@ -36,7 +36,7 @@ my_openml_tasks = [75126, 75125, 75121, 75120, 75116, 75115, 75114, 189859, 1898
 my_scorer = make_scorer(balanced_accuracy_score)
 
 
-mp_glob.total_search_time = 1*60#60
+mp_glob.total_search_time = 5*60#60
 topk = 28#26 # 20
 continue_from_checkpoint = False
 
@@ -343,7 +343,7 @@ def get_best_trial(model_uncertainty):
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24:
+    if time.time() - starting_time_tt > 60*60*24*7:
         return -1
 
     X_meta = copy.deepcopy(dictionary['X_meta'])
@@ -355,40 +355,45 @@ def sample_and_evaluate(my_id1):
     y_meta = y_meta[0:my_len]
 
     #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+    try:
+        model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
+        model_uncertainty.fit(X_meta, y_meta)
 
-    model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
-    model_uncertainty.fit(X_meta, y_meta)
+        best_trial = get_best_trial(model_uncertainty)
+        features_of_sampled_point = best_trial.user_attrs['features']
 
-    best_trial = get_best_trial(model_uncertainty)
-    features_of_sampled_point = best_trial.user_attrs['features']
-
-    result = run_AutoML(best_trial)
-    actual_y = result['objective']
+        result = run_AutoML(best_trial)
+        actual_y = result['objective']
+    except Exception as e:
+        print('exception: ' + str(e))
+        return 0
 
     my_lock.acquire()
+    try:
+        X_meta = dictionary['X_meta']
+        dictionary['X_meta'] = np.vstack((X_meta, features_of_sampled_point))
 
-    X_meta = dictionary['X_meta']
-    dictionary['X_meta'] = np.vstack((X_meta, features_of_sampled_point))
+        y_meta = dictionary['y_meta']
+        y_meta.append(actual_y)
+        dictionary['y_meta'] = y_meta
 
-    y_meta = dictionary['y_meta']
-    y_meta.append(actual_y)
-    dictionary['y_meta'] = y_meta
+        #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
 
-    #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+        group_meta = dictionary['group_meta']
+        group_meta.append(best_trial.params['dataset_id'])
+        dictionary['group_meta'] = group_meta
 
-    group_meta = dictionary['group_meta']
-    group_meta.append(best_trial.params['dataset_id'])
-    dictionary['group_meta'] = group_meta
+        #assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
 
-    #assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
+        aquisition_function_value = dictionary['aquisition_function_value']
+        aquisition_function_value.append(best_trial.value)
+        dictionary['aquisition_function_value'] = aquisition_function_value
 
-    aquisition_function_value = dictionary['aquisition_function_value']
-    aquisition_function_value.append(best_trial.value)
-    dictionary['aquisition_function_value'] = aquisition_function_value
-
-    #assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
-
-    my_lock.release()
+        #assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
+    except Exception as e:
+        print('exception: ' + str(e))
+    finally:
+        my_lock.release()
 
     return 0
 
