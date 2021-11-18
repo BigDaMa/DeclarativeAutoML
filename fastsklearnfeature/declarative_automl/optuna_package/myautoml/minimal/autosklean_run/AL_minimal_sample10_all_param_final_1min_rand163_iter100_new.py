@@ -22,10 +22,12 @@ import multiprocessing as mp
 from multiprocessing import Lock
 import openml
 from sklearn.metrics import balanced_accuracy_score
+import shutil
 
 from autosklearn.metrics import balanced_accuracy
 
 import sklearn
+import os
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -151,6 +153,9 @@ def run_AutoML(trial):
     Config.setup()
     for random_i in range(repetitions_count):
         test_score = 0.0
+        my_folder = '/home/neutatz/data/autosklearn_folder/autosklearn_dynamic_tmp_' + str(time.time()) + '_' + str(
+            np.random.randint(10000)) + '_' + str(random_i)
+
         try:
             automl = AutoSklearn2Classifier(
                 time_left_for_this_task=search_time,
@@ -159,7 +164,7 @@ def run_AutoML(trial):
                 metric=balanced_accuracy,
                 seed=random_i,
                 memory_limit=1024 * 250,
-                tmp_folder='/tmp/autosklearn_dynamic_tmp_' + str(time.time()) + '_' + str(np.random.randint(10000)) + '_' + str(random_i)
+                tmp_folder=my_folder
             )
 
             X_train_sample = X_train
@@ -176,6 +181,10 @@ def run_AutoML(trial):
             print(test_score)
         except Exception as e:
             print(e)
+
+        if os.path.isdir(my_folder):
+            shutil.rmtree(my_folder)
+
         dynamic_params.append(test_score)
     dynamic_values = np.array(dynamic_params)
 
@@ -187,6 +196,8 @@ def run_AutoML(trial):
     Config.setup()
     for random_i in range(repetitions_count):
         test_score = 0.0
+        my_folder = '/home/neutatz/data/autosklearn_folder/autosklearn_static_tmp_' + str(time.time()) + '_' + str(
+            np.random.randint(10000)) + '_' + str(random_i)
         try:
             automl = AutoSklearn2Classifier(
                 time_left_for_this_task=search_time,
@@ -195,7 +206,7 @@ def run_AutoML(trial):
                 metric=balanced_accuracy,
                 seed=random_i,
                 memory_limit=1024 * 250,
-                tmp_folder='/tmp/autosklearn_static_tmp_' + str(time.time()) + '_' + str(np.random.randint(10000)) + '_' + str(random_i)
+                tmp_folder=my_folder
             )
 
             automl.fit(X_train.copy(), y_train.copy(), feat_type=feat_type, metric=balanced_accuracy)
@@ -203,6 +214,10 @@ def run_AutoML(trial):
             test_score = my_scorer(automl, X_test, y_test)
         except Exception as e:
             print(e)
+
+        if os.path.isdir(my_folder):
+            shutil.rmtree(my_folder)
+
         static_params.append(test_score)
 
     static_values = np.array(static_params)
@@ -427,17 +442,17 @@ print('storing stuff')
 model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
 model_uncertainty.fit(dictionary['X_meta'], dictionary['y_meta'])
 
-with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/autosklearn_folder/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(model_uncertainty, pickle_model_file)
 
-with open('/tmp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/autosklearn_folder/felix_X_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['X_meta'], pickle_model_file)
 
-with open('/tmp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/autosklearn_folder/felix_y_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['y_meta'], pickle_model_file)
 
-with open('/tmp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/autosklearn_folder/felix_group_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['group_meta'], pickle_model_file)
 
-with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/autosklearn_folder/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['aquisition_function_value'], pickle_model_file)
