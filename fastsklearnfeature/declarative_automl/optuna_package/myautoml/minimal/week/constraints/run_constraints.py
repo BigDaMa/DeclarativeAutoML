@@ -37,8 +37,8 @@ my_scorer = make_scorer(balanced_accuracy_score)
 
 
 mp_glob.total_search_time = 5*60#60
-topk = 28#26 # 20
-continue_from_checkpoint = False
+topk = 25#26 # 20
+continue_from_checkpoint = True
 
 starting_time_tt = time.time()
 
@@ -276,7 +276,7 @@ aquisition_function_value = []
 
 
 #path2files = '/home/neutatz/phd2/decAutoML2weeks_compare2default/single_cpu_machine1_4D_start_and_class_imbalance'
-path2files = '/tmp'
+path2files = '/home/neutatz/data/my_temp'
 
 
 if continue_from_checkpoint:
@@ -345,7 +345,7 @@ def get_best_trial(model_uncertainty):
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24*7:
+    if time.time() - starting_time_tt > 60*60*24:
         return -1
 
     X_meta = copy.deepcopy(dictionary['X_meta'])
