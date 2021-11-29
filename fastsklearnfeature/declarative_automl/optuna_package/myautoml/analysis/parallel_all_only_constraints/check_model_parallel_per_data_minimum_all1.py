@@ -104,35 +104,19 @@ for test_holdout_dataset_id in [args.dataset]:
             try:
                 result = None
                 search_dynamic = None
-                if mp_global.study_prune.best_trial.value > 0.5:
-                    result, search_dynamic = utils_run_AutoML(mp_global.study_prune.best_trial,
-                                                                 X_train=X_train_hold,
-                                                                 X_test=X_test_hold,
-                                                                 y_train=y_train_hold,
-                                                                 y_test=y_test_hold,
-                                                                 categorical_indicator=categorical_indicator_hold,
-                                                                 my_scorer=my_scorer,
-                                                                 search_time=search_time_frozen,
-                                                                 memory_limit=memory_budget,
-                                                                 privacy_limit=privacy,
-                                                                 pipeline_size_limit=pipeline_size
-                                                 )
-                else:
-                    gen_new = SpaceGenerator()
-                    space = gen_new.generate_params()
 
-                    search_default = MyAutoML(n_jobs=1,
-                                              time_search_budget=search_time_frozen,
-                                              space=space,
-                                              evaluation_budget=int(0.1 * search_time_frozen),
-                                              main_memory_budget_gb=memory_budget,
-                                              differential_privacy_epsilon=privacy,
-                                              hold_out_fraction=0.33,
-                                              pipeline_size_limit=pipeline_size
-                                              )
-
-                    best_result = search_default.fit(X_train_hold, y_train_hold, categorical_indicator=categorical_indicator_hold, scorer=my_scorer)
-                    result = my_scorer(search_default.get_best_pipeline(), X_test_hold, y_test_hold)
+                result, search_dynamic = utils_run_AutoML(mp_global.study_prune.best_trial,
+                                                             X_train=X_train_hold,
+                                                             X_test=X_test_hold,
+                                                             y_train=y_train_hold,
+                                                             y_test=y_test_hold,
+                                                             categorical_indicator=categorical_indicator_hold,
+                                                             my_scorer=my_scorer,
+                                                             search_time=search_time_frozen,
+                                                             memory_limit=memory_budget,
+                                                             privacy_limit=privacy,
+                                                             pipeline_size_limit=pipeline_size
+                                             )
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
             except:
