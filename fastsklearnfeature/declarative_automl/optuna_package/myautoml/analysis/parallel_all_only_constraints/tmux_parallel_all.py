@@ -24,7 +24,7 @@ session.attached_pane.send_keys('exec bash')
 session.attached_pane.send_keys('conda activate ' + conda_name)
 session.attached_pane.send_keys('cd /home/neutatz/Software/DeclarativeAutoML')
 #session.attached_pane.send_keys('git pull origin main')
-session.attached_pane.send_keys('python -m pip install .')
+#session.attached_pane.send_keys('python -m pip install .')
 
 
 time.sleep(60)
