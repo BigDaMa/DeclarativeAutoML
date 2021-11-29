@@ -127,7 +127,8 @@ for test_holdout_dataset_id in [args.dataset]:
                                               evaluation_budget=int(0.1 * search_time_frozen),
                                               main_memory_budget_gb=memory_budget,
                                               differential_privacy_epsilon=privacy,
-                                              hold_out_fraction=0.33
+                                              hold_out_fraction=0.33,
+                                              pipeline_size_limit=pipeline_size
                                               )
 
                     best_result = search_default.fit(X_train_hold, y_train_hold, categorical_indicator=categorical_indicator_hold, scorer=my_scorer)
@@ -166,7 +167,8 @@ for test_holdout_dataset_id in [args.dataset]:
                                       evaluation_budget=int(0.1 * search_time_frozen),
                                       main_memory_budget_gb=memory_budget,
                                       differential_privacy_epsilon=privacy,
-                                      hold_out_fraction=0.33
+                                      hold_out_fraction=0.33,
+                                      pipeline_size_limit=pipeline_size
                                       )
 
             best_result = search_default.fit(X_train_hold, y_train_hold,
