@@ -36,7 +36,7 @@ my_openml_tasks = [75126, 75125, 75121, 75120, 75116, 75115, 75114, 189859, 1898
 my_scorer = make_scorer(balanced_accuracy_score)
 
 
-mp_glob.total_search_time = 5*60#60
+mp_glob.total_search_time = 1*60#60
 topk = 26#26 # 20
 continue_from_checkpoint = True
 
@@ -412,17 +412,17 @@ print('storing stuff')
 model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
 model_uncertainty.fit(dictionary['X_meta'], dictionary['y_meta'])
 
-with open('/tmp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/my_temp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(model_uncertainty, pickle_model_file)
 
-with open('/tmp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/my_temp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['X_meta'], pickle_model_file)
 
-with open('/tmp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/my_temp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['y_meta'], pickle_model_file)
 
-with open('/tmp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/my_temp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['group_meta'], pickle_model_file)
 
-with open('/tmp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/my_temp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['aquisition_function_value'], pickle_model_file)
