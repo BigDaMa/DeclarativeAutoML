@@ -133,46 +133,46 @@ for test_holdout_dataset_id in [args.dataset]:
 
         print('dynamic: ' + str(dynamic_approach))
 
-    current_static = []
-    new_constraint_evaluation_default = ConstraintEvaluation(dataset=test_holdout_dataset_id,
-                                                             constraint={'pipeline_size': pipeline_size},
-                                                             system_def='default')
+        current_static = []
+        new_constraint_evaluation_default = ConstraintEvaluation(dataset=test_holdout_dataset_id,
+                                                                 constraint={'pipeline_size': pipeline_size},
+                                                                 system_def='default')
 
 
-    for repeat in range(10):
-        gen_new = SpaceGenerator()
-        space = gen_new.generate_params()
+        for repeat in range(10):
+            gen_new = SpaceGenerator()
+            space = gen_new.generate_params()
 
-        try:
-            result = None
-            search_default = MyAutoML(n_jobs=1,
-                                      time_search_budget=search_time_frozen,
-                                      space=space,
-                                      evaluation_budget=int(0.1 * search_time_frozen),
-                                      main_memory_budget_gb=memory_budget,
-                                      differential_privacy_epsilon=privacy,
-                                      hold_out_fraction=0.33,
-                                      pipeline_size_limit=pipeline_size
-                                      )
+            try:
+                result = None
+                search_default = MyAutoML(n_jobs=1,
+                                          time_search_budget=search_time_frozen,
+                                          space=space,
+                                          evaluation_budget=int(0.1 * search_time_frozen),
+                                          main_memory_budget_gb=memory_budget,
+                                          differential_privacy_epsilon=privacy,
+                                          hold_out_fraction=0.33,
+                                          pipeline_size_limit=pipeline_size
+                                          )
 
-            best_result = search_default.fit(X_train_hold, y_train_hold,
-                                             categorical_indicator=categorical_indicator_hold, scorer=my_scorer)
-            result = my_scorer(search_default.get_best_pipeline(), X_test_hold, y_test_hold)
+                best_result = search_default.fit(X_train_hold, y_train_hold,
+                                                 categorical_indicator=categorical_indicator_hold, scorer=my_scorer)
+                result = my_scorer(search_default.get_best_pipeline(), X_test_hold, y_test_hold)
 
-            new_constraint_evaluation_default.append(
-                ConstraintRun(space_str=space2str(space.parameter_tree), params='default',
-                              test_score=result, estimated_score=0.0))
-        except:
-            result = 0
-            new_constraint_evaluation_default.append(
-                ConstraintRun(space_str=space2str(space.parameter_tree), params='default',
-                              test_score=result, estimated_score=0.0))
+                new_constraint_evaluation_default.append(
+                    ConstraintRun(space_str=space2str(space.parameter_tree), params='default',
+                                  test_score=result, estimated_score=0.0))
+            except:
+                result = 0
+                new_constraint_evaluation_default.append(
+                    ConstraintRun(space_str=space2str(space.parameter_tree), params='default',
+                                  test_score=result, estimated_score=0.0))
 
-        print("test result: " + str(result))
-        current_static.append(result)
+            print("test result: " + str(result))
+            current_static.append(result)
 
-    static_approach.append(current_static)
-    new_constraint_evaluation_default_all.append(new_constraint_evaluation_default)
+        static_approach.append(current_static)
+        new_constraint_evaluation_default_all.append(new_constraint_evaluation_default)
 
 
     results_dict_log = {}
