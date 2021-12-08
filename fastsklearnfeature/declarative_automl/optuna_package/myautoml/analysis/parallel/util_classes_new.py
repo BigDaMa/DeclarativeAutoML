@@ -6,6 +6,7 @@ def space2str(parameter_tree):
     for pre, _, node in RenderTree(parameter_tree):
         if node.status == True:
             my_str += "%s%s" % (pre, node.name)
+            my_str += '\n'
     return my_str
 
 class ConstraintRun(object):
