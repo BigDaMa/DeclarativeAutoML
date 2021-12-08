@@ -317,30 +317,21 @@ else:
 
 
 class Objective(object):
-    def __init__(self, model_uncertainty):
-        self.model_uncertainty = model_uncertainty
-
     def __call__(self, trial):
         features = sample_configuration(trial)
         if type(features) == type(None):
             return -1 * np.inf
+        return 1.0
 
-        predictions = []
-        for tree in range(self.model_uncertainty.n_estimators):
-            predictions.append(predict_range(self.model_uncertainty.estimators_[tree], features))
+def get_best_trial():
+    while True:
+        sampler = RandomSampler()
+        study_uncertainty = optuna.create_study(direction='maximize', sampler=sampler)
+        my_objective = Objective()
+        study_uncertainty.optimize(my_objective, n_trials=1, n_jobs=1)
 
-        stddev_pred = np.std(np.matrix(predictions).transpose(), axis=1)
-        uncertainty = stddev_pred[0]
-
-        objective = uncertainty
-        return objective
-
-def get_best_trial(model_uncertainty):
-    sampler = TPESampler()
-    study_uncertainty = optuna.create_study(direction='maximize', sampler=sampler)
-    my_objective = Objective(model_uncertainty)
-    study_uncertainty.optimize(my_objective, n_trials=100, n_jobs=1)
-    return study_uncertainty.best_trial
+        if study_uncertainty.best_value == 1.0:
+            return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
     if time.time() - starting_time_tt > 60*60*24:
