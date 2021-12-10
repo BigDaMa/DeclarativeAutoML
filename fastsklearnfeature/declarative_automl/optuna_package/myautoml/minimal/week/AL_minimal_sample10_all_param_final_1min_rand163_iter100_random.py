@@ -347,10 +347,7 @@ def sample_and_evaluate(my_id1):
 
     #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
     try:
-        model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
-        model_uncertainty.fit(X_meta, y_meta)
-
-        best_trial = get_best_trial(model_uncertainty)
+        best_trial = get_best_trial()
         features_of_sampled_point = best_trial.user_attrs['features']
 
         result = run_AutoML(best_trial)
