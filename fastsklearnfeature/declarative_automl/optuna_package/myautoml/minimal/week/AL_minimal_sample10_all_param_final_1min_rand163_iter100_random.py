@@ -36,8 +36,8 @@ my_openml_tasks = [75126, 75125, 75121, 75120, 75116, 75115, 75114, 189859, 1898
 my_scorer = make_scorer(balanced_accuracy_score)
 
 
-mp_glob.total_search_time = 5*60#60
-topk = 26#26 # 20
+mp_glob.total_search_time = 60#5*60#60 #TODO
+topk = 3#26#26 # 20 #TODO
 continue_from_checkpoint = False
 
 starting_time_tt = time.time()
@@ -64,11 +64,11 @@ feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
 print(len(feature_names_new))
 
-random_runs = (163)
+random_runs = 6#(163) #TODO
 
 
 def run_AutoML(trial):
-    repetitions_count = 10
+    repetitions_count = 1#10 # TODO
 
     space = trial.user_attrs['space']
 
@@ -334,18 +334,9 @@ def get_best_trial():
             return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24:
+    if time.time() - starting_time_tt > 60*5:#60*60*24: #TODO
         return -1
 
-    X_meta = copy.deepcopy(dictionary['X_meta'])
-    y_meta = copy.deepcopy(dictionary['y_meta'])
-
-    # how many are there
-    my_len = min(len(X_meta), len(y_meta))
-    X_meta = X_meta[0:my_len, :]
-    y_meta = y_meta[0:my_len]
-
-    #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
     try:
         best_trial = get_best_trial()
         features_of_sampled_point = best_trial.user_attrs['features']
@@ -399,6 +390,8 @@ print('storing stuff')
 
 model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
 model_uncertainty.fit(dictionary['X_meta'], dictionary['y_meta'])
+print(len(dictionary['X_meta']))
+print(len(dictionary['y_meta']))
 
 with open('/home/neutatz/data/my_temp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(model_uncertainty, pickle_model_file)
