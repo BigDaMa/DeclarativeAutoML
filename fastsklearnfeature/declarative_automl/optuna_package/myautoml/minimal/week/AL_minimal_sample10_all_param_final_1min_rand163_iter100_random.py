@@ -36,8 +36,8 @@ my_openml_tasks = [75126, 75125, 75121, 75120, 75116, 75115, 75114, 189859, 1898
 my_scorer = make_scorer(balanced_accuracy_score)
 
 
-mp_glob.total_search_time = 60#5*60#60 #TODO
-topk = 3#26#26 # 20 #TODO
+mp_glob.total_search_time = 5*60#60
+topk = 26#26 # 20
 continue_from_checkpoint = False
 
 starting_time_tt = time.time()
@@ -64,11 +64,11 @@ feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
 print(len(feature_names_new))
 
-random_runs = 6#(163) #TODO
+random_runs = (163)
 
 
 def run_AutoML(trial):
-    repetitions_count = 1#10 # TODO
+    repetitions_count = 10
 
     space = trial.user_attrs['space']
 
@@ -334,7 +334,7 @@ def get_best_trial():
             return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*5:#60*60*24: #TODO
+    if time.time() - starting_time_tt > 60*60*24:
         return -1
 
     try:
