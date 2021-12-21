@@ -36,9 +36,9 @@ my_openml_tasks = [75126, 75125, 75121, 75120, 75116, 75115, 75114, 189859, 1898
 my_scorer = make_scorer(balanced_accuracy_score)
 
 
-mp_glob.total_search_time = 5*60#60
+mp_glob.total_search_time = 10*60#60
 topk = 20#26 # 20
-continue_from_checkpoint = False
+continue_from_checkpoint = True
 
 starting_time_tt = time.time()
 
@@ -274,7 +274,7 @@ aquisition_function_value = []
 
 
 #path2files = '/home/neutatz/phd2/decAutoML2weeks_compare2default/single_cpu_machine1_4D_start_and_class_imbalance'
-path2files = '/tmp'
+path2files = '/home/neutatz/data/my_temp'
 
 
 if continue_from_checkpoint:
