@@ -14,6 +14,8 @@ import argparse
 import openml
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.my_global_vars as mp_global
 from sklearn.metrics import balanced_accuracy_score
+import time
+from optuna.samplers import NSGAIISampler
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -27,7 +29,7 @@ parser.add_argument("--outputname", "-o", help="Name of the output file")
 args = parser.parse_args()
 print(args.dataset)
 
-#args.dataset = 448
+#args.dataset = 168794
 #args.outputname = 'testtest'
 
 
@@ -47,6 +49,7 @@ for test_holdout_dataset_id in [args.dataset]:
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine4/my_great_model_compare_scaled.p', "rb"))
     model_success = pickle.load(open('/home/neutatz/data/my_temp/my_great_model_compare_scaled.p', "rb"))
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/sep14_sampling/my_great_model_compare_scaled.p', "rb"))
+    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/model_1_week_dez_17/my_great_model_compare_scaled.p', "rb"))
 
     my_list_constraints = ['global_search_time_constraint',
                            'global_evaluation_time_constraint',
@@ -79,7 +82,10 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                  system_def='dynamic')
         for repeat in range(10):
 
-            mp_global.study_prune = optuna.create_study(direction='maximize')
+            start_probing = time.time()
+
+
+            mp_global.study_prune = optuna.create_study(direction='maximize', sampler=NSGAIISampler()) #TODO
             mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample(trial=trial,
                                                                                    metafeature_values_hold=metafeature_values_hold,
                                                                                    search_time=search_time_frozen,
@@ -90,6 +96,7 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                                    #hold_out_fraction=0.33,
                                                                                    tune_space=True
                                                                                    ), n_trials=1000, n_jobs=1)
+            print("probing time: " + str(time.time() - start_probing))
 
             space = mp_global.study_prune.best_trial.user_attrs['space']
 
