@@ -15,6 +15,7 @@ import openml
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.my_global_vars as mp_global
 from sklearn.metrics import balanced_accuracy_score
 from sklearn.ensemble import RandomForestRegressor
+from optuna.samplers import NSGAIISampler
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -88,7 +89,7 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                  system_def='dynamic')
         for repeat in range(10):
 
-            mp_global.study_prune = optuna.create_study(direction='maximize')
+            mp_global.study_prune = optuna.create_study(direction='maximize', sampler=NSGAIISampler())
             mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample(trial=trial,
                                                                                    metafeature_values_hold=metafeature_values_hold,
                                                                                    search_time=search_time_frozen,
