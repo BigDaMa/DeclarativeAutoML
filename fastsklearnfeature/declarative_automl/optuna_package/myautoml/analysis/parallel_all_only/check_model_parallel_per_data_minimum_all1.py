@@ -85,7 +85,7 @@ for test_holdout_dataset_id in [args.dataset]:
             start_probing = time.time()
 
 
-            mp_global.study_prune = optuna.create_study(direction='maximize', sampler=NSGAIISampler()) #TODO
+            mp_global.study_prune = optuna.create_study(direction='maximize') #TODO
             mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample(trial=trial,
                                                                                    metafeature_values_hold=metafeature_values_hold,
                                                                                    search_time=search_time_frozen,
@@ -107,7 +107,7 @@ for test_holdout_dataset_id in [args.dataset]:
             try:
                 result = None
                 search_dynamic = None
-                if mp_global.study_prune.best_trial.value > 0.5:
+                if True:#mp_global.study_prune.best_trial.value > 0.5: #TODO
                     result, search_dynamic = utils_run_AutoML(mp_global.study_prune.best_trial,
                                                                  X_train=X_train_hold,
                                                                  X_test=X_test_hold,
