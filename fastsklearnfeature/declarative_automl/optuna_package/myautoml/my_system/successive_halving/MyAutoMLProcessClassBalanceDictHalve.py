@@ -36,8 +36,11 @@ class StopWhenOptimumReachedCallback:
     optimum: float
 
     def __call__(self, study, trial):
-        if study.best_value == self.optimum:
-            study.stop()
+        try:
+            if study.best_value == self.optimum:
+                study.stop()
+        except:
+            pass
 
 class TimeException(Exception):
     def __init__(self, message="Time is over!"):
@@ -176,11 +179,13 @@ def evaluatePipeline(key, return_dict):
                 if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X):
                     return None
                 else:
-                    return_dict[key + 'result'] = np.mean(scores)
-                    return_dict[key + 'intermediate_steps'] = intermediate_steps
 
-                    if return_dict['study_best_value'] < return_dict[key + 'result']:
-                        return_dict[key + 'trained_pipeline'] = trained_pipeline
+                    if return_dict['study_best_value'] < np.mean(scores):
+                        return_dict[key + 'trained_pipeline'] = copy.deepcopy(p)
+
+                    return_dict[key + 'intermediate_steps'] = intermediate_steps
+                    return_dict[key + 'result'] = np.mean(scores)
+
 
             if training_sampling_factor < 1.0:
                 if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X):
@@ -192,6 +197,9 @@ def evaluatePipeline(key, return_dict):
                 max_score = np.average(scores)
             trial.report(max_score, budget)
             intermediate_steps.append((max_score, budget))
+
+            #if len(intermediate_steps) >=2 and intermediate_steps[-1][0] <= intermediate_steps[-2][0]:
+            #    return None
 
             if trial.should_prune():
                 print('trial should be pruned')
@@ -440,7 +448,7 @@ class MyAutoML:
 
                 if result > 0:
                     if key + 'trained_pipeline' in return_dict:
-                        if self.study.best_value < result:
+                        if return_dict['study_best_value'] < result:
                             trial.set_user_attr('pipeline', return_dict[key + 'trained_pipeline'])
 
 
@@ -449,6 +457,8 @@ class MyAutoML:
                 return -1 * np.inf
 
             if key + 'pruned' in return_dict and return_dict[key + 'pruned']:
+                raise optuna.TrialPruned()
+            elif np.isneginf(result):
                 raise optuna.TrialPruned()
             else:
                 return result
