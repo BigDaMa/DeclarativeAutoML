@@ -114,7 +114,7 @@ def evaluatePipeline(key, return_dict):
 
 
         #sample based on budget:
-        budget = 20
+        budget = len(np.unique(y))*10
         it_is_over = False
         max_score = 0
 
@@ -440,7 +440,6 @@ class MyAutoML:
 
                 if result > 0:
                     if key + 'trained_pipeline' in return_dict:
-                        return_dict[key + 'trained_pipeline']
                         if self.study.best_value < result:
                             trial.set_user_attr('pipeline', return_dict[key + 'trained_pipeline'])
 
@@ -513,7 +512,7 @@ if __name__ == "__main__":
         print("%s%s: %s" % (pre, node.name, node.status))
 
     search = MyAutoML(n_jobs=1,
-                      time_search_budget=5,
+                      time_search_budget=2*60,
                       space=space,
                       main_memory_budget_gb=40,
                       hold_out_fraction=0.3)
