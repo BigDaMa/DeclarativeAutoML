@@ -441,9 +441,9 @@ def generate_features_minimum_sample(trial, metafeature_values_hold, search_time
                 else:
                     hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.33, 0.33)
             else:
-                cv = trial.suggest_int('global_cv', 2, 20, log=False)  # todo: calculate minimum number of splits based on y
+                cv = trial.suggest_int('global_cv', 2, 10, log=False)  # todo: calculate minimum number of splits based on y
                 number_of_cvs = 1
-                if trial.suggest_categorical('use_multiple_cvs', [True, False]):
+                if trial.suggest_categorical('use_multiple_cvs', [False]):
                     number_of_cvs = trial.suggest_int('global_number_cv', 2, 10, log=False)
         else:
             trial.set_user_attr('hold_out_fraction', hold_out_fraction)
