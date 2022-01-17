@@ -1,6 +1,5 @@
-from sklearn.metrics import make_scorer
 import pickle
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_data
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_data
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.util_classes import ConstraintEvaluation, ConstraintRun
 import argparse
 import openml
@@ -10,8 +9,6 @@ from autosklearn.experimental.askl2 import AutoSklearn2Classifier
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
-
-my_scorer = make_scorer(balanced_accuracy_score)
 
 # Initiate the parser
 parser = argparse.ArgumentParser()
@@ -70,6 +67,7 @@ for test_holdout_dataset_id in [args.dataset]:
 
                 y_hat = automl.predict(X_test_hold)
                 result = balanced_accuracy_score(y_test_hold, y_hat)
+
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'test', result, more='test'))
             except:
