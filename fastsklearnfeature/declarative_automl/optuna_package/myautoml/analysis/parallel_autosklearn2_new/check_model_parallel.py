@@ -20,7 +20,7 @@ print(args.dataset)
 
 print(args)
 
-#args.dataset = 168794
+#args.dataset = 31
 
 memory_budget = 500.0
 privacy = None
@@ -57,7 +57,7 @@ for test_holdout_dataset_id in [args.dataset]:
                     metric=balanced_accuracy,
                     seed=repeat,
                     memory_limit=1024 * 250,
-                    ensemble_size=0
+                    ensemble_size=1
                 )
 
                 X_train_sample = X_train_hold
@@ -71,7 +71,8 @@ for test_holdout_dataset_id in [args.dataset]:
 
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'test', result, more='test'))
-            except:
+            except Exception as e:
+                print(e)
                 result = 0
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'shit happened', result, more='test'))
 
