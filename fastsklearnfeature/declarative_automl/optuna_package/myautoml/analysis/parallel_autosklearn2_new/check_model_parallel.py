@@ -56,7 +56,8 @@ for test_holdout_dataset_id in [args.dataset]:
                     delete_tmp_folder_after_terminate=True,
                     metric=balanced_accuracy,
                     seed=repeat,
-                    memory_limit=1024 * 250
+                    memory_limit=1024 * 250,
+                    ensemble_size=0
                 )
 
                 X_train_sample = X_train_hold
