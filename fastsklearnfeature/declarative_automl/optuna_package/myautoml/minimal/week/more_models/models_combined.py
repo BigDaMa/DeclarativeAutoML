@@ -6,7 +6,7 @@ import numpy as np
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 import copy
 from anytree import RenderTree
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor
 from optuna.samplers import RandomSampler
 import pickle
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.mp_global_vars as mp_glob
@@ -131,6 +131,38 @@ def run_AutoML(trial):
     except:
         return {'objective': 0.0}
 
+    dynamic_params = []
+    for random_i in range(repetitions_count):
+        search = MyAutoML(cv=cv,
+                          number_of_cvs=number_of_cvs,
+                          n_jobs=1,
+                          evaluation_budget=evaluation_time,
+                          time_search_budget=search_time,
+                          space=space,
+                          main_memory_budget_gb=memory_limit,
+                          differential_privacy_epsilon=privacy_limit,
+                          hold_out_fraction=hold_out_fraction,
+                          sample_fraction=sample_fraction,
+                          training_time_limit=training_time_limit,
+                          inference_time_limit=inference_time_limit,
+                          pipeline_size_limit=pipeline_size_limit)
+
+        test_score = 0.0
+        try:
+            search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
+
+            best_pipeline = search.get_best_pipeline()
+            if type(best_pipeline) != type(None):
+                test_score = my_scorer(search.get_best_pipeline(), X_test, y_test)
+        except:
+            pass
+        dynamic_params.append(test_score)
+    dynamic_values = np.array(dynamic_params)
+
+    if np.sum(dynamic_values) == 0:
+        return {'objective': 0.0}
+
+    static_params = []
     for random_i in range(repetitions_count):
         # default params
         gen_new = SpaceGenerator()
@@ -151,15 +183,23 @@ def run_AutoML(trial):
                           pipeline_size_limit=pipeline_size_limit
                           )
 
-        test_score_default = 0.0
         try:
             best_result = search_static.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
             test_score_default = my_scorer(search_static.get_best_pipeline(), X_test, y_test)
         except:
             test_score_default = 0.0
-        if test_score_default > 0.0:
-            return {'objective': True}
-    return {'objective': False}
+        static_params.append(test_score_default)
+
+    static_values = np.array(static_params)
+
+    dynamic_values.sort()
+    static_values.sort()
+
+    if np.sum(static_values) == 0.0:
+        return {'objective': np.NaN}
+
+    frequency = np.average(dynamic_values) / np.average(static_values)
+    return {'objective': frequency}
 
 
 def run_AutoML_global(trial_id):
@@ -271,10 +311,11 @@ else:
 
     for result_p in results:
         for f_progress in range(len(result_p['feature_l'])):
-            X_meta = np.vstack((X_meta, result_p['feature_l'][f_progress]))
-            y_meta.append(result_p['target_l'][f_progress])
-            group_meta.append(result_p['group_l'])
-            aquisition_function_value.append(trial_id2aqval[result_p['trial_id_l']])
+            if not np.isnan(result_p['target_l'][f_progress]):
+                X_meta = np.vstack((X_meta, result_p['feature_l'][f_progress]))
+                y_meta.append(result_p['target_l'][f_progress])
+                group_meta.append(result_p['group_l'])
+                aquisition_function_value.append(trial_id2aqval[result_p['trial_id_l']])
 
     print('done')
 
@@ -282,6 +323,9 @@ else:
 class Objective(object):
     def __init__(self, model_uncertainty):
         self.model_uncertainty = model_uncertainty
+
+        with open('/home/neutatz/data/my_temp/static_greater.p', "rb") as pickle_model_file:
+            self.model_static_greater_zero = pickle.load(pickle_model_file)
 
     def __call__(self, trial):
         features = sample_configuration(trial)
@@ -296,7 +340,16 @@ class Objective(object):
         uncertainty = stddev_pred[0]
 
         objective = uncertainty
-        return objective
+        print('objective: ' + str(objective))
+
+        #add constraints here
+        result = self.model_static_greater_zero.predict_proba(predictions)[:, 1][0]
+        if result < 0.5:
+            constraint_distance = 0.5 - result
+            print('constraint_distance: ' + str(constraint_distance))
+            return -1 * constraint_distance
+        else:
+            return objective
 
 def get_best_trial(model_uncertainty):
     sampler = TPESampler()
@@ -318,8 +371,9 @@ def sample_and_evaluate(my_id1):
     y_meta = y_meta[0:my_len]
 
     #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+    actual_y = np.NaN
     try:
-        model_uncertainty = RandomForestClassifier(n_estimators=1000, random_state=my_id1, n_jobs=1)
+        model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
         model_uncertainty.fit(X_meta, y_meta)
 
         best_trial = get_best_trial(model_uncertainty)
@@ -331,32 +385,33 @@ def sample_and_evaluate(my_id1):
         print('exception: ' + str(e))
         return 0
 
-    my_lock.acquire()
-    try:
-        X_meta = dictionary['X_meta']
-        dictionary['X_meta'] = np.vstack((X_meta, features_of_sampled_point))
+    if not np.isnan(actual_y):
+        my_lock.acquire()
+        try:
+            X_meta = dictionary['X_meta']
+            dictionary['X_meta'] = np.vstack((X_meta, features_of_sampled_point))
 
-        y_meta = dictionary['y_meta']
-        y_meta.append(actual_y)
-        dictionary['y_meta'] = y_meta
+            y_meta = dictionary['y_meta']
+            y_meta.append(actual_y)
+            dictionary['y_meta'] = y_meta
 
-        #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
+            #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
 
-        group_meta = dictionary['group_meta']
-        group_meta.append(best_trial.params['dataset_id'])
-        dictionary['group_meta'] = group_meta
+            group_meta = dictionary['group_meta']
+            group_meta.append(best_trial.params['dataset_id'])
+            dictionary['group_meta'] = group_meta
 
-        #assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
+            #assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
 
-        aquisition_function_value = dictionary['aquisition_function_value']
-        aquisition_function_value.append(best_trial.value)
-        dictionary['aquisition_function_value'] = aquisition_function_value
+            aquisition_function_value = dictionary['aquisition_function_value']
+            aquisition_function_value.append(best_trial.value)
+            dictionary['aquisition_function_value'] = aquisition_function_value
 
-        #assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
-    except Exception as e:
-        print('exception: ' + str(e))
-    finally:
-        my_lock.release()
+            #assert len(X_meta) == len(aquisition_function_value), 'len(X) != len(acquisition)'
+        except Exception as e:
+            print('exception: ' + str(e))
+        finally:
+            my_lock.release()
 
     return 0
 
@@ -372,10 +427,10 @@ with MyPool(processes=topk) as pool:
 
 print('storing stuff')
 
-model_uncertainty = RandomForestClassifier(n_estimators=1000, random_state=42, n_jobs=1)
+model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
 model_uncertainty.fit(dictionary['X_meta'], dictionary['y_meta'])
 
-with open('/home/neutatz/data/my_temp/static_greater.p', "wb") as pickle_model_file:
+with open('/home/neutatz/data/my_temp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(model_uncertainty, pickle_model_file)
 
 with open('/home/neutatz/data/my_temp/felix_X_compare_scaled.p', "wb") as pickle_model_file:

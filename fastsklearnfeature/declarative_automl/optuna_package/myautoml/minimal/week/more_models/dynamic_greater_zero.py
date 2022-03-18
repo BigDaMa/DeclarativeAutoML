@@ -131,7 +131,6 @@ def run_AutoML(trial):
     except:
         return {'objective': 0.0}
 
-    dynamic_params = []
     for random_i in range(repetitions_count):
         search = MyAutoML(cv=cv,
                           number_of_cvs=number_of_cvs,
@@ -156,10 +155,9 @@ def run_AutoML(trial):
                 test_score = my_scorer(search.get_best_pipeline(), X_test, y_test)
         except:
             pass
-        dynamic_params.append(test_score)
-    dynamic_values = np.array(dynamic_params)
-
-    return {'objective': np.sum(dynamic_values) > 0.0}
+        if test_score > 0.0:
+            return {'objective': True}
+    return {'objective': False}
 
 
 def run_AutoML_global(trial_id):
