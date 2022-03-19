@@ -339,11 +339,11 @@ class Objective(object):
         stddev_pred = np.std(np.matrix(predictions).transpose(), axis=1)
         uncertainty = stddev_pred[0]
 
-        objective = uncertainty
+        objective = uncertainty[0][0]
         print('objective: ' + str(objective))
 
         #add constraints here
-        result = self.model_static_greater_zero.predict_proba(predictions)[:, 1][0]
+        result = self.model_static_greater_zero.predict_proba(features)[:, 1][0]
         if result < 0.5:
             constraint_distance = 0.5 - result
             print('constraint_distance: ' + str(constraint_distance))
