@@ -355,6 +355,8 @@ class Objective(object):
         if result < 0.5:
             constraint_distance += 0.5 - result
 
+        print('distance: ' + str(constraint_distance))
+
         if constraint_distance > 0.0:
             return -1 * constraint_distance
         else:

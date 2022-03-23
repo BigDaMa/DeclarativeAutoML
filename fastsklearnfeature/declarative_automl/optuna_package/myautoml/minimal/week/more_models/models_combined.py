@@ -198,7 +198,7 @@ def run_AutoML(trial):
     if np.sum(static_values) == 0.0:
         return {'objective': np.NaN}
 
-    frequency = np.average(dynamic_values) / np.average(static_values)
+    frequency = np.square(np.average(dynamic_values) / np.average(static_values))
     return {'objective': frequency}
 
 
@@ -344,6 +344,7 @@ class Objective(object):
 
         #add constraints here
         result = self.model_static_greater_zero.predict_proba(features)[:, 1][0]
+        print('result: ' + str(result))
         if result < 0.5:
             constraint_distance = 0.5 - result
             print('constraint_distance: ' + str(constraint_distance))
