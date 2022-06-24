@@ -1,4 +1,4 @@
-from sklearn.metrics import make_scorer
+from autosklearn.metrics import make_scorer
 import pickle
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import get_data
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.util_classes import ConstraintEvaluation, ConstraintRun
@@ -14,8 +14,6 @@ from functools import partial
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
-
-my_scorer = make_scorer(balanced_accuracy_score)
 
 # Initiate the parser
 parser = argparse.ArgumentParser()
