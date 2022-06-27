@@ -37,19 +37,19 @@ for test_holdout_dataset_id in [args.dataset]:
 
     new_constraint_evaluation_dynamic_all = []
 
-    for pipeline_size in [3175.0, 4026.22, 6651.52, 8359.48, 16797.0, 32266.96]:
+    for inference_time in [0.0007504010200500488, 0.0007910609245300294,0.0008180351257324219,0.0010206394195556641,0.0014590854644775393, 0.00301915740966]:
         minutes_to_search = 5
 
         current_dynamic = []
         search_time_frozen = minutes_to_search * 60
         new_constraint_evaluation_dynamic = ConstraintEvaluation(dataset=test_holdout_dataset_id,
-                                                                 constraint={'pipeline_size': pipeline_size},
+                                                                 constraint={'inference_time': inference_time},
                                                                  system_def='dynamic')
 
         for repeat in range(10):
 
             try:
-                scorerr = make_scorer('balanced_accuracy_constraints', partial(utils.balanced_accuracy_score_constraints, pipeline_size_constraint=pipeline_size), worst_possible_result=-np.inf)
+                scorerr = make_scorer('balanced_accuracy_constraints', partial(utils.balanced_accuracy_score_constraints, inference_time_constraint=inference_time, X=X_train_hold), worst_possible_result=-np.inf)
 
 
                 feat_type = []
@@ -63,7 +63,7 @@ for test_holdout_dataset_id in [args.dataset]:
                 automl = AutoSklearn2Classifier(time_left_for_this_task=search_time_frozen, metric=scorerr, seed=repeat, memory_limit=1024*250, tmp_folder=tmp_path, delete_tmp_folder_after_terminate=True)
                 automl.fit(X_train_hold, y_train_hold, feat_type=feat_type)
 
-                joined_pipeline_size, joined_inference_time, selected_models, selected_weights = utils.return_model_size(automl, X_train_hold, y_train_hold, pipeline_size_constraint=pipeline_size, inference_time_constraint=None)
+                joined_pipeline_size, joined_inference_time, selected_models, selected_weights = utils.return_model_size(automl, X_train_hold, y_train_hold, pipeline_size_constraint=None, inference_time_constraint=inference_time)
 
                 result = 0
                 try:

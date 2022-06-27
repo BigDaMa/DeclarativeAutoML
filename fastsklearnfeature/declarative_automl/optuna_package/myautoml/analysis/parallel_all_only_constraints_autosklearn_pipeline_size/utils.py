@@ -9,8 +9,11 @@ import pickle
 import sys
 from autosklearn.automl import _model_predict
 import numpy as np
+import logging
 
-def balanced_accuracy_score_constraints(y_true, y_pred, sample_weight=None, model=None, pipeline_size_constraint=None):
+import time
+
+def balanced_accuracy_score_constraints(y_true, y_pred, sample_weight=None, model=None, pipeline_size_constraint=None, inference_time_constraint=None, X=None):
     ba = sklearn.metrics.balanced_accuracy_score(y_true, y_pred)
 
     sum_of_constraint_distance = 0
@@ -20,7 +23,28 @@ def balanced_accuracy_score_constraints(y_true, y_pred, sample_weight=None, mode
 
         if pipeline_size > pipeline_size_constraint:
             sum_of_constraint_distance += pipeline_size - pipeline_size_constraint
-    return -1 * sum_of_constraint_distance + ba
+
+    inference_times = []
+    try:
+        if type(model) != type(None) and type(inference_time_constraint) != type(None):
+            for i in range(10):
+                random_id = np.random.randint(low=0, high=X.shape[0])
+                start_inference = time.time()
+                model.predict(X[[random_id]])
+                inference_times.append(time.time() - start_inference)
+            if np.mean(inference_times) > inference_time_constraint:
+                sum_of_constraint_distance += np.mean(inference_times) - inference_time_constraint
+    except:
+        pass
+
+    logging.warning('time: ' + str(np.mean(inference_times)) + ' res:' + str(-1 * sum_of_constraint_distance + ba) + 'inference constaint: ' + str(inference_time_constraint) + "sum: " + str(sum_of_constraint_distance))
+
+
+    if sum_of_constraint_distance > 0:
+        return -1 * sum_of_constraint_distance
+    else:
+        return ba
+
 
 def get_selected_model_identifiers_and_weight(automl):
     output = []
@@ -32,7 +56,7 @@ def get_selected_model_identifiers_and_weight(automl):
 
     return output
 
-def return_model_size(automl, y_train, pipeline_size_constraint=None):
+def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, inference_time_constraint=None):
     try:
         for i, tmp_model in enumerate(automl.automl_.models_.values()):
             if isinstance(tmp_model, (DummyRegressor, DummyClassifier)):
@@ -60,25 +84,68 @@ def return_model_size(automl, y_train, pipeline_size_constraint=None):
 
 
     joined_pipeline_size = 0
+    joined_inference_time = 0
     selected_models = []
     selected_weights = []
     for m_identifier, current_weight in id2weight:
         new_model = models[m_identifier]
-        dumped_obj = pickle.dumps(new_model)
-        pipeline_size = sys.getsizeof(dumped_obj)
-        print('pipeline size: ' + str(pipeline_size))
 
-        if joined_pipeline_size + pipeline_size > pipeline_size_constraint:
+        pipeline_size = 0
+        inference_time = 0
+
+        too_big = False
+        if type(pipeline_size_constraint) != type(None):
+            dumped_obj = pickle.dumps(new_model)
+            pipeline_size = sys.getsizeof(dumped_obj)
+            print('pipeline size: ' + str(pipeline_size))
+            if joined_pipeline_size + pipeline_size > pipeline_size_constraint:
+                too_big = True
+
+        if type(inference_time_constraint) != type(None):
+            inference_times = []
+            for i in range(10):
+                random_id = np.random.randint(low=0, high=X_train.shape[0])
+                if isinstance(new_model, VotingClassifier):
+                    new_model.le_ = preprocessing.LabelEncoder().fit(y_train)
+                start_inference = time.time()
+                new_model.predict(X_train[[random_id]])
+                inference_times.append(time.time() - start_inference)
+            inference_time = np.mean(inference_times)
+            print('inference time: ' + str(inference_time))
+
+            if joined_inference_time + inference_time > inference_time_constraint:
+                too_big = True
+
+        if too_big:
             try:
                 cv_models = []
                 for est in new_model.estimators_:
-                    dumped_obj = pickle.dumps(est)
-                    pipeline_size = sys.getsizeof(dumped_obj)
+                    too_big = False
+                    if type(pipeline_size_constraint) != type(None):
+                        dumped_obj = pickle.dumps(est)
+                        pipeline_size = sys.getsizeof(dumped_obj)
+                        print('pipeline size: ' + str(pipeline_size))
+                        if joined_pipeline_size + pipeline_size > pipeline_size_constraint:
+                            too_big = True
 
-                    if joined_pipeline_size + pipeline_size > pipeline_size_constraint:
+                    if type(inference_time_constraint) != type(None):
+                        inference_times = []
+                        for i in range(10):
+                            random_id = np.random.randint(low=0, high=X.shape[0])
+                            start_inference = time.time()
+                            est.predict(X_train[[random_id]])
+                            inference_times.append(time.time() - start_inference)
+                        inference_time = np.mean(inference_times)
+                        print('inference time: ' + str(inference_time))
+
+                        if joined_inference_time + inference_time > inference_time_constraint:
+                            too_big = True
+
+                    if too_big:
                         break
                     else:
                         joined_pipeline_size += pipeline_size
+                        joined_inference_time += inference_time
                         cv_models.append(est)
                 if len(cv_models) > 1:
                     eclf1 = VotingClassifier(estimators=None, voting='soft')
@@ -96,12 +163,13 @@ def return_model_size(automl, y_train, pipeline_size_constraint=None):
                 pass
         else:
             joined_pipeline_size += pipeline_size
+            joined_inference_time += inference_time
             selected_models.append(new_model)
             selected_weights.append(current_weight)
 
         print('selected models:')
         print(selected_models)
-    return joined_pipeline_size, selected_models, selected_weights
+    return joined_pipeline_size, joined_inference_time, selected_models, selected_weights
 
 def predict_ensemble(predictions, weights) -> np.ndarray:
 
