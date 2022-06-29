@@ -13,7 +13,7 @@ import logging
 
 import time
 
-def balanced_accuracy_score_constraints(y_true, y_pred, sample_weight=None, model=None, pipeline_size_constraint=None, inference_time_constraint=None, X=None):
+def balanced_accuracy_score_constraints(y_true, y_pred, sample_weight=None, model=None, inference_time=None,pipeline_size_constraint=None,inference_time_constraint=None):
     ba = sklearn.metrics.balanced_accuracy_score(y_true, y_pred)
 
     sum_of_constraint_distance = 0
@@ -24,21 +24,13 @@ def balanced_accuracy_score_constraints(y_true, y_pred, sample_weight=None, mode
         if pipeline_size > pipeline_size_constraint:
             sum_of_constraint_distance += pipeline_size - pipeline_size_constraint
 
-    inference_times = []
-    try:
-        if type(model) != type(None) and type(inference_time_constraint) != type(None):
-            for i in range(10):
-                random_id = np.random.randint(low=0, high=X.shape[0])
-                start_inference = time.time()
-                model.predict(X[[random_id]])
-                inference_times.append(time.time() - start_inference)
-            if np.mean(inference_times) > inference_time_constraint:
-                sum_of_constraint_distance += np.mean(inference_times) - inference_time_constraint
-    except:
-        pass
+    if type(inference_time_constraint) != type(None) and type(inference_time) != type(None):
+        if inference_time > inference_time_constraint:
+            sum_of_constraint_distance += inference_time - inference_time_constraint
 
-    logging.warning('time: ' + str(np.mean(inference_times)) + ' res:' + str(-1 * sum_of_constraint_distance + ba) + 'inference constaint: ' + str(inference_time_constraint) + "sum: " + str(sum_of_constraint_distance))
-
+    logging.warning('time: ' + str(inference_time) + ' res:' + str(
+        -1 * sum_of_constraint_distance + ba) + 'inference constaint: ' + str(
+        inference_time_constraint) + "sum: " + str(sum_of_constraint_distance))
 
     if sum_of_constraint_distance > 0:
         return -1 * sum_of_constraint_distance
@@ -82,7 +74,6 @@ def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, i
 
     print(id2weight)
 
-
     joined_pipeline_size = 0
     joined_inference_time = 0
     selected_models = []
@@ -103,63 +94,62 @@ def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, i
 
         if type(inference_time_constraint) != type(None):
             inference_times = []
-            for i in range(10):
+            for _ in range(10):
                 random_id = np.random.randint(low=0, high=X_train.shape[0])
                 if isinstance(new_model, VotingClassifier):
                     new_model.le_ = preprocessing.LabelEncoder().fit(y_train)
                 start_inference = time.time()
-                new_model.predict(X_train[[random_id]])
+                new_model.predict_proba(X_train[[random_id]])
                 inference_times.append(time.time() - start_inference)
             inference_time = np.mean(inference_times)
-            print('inference time: ' + str(inference_time))
+            logging.warning('post model_type: ' + str(type(new_model)) + ' inference time: ' + str(inference_time))
 
             if joined_inference_time + inference_time > inference_time_constraint:
                 too_big = True
 
         if too_big:
-            try:
-                cv_models = []
-                for est in new_model.estimators_:
-                    too_big = False
-                    if type(pipeline_size_constraint) != type(None):
-                        dumped_obj = pickle.dumps(est)
-                        pipeline_size = sys.getsizeof(dumped_obj)
-                        print('pipeline size: ' + str(pipeline_size))
-                        if joined_pipeline_size + pipeline_size > pipeline_size_constraint:
-                            too_big = True
+            cv_models = []
+            for est in new_model.estimators_:
 
-                    if type(inference_time_constraint) != type(None):
-                        inference_times = []
-                        for i in range(10):
-                            random_id = np.random.randint(low=0, high=X.shape[0])
-                            start_inference = time.time()
-                            est.predict(X_train[[random_id]])
-                            inference_times.append(time.time() - start_inference)
-                        inference_time = np.mean(inference_times)
-                        print('inference time: ' + str(inference_time))
+                logging.warning('post model_type: ' + str(type(est)))
 
-                        if joined_inference_time + inference_time > inference_time_constraint:
-                            too_big = True
+                too_big = False
+                if type(pipeline_size_constraint) != type(None):
+                    dumped_obj = pickle.dumps(est)
+                    pipeline_size = sys.getsizeof(dumped_obj)
+                    print('pipeline size: ' + str(pipeline_size))
+                    if joined_pipeline_size + pipeline_size > pipeline_size_constraint:
+                        too_big = True
 
-                    if too_big:
-                        break
-                    else:
-                        joined_pipeline_size += pipeline_size
-                        joined_inference_time += inference_time
-                        cv_models.append(est)
-                if len(cv_models) > 1:
-                    eclf1 = VotingClassifier(estimators=None, voting='soft')
-                    eclf1.estimators_ = cv_models
-                    eclf1.le_ = preprocessing.LabelEncoder().fit(y_train)
-                    selected_models.append(eclf1)
-                    selected_weights.append(current_weight)
-                elif len(cv_models) == 1:
-                    selected_models.append(cv_models[0])
-                    selected_weights.append(current_weight)
+                if type(inference_time_constraint) != type(None):
+                    inference_times = []
+                    for _ in range(10):
+                        random_id = np.random.randint(low=0, high=X_train.shape[0])
+                        start_inference = time.time()
+                        est.predict_proba(X_train[[random_id]])
+                        inference_times.append(time.time() - start_inference)
+                    inference_time = np.mean(inference_times)
+                    logging.warning('post model_type: ' + str(type(est)) + ' inference time: ' + str(inference_time))
+
+                    if joined_inference_time + inference_time > inference_time_constraint:
+                        too_big = True
+
+                if too_big:
+                    break
                 else:
-                    pass
-
-            except:
+                    joined_pipeline_size += pipeline_size
+                    joined_inference_time += inference_time
+                    cv_models.append(est)
+            if len(cv_models) > 1:
+                eclf1 = VotingClassifier(estimators=None, voting='soft')
+                eclf1.estimators_ = cv_models
+                eclf1.le_ = preprocessing.LabelEncoder().fit(y_train)
+                selected_models.append(eclf1)
+                selected_weights.append(current_weight)
+            elif len(cv_models) == 1:
+                selected_models.append(cv_models[0])
+                selected_weights.append(current_weight)
+            else:
                 pass
         else:
             joined_pipeline_size += pipeline_size
@@ -167,9 +157,10 @@ def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, i
             selected_models.append(new_model)
             selected_weights.append(current_weight)
 
-        print('selected models:')
-        print(selected_models)
+
+
     return joined_pipeline_size, joined_inference_time, selected_models, selected_weights
+
 
 def predict_ensemble(predictions, weights) -> np.ndarray:
 

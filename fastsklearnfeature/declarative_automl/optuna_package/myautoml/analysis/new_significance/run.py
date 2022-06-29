@@ -20,13 +20,16 @@ nametag = '/sample_instances_new2_all_'
 #folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/mai26_3weeks'
 #nametag = '/sample_instances_new2_all_'
 
+folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/june27_autosklearn_pipelinesize'
+nametag = '/autosklearn_pipelinesize_'
+
 print(glob.glob( folder + nametag + '*'))
 
 my_list = ['168797', '167200', '189862', '168794', '75097', '189905', '189866', '168796', '75193', '167185', '75105', '167168', '168793', '167152', '126025', '168798', '167083', '167149', '189908', '126026', '189865', '167181', '189906', '189874', '189872', '167190', '167104', '189909', '167161', '75127', '167201', '189861', '126029', '189860', '189873', '167184', '168795', '168792', '189871']
 
 data_means = {}
 
-for constraint_i in range(4):
+for constraint_i in range(10):
     data_all = []
     data_means[constraint_i] = {}
 
