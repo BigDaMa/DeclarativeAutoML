@@ -49,7 +49,7 @@ for test_holdout_dataset_id in [args.dataset]:
         for repeat in range(10):
 
             try:
-                scorerr = make_scorer('balanced_accuracy_constraints', partial(utils.balanced_accuracy_score_constraints, inference_time_constraint=inference_time, X=X_train_hold), worst_possible_result=-np.inf)
+                scorerr = make_scorer('balanced_accuracy_constraints', partial(utils.balanced_accuracy_score_constraints, inference_time_constraint=inference_time), worst_possible_result=-np.inf)
 
 
                 feat_type = []
