@@ -37,19 +37,19 @@ for test_holdout_dataset_id in [args.dataset]:
 
     new_constraint_evaluation_dynamic_all = []
 
-    for pipeline_size in [3175.0, 4026.22, 6651.52, 8359.48, 16797.0, 32266.96]:
+    for training_time in [0.008367328643798829, 0.00939997673034668, 0.009795446395874024, 0.012252435684204102, 0.019357662200927734, 0.07790081024169922]:
         minutes_to_search = 5
 
         current_dynamic = []
         search_time_frozen = minutes_to_search * 60
         new_constraint_evaluation_dynamic = ConstraintEvaluation(dataset=test_holdout_dataset_id,
-                                                                 constraint={'pipeline_size': pipeline_size},
+                                                                 constraint={'training_time': training_time},
                                                                  system_def='dynamic')
 
         for repeat in range(10):
 
             try:
-                scorerr = make_scorer('balanced_accuracy_constraints', partial(utils.balanced_accuracy_score_constraints, pipeline_size_constraint=pipeline_size), worst_possible_result=-np.inf)
+                scorerr = make_scorer('balanced_accuracy_constraints', partial(utils.balanced_accuracy_score_constraints, training_time_constraint=training_time), worst_possible_result=-np.inf)
 
 
                 feat_type = []
@@ -64,7 +64,7 @@ for test_holdout_dataset_id in [args.dataset]:
                 automl.fit(X_train_hold, y_train_hold, feat_type=feat_type)
 
                 joined_pipeline_size, joined_inference_time, joined_training_time, selected_models, selected_weights = utils.return_model_size(
-                    automl, X_train_hold, y_train_hold, pipeline_size_constraint=pipeline_size)
+                    automl, X_train_hold, y_train_hold, training_time_constraint=training_time)
 
                 result = 0
                 try:

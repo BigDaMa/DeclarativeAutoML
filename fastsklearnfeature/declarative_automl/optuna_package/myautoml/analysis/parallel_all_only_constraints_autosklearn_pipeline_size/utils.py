@@ -13,7 +13,7 @@ import logging
 
 import time
 
-def balanced_accuracy_score_constraints(y_true, y_pred, sample_weight=None, model=None, inference_time=None,pipeline_size_constraint=None,inference_time_constraint=None):
+def balanced_accuracy_score_constraints(y_true, y_pred, sample_weight=None, model=None, inference_time=None, training_time=None,pipeline_size_constraint=None,inference_time_constraint=None, training_time_constraint=None):
     ba = sklearn.metrics.balanced_accuracy_score(y_true, y_pred)
 
     sum_of_constraint_distance = 0
@@ -28,9 +28,9 @@ def balanced_accuracy_score_constraints(y_true, y_pred, sample_weight=None, mode
         if inference_time > inference_time_constraint:
             sum_of_constraint_distance += inference_time - inference_time_constraint
 
-    logging.warning('time: ' + str(inference_time) + ' res:' + str(
-        -1 * sum_of_constraint_distance + ba) + 'inference constaint: ' + str(
-        inference_time_constraint) + "sum: " + str(sum_of_constraint_distance))
+    if type(training_time_constraint) != type(None) and type(training_time) != type(None):
+        if training_time > training_time_constraint:
+            sum_of_constraint_distance += training_time - training_time_constraint
 
     if sum_of_constraint_distance > 0:
         return -1 * sum_of_constraint_distance
@@ -48,7 +48,7 @@ def get_selected_model_identifiers_and_weight(automl):
 
     return output
 
-def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, inference_time_constraint=None):
+def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, inference_time_constraint=None, training_time_constraint=None):
     try:
         for i, tmp_model in enumerate(automl.automl_.models_.values()):
             if isinstance(tmp_model, (DummyRegressor, DummyClassifier)):
@@ -76,6 +76,7 @@ def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, i
 
     joined_pipeline_size = 0
     joined_inference_time = 0
+    joined_training_time = 0
     selected_models = []
     selected_weights = []
     for m_identifier, current_weight in id2weight:
@@ -83,6 +84,7 @@ def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, i
 
         pipeline_size = 0
         inference_time = 0
+        training_time = 0
 
         too_big = False
         if type(pipeline_size_constraint) != type(None):
@@ -107,11 +109,26 @@ def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, i
             if joined_inference_time + inference_time > inference_time_constraint:
                 too_big = True
 
+        if type(training_time_constraint) != type(None):
+            for key, value in automl.automl_.runhistory_.data.items():
+                if key.config_id == m_identifier[1]:
+                    if 'training_time_cv' in value.additional_info:
+                        training_time = np.sum(value.additional_info['training_time_cv'])
+                    else:
+                        training_time = value.additional_info['training_time']
+
+                    if joined_training_time + training_time > training_time_constraint:
+                        too_big = True
         if too_big:
             cv_models = []
+            fold_id = 0
             for est in new_model.estimators_:
 
                 logging.warning('post model_type: ' + str(type(est)))
+
+                pipeline_size = 0
+                inference_time = 0
+                training_time = 0
 
                 too_big = False
                 if type(pipeline_size_constraint) != type(None):
@@ -134,12 +151,20 @@ def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, i
                     if joined_inference_time + inference_time > inference_time_constraint:
                         too_big = True
 
-                if too_big:
-                    break
-                else:
+                if type(training_time_constraint) != type(None):
+                    for key, value in automl.automl_.runhistory_.data.items():
+                        if key.config_id == m_identifier[1]:
+                            training_time = value.additional_info['training_time_cv'][fold_id]
+                            if joined_training_time + training_time > training_time_constraint:
+                                too_big = True
+
+                if not too_big:
                     joined_pipeline_size += pipeline_size
                     joined_inference_time += inference_time
+                    joined_training_time += training_time
                     cv_models.append(est)
+
+                fold_id += 1
             if len(cv_models) > 1:
                 eclf1 = VotingClassifier(estimators=None, voting='soft')
                 eclf1.estimators_ = cv_models
@@ -154,12 +179,11 @@ def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, i
         else:
             joined_pipeline_size += pipeline_size
             joined_inference_time += inference_time
+            joined_training_time += training_time
             selected_models.append(new_model)
             selected_weights.append(current_weight)
 
-
-
-    return joined_pipeline_size, joined_inference_time, selected_models, selected_weights
+    return joined_pipeline_size, joined_inference_time, joined_training_time, selected_models, selected_weights
 
 
 def predict_ensemble(predictions, weights) -> np.ndarray:

@@ -20,8 +20,17 @@ nametag = '/sample_instances_new2_all_'
 #folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/mai26_3weeks'
 #nametag = '/sample_instances_new2_all_'
 
-folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/june27_autosklearn_pipelinesize'
-nametag = '/autosklearn_pipelinesize_'
+#folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/june27_autosklearn_pipelinesize'
+#nametag = '/autosklearn_pipelinesize_'
+
+folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/dez3_pipeline_size_m1'
+nametag = '/sample_instances_new2_all_constraints_'
+
+#folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/jun30_autosklearn_inference_time'
+#nametag = '/autosklearn_inference_time_'
+
+#folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/dez3_inference_time'
+#nametag = '/sample_instances_new2_all_constraints_inference_time__'
 
 print(glob.glob( folder + nametag + '*'))
 
@@ -29,14 +38,17 @@ my_list = ['168797', '167200', '189862', '168794', '75097', '189905', '189866', 
 
 data_means = {}
 
+tag = 'static'
+#tag = 'dynamic'
+
 for constraint_i in range(10):
     data_all = []
     data_means[constraint_i] = {}
 
     for datasetid in my_list:
         data = pickle.load(open(folder + nametag + datasetid + '.p', "rb"))
-        data_all.append(data['dynamic'][constraint_i])
-        data_means[constraint_i][datasetid] = np.mean(data['dynamic'][constraint_i])
+        data_all.append(data[tag][constraint_i])
+        data_means[constraint_i][datasetid] = np.mean(data[tag][constraint_i])
 
     pop_dyn, pop_static = [], []
     for i in range(10000):
