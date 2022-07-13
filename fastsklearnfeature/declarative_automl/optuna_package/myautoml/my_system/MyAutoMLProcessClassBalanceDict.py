@@ -29,7 +29,7 @@ import os
 import glob
 from dataclasses import dataclass
 import sys
-
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.fairness.metric import true_positive_rate_score
 
 @dataclass
 class StopWhenOptimumReachedCallback:
@@ -45,7 +45,13 @@ class TimeException(Exception):
         super().__init__(self.message)
 
 
-def constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X):
+def constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X, fairness=None, fairness_limit=None):
+
+    return_dict[key + 'result' + '_fairness'] = fairness
+    if type(fairness_limit) != type(None) and type(fairness) != type(None) and fairness < fairness_limit:
+        return_dict[key + 'result'] = -1 * (fairness_limit - fairness)  # return the difference to satisfying the constraint
+        return False
+
     return_dict[key + 'result' + '_training_time'] = training_time
     if type(training_time_limit) != type(None) and training_time > training_time_limit:
         return_dict[key + 'result'] = -1 * (
@@ -91,6 +97,8 @@ def evaluatePipeline(key, return_dict):
         inference_time_limit = return_dict['inference_time_limit']
         pipeline_size_limit = return_dict['pipeline_size_limit']
         adversarial_robustness_constraint = return_dict['adversarial_robustness_constraint']
+        fairness_limit = return_dict['fairness_limit']
+        group_id = return_dict['fairness_group_id']
 
         size = int(main_memory_budget_gb * 1024.0 * 1024.0 * 1024.0)
         resource.setrlimit(resource.RLIMIT_AS, (size, resource.RLIM_INFINITY))
@@ -102,7 +110,7 @@ def evaluatePipeline(key, return_dict):
             p.fit(X, y)
             training_time = time.time() - start_training
 
-            if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X):
+            if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X, None, fairness_limit):
                 return
 
             trained_pipeline = copy.deepcopy(p)
@@ -110,6 +118,7 @@ def evaluatePipeline(key, return_dict):
 
 
         scores = []
+        fairness_scores = []
 
         if type(hold_out_fraction) == type(None):
             for cv_num in range(number_of_cvs):
@@ -130,8 +139,7 @@ def evaluatePipeline(key, return_dict):
                     p.fit(X_train, y_train)
                     training_time = time.time() - start_training
                     scores.append(scorer(p, X[test_ids, :], pd.DataFrame(y[test_ids])))
-
-
+                    fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y[test_ids]), p.predict(X[test_ids, :]), sensitive_data=X[test_ids, group_id]))
 
         else:
             X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
@@ -147,13 +155,15 @@ def evaluatePipeline(key, return_dict):
             p.fit(X_train, y_train)
             training_time = time.time() - start_training
             scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
+            fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y_test), p.predict(X_test), sensitive_data=X_test[:, group_id]))
 
+        print(fairness_scores)
         if training_sampling_factor < 1.0:
-            if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X):
-                return
-
             trained_pipeline = copy.deepcopy(p)
 
+        if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit,
+                                     inference_time_limit, X, np.mean(fairness_scores), fairness_limit):
+            return
 
         return_dict[key + 'result'] = np.mean(scores)
 
@@ -185,7 +195,9 @@ class MyAutoML:
                  training_time_limit=None,
                  inference_time_limit=None,
                  pipeline_size_limit=None,
-                 adversarial_robustness_constraint=None
+                 adversarial_robustness_constraint=None,
+                 fairness_limit=None,
+                 fairness_group_id=None
                  ):
         self.cv = cv
         self.time_search_budget = time_search_budget
@@ -200,6 +212,9 @@ class MyAutoML:
         self.scaling_list = myspace.scaling_list
         self.categorical_encoding_list = myspace.categorical_encoding_list
         self.augmentation_list = myspace.augmentation_list
+
+        self.fairness_limit = fairness_limit
+        self.fairness_group_id = fairness_group_id
 
         #generate binary or mapping for each hyperparameter
 
@@ -335,6 +350,8 @@ class MyAutoML:
                 return_dict['inference_time_limit'] = self.inference_time_limit
                 return_dict['pipeline_size_limit'] = self.pipeline_size_limit
                 return_dict['adversarial_robustness_constraint'] = self.adversarial_robustness_constraint
+                return_dict['fairness_limit'] = self.fairness_limit
+                return_dict['fairness_group_id'] = self.fairness_group_id
 
                 try:
                     return_dict['study_best_value'] = self.study.best_value
@@ -372,6 +389,8 @@ class MyAutoML:
                     trial.set_user_attr('pipeline_size', return_dict[key + 'result' + '_pipeline_size'])
                 if key + 'result' + '_inference_time' in return_dict:
                     trial.set_user_attr('inference_time', return_dict[key + 'result' + '_inference_time'])
+                if key + 'result' + '_fairness' in return_dict:
+                    trial.set_user_attr('fairness', return_dict[key + 'result' + '_fairness'])
 
                 trial.set_user_attr('evaluation_time', time.time() - start_total)
                 trial.set_user_attr('time_since_start', time.time() - self.start_fitting)
@@ -420,12 +439,18 @@ if __name__ == "__main__":
     # dataset = openml.datasets.get_dataset(1114)
 
     # dataset = openml.datasets.get_dataset(1116)
-    dataset = openml.datasets.get_dataset(187)  # 51
+    dataset = openml.datasets.get_dataset(31)  # 51
 
     X, y, categorical_indicator, attribute_names = dataset.get_data(
         dataset_format='array',
         target=dataset.default_target_attribute
     )
+
+    print(X[:, 12])
+
+    X[:,12] = X[:,12] > np.mean(X[:,12])
+
+    print(X[:,12])
 
     print(X.shape)
 
@@ -454,10 +479,12 @@ if __name__ == "__main__":
         print("%s%s: %s" % (pre, node.name, node.status))
 
     search = MyAutoML(n_jobs=1,
-                      time_search_budget=4 * 60,
+                      time_search_budget=2 * 60,
                       space=space,
                       main_memory_budget_gb=40,
-                      hold_out_fraction=0.3)
+                      hold_out_fraction=0.3,
+                      fairness_limit=0.95,
+                      fairness_group_id=12)
 
     begin = time.time()
 
