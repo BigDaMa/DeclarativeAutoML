@@ -14,7 +14,7 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.feature_trans
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_data
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import data2features
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import space2features
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import MyPool
+#from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import MyPool
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_feature_names
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import ifNull
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import generate_parameters_minimal_sample
@@ -306,8 +306,8 @@ dictionary['inference_time'] = np.array([])
 dictionary['pipeline_size'] = np.array([])
 dictionary['fairness'] = np.array([])
 
-
-with MyPool(processes=topk) as pool:
+from multiprocessing import Pool
+with Pool(processes=topk) as pool:
     results = pool.map(sample_and_evaluate, range(100000))
 
 print('storing stuff')
