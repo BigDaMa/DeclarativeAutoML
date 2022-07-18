@@ -411,7 +411,7 @@ class MyAutoML:
 
                 return result
             except Exception as e:
-                print(str(e) + '\n\n')
+                print('Exception: ' + str(e) + '\n\n')
                 return -1 * np.inf
 
         if type(self.study) == type(None):
@@ -479,7 +479,7 @@ if __name__ == "__main__":
         print("%s%s: %s" % (pre, node.name, node.status))
 
     search = MyAutoML(n_jobs=1,
-                      time_search_budget=2 * 60,
+                      time_search_budget=1 * 60,
                       space=space,
                       main_memory_budget_gb=40,
                       hold_out_fraction=0.3,
@@ -489,6 +489,13 @@ if __name__ == "__main__":
     begin = time.time()
 
     best_result = search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=auc)
+
+    print('fair: ')
+    for t in search.study.trials:
+        if 'fairness' in t.user_attrs:
+            print(t.user_attrs['fairness'])
+
+    print('tets')
 
     from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import show_progress
 

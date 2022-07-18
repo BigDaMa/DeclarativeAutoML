@@ -15,11 +15,14 @@ def true_positive_rate_score(y_true, y_pred, sensitive_data, labels =[False, Tru
 
 	sensitive_values = list(np.unique(sensitive_data))
 
+	#print(sensitive_values)
+
 	if len(sensitive_values) != 2:
 		return 0.0
 
 	for i in range(2):
 		ids[i] = np.where(sensitive_data[y_true.index.values] == sensitive_values[i])[0]
+		#print(ids[i])
 
 		tp = -1
 		if len(ids[i]) == 0:
