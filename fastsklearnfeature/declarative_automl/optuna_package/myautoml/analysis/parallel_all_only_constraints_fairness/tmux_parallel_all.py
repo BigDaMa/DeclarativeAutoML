@@ -3,7 +3,7 @@ from pathlib import Path
 import time
 import argparse
 
-datasets = ['ACSEmployment', 'ACSIncome', 'ACSPublicCoverage', 'ACSMobility', 'ACSTravelTime']
+datasets = [0,1,2,3,4]
 
 
 program = '/home/neutatz/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel_all_only_constraints_fairness/check_model_parallel_per_data_minimum_all1.py'

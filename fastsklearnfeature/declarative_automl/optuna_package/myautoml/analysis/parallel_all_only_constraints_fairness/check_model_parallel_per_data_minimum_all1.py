@@ -25,7 +25,7 @@ my_scorer = make_scorer(balanced_accuracy_score)
 
 # Initiate the parser
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", "-d", help="OpenML datatset ID")
+parser.add_argument("--dataset", "-d", help="OpenML datatset ID", type=int)
 parser.add_argument("--outputname", "-o", help="Name of the output file")
 args = parser.parse_args()
 print(args.dataset)
@@ -33,12 +33,7 @@ print(args.dataset)
 #args.dataset = 448
 #args.outputname = 'testtest'
 
-folktable_dict = {}
-folktable_dict['ACSEmployment'] = ACSEmployment
-folktable_dict['ACSIncome'] = ACSIncome
-folktable_dict['ACSPublicCoverage'] = ACSPublicCoverage
-folktable_dict['ACSMobility'] = ACSMobility
-folktable_dict['ACSTravelTime'] = ACSTravelTime
+folktable_dict = [ACSEmployment,ACSIncome,ACSPublicCoverage,ACSMobility,ACSTravelTime]
 
 print(args)
 
