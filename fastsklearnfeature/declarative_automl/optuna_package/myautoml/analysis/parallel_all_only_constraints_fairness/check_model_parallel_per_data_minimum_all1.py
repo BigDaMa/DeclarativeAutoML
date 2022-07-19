@@ -25,7 +25,7 @@ my_scorer = make_scorer(balanced_accuracy_score)
 
 # Initiate the parser
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset", "-d", help="OpenML datatset ID", type=int)
+parser.add_argument("--dataset", "-d", help="OpenML datatset ID")
 parser.add_argument("--outputname", "-o", help="Name of the output file")
 args = parser.parse_args()
 print(args.dataset)
