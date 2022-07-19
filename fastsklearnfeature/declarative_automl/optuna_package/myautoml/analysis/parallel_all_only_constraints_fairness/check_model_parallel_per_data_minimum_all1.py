@@ -194,7 +194,8 @@ for test_holdout_dataset_id in [args.dataset]:
                 new_constraint_evaluation_default.append(
                     ConstraintRun(space_str=space2str(space.parameter_tree), params='default',
                                   test_score=result, estimated_score=0.0))
-            except:
+            except Exception as e:
+                print('exception' + str(e))
                 result = 0
                 new_constraint_evaluation_default.append(
                     ConstraintRun(space_str=space2str(space.parameter_tree), params='default',
