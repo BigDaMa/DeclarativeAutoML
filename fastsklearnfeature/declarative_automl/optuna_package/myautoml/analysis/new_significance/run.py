@@ -23,14 +23,23 @@ nametag = '/sample_instances_new2_all_'
 #folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/june27_autosklearn_pipelinesize'
 #nametag = '/autosklearn_pipelinesize_'
 
-folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/dez3_pipeline_size_m1'
-nametag = '/sample_instances_new2_all_constraints_'
+#folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/dez3_pipeline_size_m1'
+#nametag = '/sample_instances_new2_all_constraints_'
+
+#folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/jul3_training_time'
+#nametag = '/autosklearn_training_time_'
+
+folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/dez3_training_time_m2'
+nametag = '/sample_instances_new2_all_constraints_training_time__'
 
 #folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/jun30_autosklearn_inference_time'
 #nametag = '/autosklearn_inference_time_'
 
 #folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/dez3_inference_time'
-#nametag = '/sample_instances_new2_all_constraints_inference_time__'
+#nametag = '/
+
+#folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/jul_3_autosklearn_inference_time2'
+#nametag = '/autosklearn_inference_time_'
 
 print(glob.glob( folder + nametag + '*'))
 
@@ -47,13 +56,14 @@ for constraint_i in range(10):
 
     for datasetid in my_list:
         data = pickle.load(open(folder + nametag + datasetid + '.p', "rb"))
+        #print(data)
         data_all.append(data[tag][constraint_i])
         data_means[constraint_i][datasetid] = np.mean(data[tag][constraint_i])
 
     pop_dyn, pop_static = [], []
     for i in range(10000):
         list_dyn, list_static = [], []
-        for d in range(len(my_list)):
+        for d in range(len(data_all)):
             list_dyn.append(np.random.choice(data_all[d]))
             #list_static.append()
         pop_dyn.append(np.mean(list_dyn))
