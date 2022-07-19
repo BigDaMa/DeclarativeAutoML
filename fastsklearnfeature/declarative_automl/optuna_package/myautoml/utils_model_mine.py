@@ -938,7 +938,8 @@ def generate_parameters_minimal_sample_cv(trial, total_search_time_minutes, my_o
 def generate_parameters_minimal_sample_constraints(trial, total_search_time_minutes, my_openml_datasets, sample_data=True,
                                                    use_training_time_constraint=False,
                                                    use_inference_time_constraint=False,
-                                                   use_pipeline_size_constraint=False):
+                                                   use_pipeline_size_constraint=False,
+                                                   use_fairness_constraint=False):
     # which constraints to use
     search_time = trial.suggest_int('global_search_time_constraint', 10, max(10, total_search_time_minutes), log=False) #* 60
 
@@ -978,6 +979,13 @@ def generate_parameters_minimal_sample_constraints(trial, total_search_time_minu
     if trial.suggest_categorical('use_pipeline_size_constraint', pipeline_size_choices):
         pipeline_size_limit = trial.suggest_loguniform('pipeline_size_constraint', 3175, 34070059)
 
+    fairness_limit = 0.0
+    fairness_choices = [False]
+    if use_fairness_constraint:
+        fairness_choices.append(True)
+    if trial.suggest_categorical('use_fairness_constraint', fairness_choices):
+        fairness_limit = trial.suggest_uniform('fairness_constraint', 0.9, 1.0)
+
 
     # how many cvs should be used
     cv = 1
@@ -999,7 +1007,7 @@ def generate_parameters_minimal_sample_constraints(trial, total_search_time_minu
     if sample_data:
         dataset_id = trial.suggest_categorical('dataset_id', my_openml_datasets)
 
-    return search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, dataset_id
+    return search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, dataset_id, fairness_limit
 
 
 
