@@ -419,7 +419,7 @@ def get_best_trial(model_uncertainty):
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24 * 14:
+    if time.time() - starting_time_tt > 60*60*24 * 1:
         return -1
 
     X_meta = copy.deepcopy(dictionary['X_meta'])
