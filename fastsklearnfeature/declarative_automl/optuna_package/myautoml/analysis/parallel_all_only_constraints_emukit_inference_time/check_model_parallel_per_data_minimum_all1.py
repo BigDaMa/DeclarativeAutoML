@@ -86,7 +86,7 @@ for test_holdout_dataset_id in [args.dataset]:
 
         for repeat in range(10):
             gen_new = EmuSpaceGenerator()
-            space = gen_new.generate_params()
+            space = gen_new.generate_params(y_train_hold)
 
             try:
                 result = None
