@@ -36,7 +36,7 @@ print(args)
 memory_budget = 500.0
 privacy = None
 
-for test_holdout_dataset_id in [args.dataset]:
+for test_holdout_dataset_id in [189871]:#[args.dataset]:
 
     X_train_hold, X_test_hold, y_train_hold, y_test_hold, categorical_indicator_hold, attribute_names_hold = get_data('data', randomstate=42, task_id=test_holdout_dataset_id)
     metafeature_values_hold = data2features(X_train_hold, y_train_hold, categorical_indicator_hold)
@@ -109,11 +109,13 @@ for test_holdout_dataset_id in [args.dataset]:
                 new_constraint_evaluation_default.append(
                     ConstraintRun(space_str='', params='default',
                                   test_score=result, estimated_score=0.0))
+
             except:
                 result = 0
                 new_constraint_evaluation_default.append(
                     ConstraintRun(space_str='', params='default',
                                   test_score=result, estimated_score=0.0))
+            
 
             print("test result: " + str(result))
             current_static.append(result)

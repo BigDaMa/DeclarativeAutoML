@@ -34,6 +34,7 @@ from emukit.core.loop import UserFunctionResult
 from emukit.examples.gp_bayesian_optimization.unknown_constraint_bayesian_optimization import (
     UnknownConstraintGPBayesianOptimization,)
 from emukit.core.initial_designs.random_design import RandomDesign
+import traceback
 
 @dataclass
 class StopWhenOptimumReachedCallback:
@@ -52,9 +53,10 @@ class TimeException(Exception):
 def constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X, fairness=None, fairness_limit=None):
 
     return_dict[key + 'result' + '_fairness'] = fairness
-    if type(fairness_limit) != type(None) and type(fairness) != type(None) and fairness < fairness_limit:
-        return_dict[key + 'result'] = -1 * (fairness_limit - fairness)  # return the difference to satisfying the constraint
-        return False
+    if type(fairness_limit) != type(None) and type(fairness) != type(None):
+        if fairness < fairness_limit:
+            return_dict[key + 'result'] = -1 * (fairness_limit - fairness)  # return the difference to satisfying the constraint
+            return False
 
     return_dict[key + 'result' + '_training_time'] = training_time
     if type(training_time_limit) != type(None) and training_time > training_time_limit:
@@ -261,7 +263,6 @@ class MyAutoML:
             self.space.parameterization = parameterization
 
             try:
-            #if True:
 
                 imputer = SimpleImputerOptuna()
                 imputer.init_hyperparameters(self.space, X, y)
@@ -398,16 +399,31 @@ class MyAutoML:
                     training_time = return_dict[key + 'result' + '_training_time']
 
                 fairness = -np.inf
-                if key + 'result' +  '_fairness' in return_dict:
-                    fairness = return_dict[key + 'result' +  '_fairness']
+                if key + 'result' + '_fairness' in return_dict:
+                    fairness = return_dict[key + 'result' + '_fairness']
 
                 if result > 0:
                     pickle_file_name = '/tmp/my_pipeline' + str(key) + '.p'
                     if os.path.exists(pickle_file_name):
-                        if self.best_value < result and pipeline_size < self.pipeline_size_limit:
-                            self.best_value = result
-                            with open(pickle_file_name, "rb") as pickle_pipeline_file:
-                                self.best_pipeline = pickle.load(pickle_pipeline_file)
+                        if self.best_value < result:
+
+                            check = True
+                            if type(self.pipeline_size_limit) != type(None):
+                                check = pipeline_size <= self.pipeline_size_limit
+
+                            if type(self.inference_time_limit) != type(None):
+                                check = inference_time <= self.inference_time_limit
+
+                            if type(self.training_time_limit) != type(None):
+                                check = training_time <= self.training_time_limit
+
+                            if type(self.fairness_limit) != type(None):
+                                check = fairness >= self.fairness_limit
+
+                            if check:
+                                self.best_value = result
+                                with open(pickle_file_name, "rb") as pickle_pipeline_file:
+                                    self.best_pipeline = pickle.load(pickle_pipeline_file)
                         os.remove(pickle_file_name)
 
                 if type(self.pipeline_size_limit) != type(None):
@@ -422,8 +438,9 @@ class MyAutoML:
                 if type(self.fairness_limit) != type(None):
                     return result, (self.fairness_limit - fairness) * my_factor
 
+
             except Exception as e:
-                print('Exception: ' + str(e) + '\n\n')
+                print('Exception: ' + str(e) + '\n' + traceback.format_exc() + '\n\n')
                 return 0.0, np.inf * my_factor
 
         ####
