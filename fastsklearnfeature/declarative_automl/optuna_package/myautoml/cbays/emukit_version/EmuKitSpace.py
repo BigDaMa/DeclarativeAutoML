@@ -46,6 +46,9 @@ class EmuKitSpace:
     def suggest_uniform(self, name, low, high):
         return self.parameterization[self.mapName2Id[name]]
 
+    def suggest_uniform(self, name, low, high, check=True):
+        return self.parameterization[self.mapName2Id[name]]
+
     def suggest_categorical(self, name, choices):
         for i in range(len(self.mapChoice2List[name])):
             if self.parameterization[self.mapName2Id[name] + i] == True:

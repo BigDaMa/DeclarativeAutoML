@@ -14,9 +14,8 @@ import argparse
 import openml
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.my_global_vars as mp_global
 from sklearn.metrics import balanced_accuracy_score
-from folktables import ACSDataSource, ACSEmployment, ACSIncome, ACSPublicCoverage, ACSMobility, ACSTravelTime
-import numpy as np
-import sklearn
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.cbays.new_emukit.Space_GenerationTreeBalanceConstrained2 import SpaceGenerator as EmuSpaceGenerator
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.cbays.new_emukit.Emukit import MyAutoML as AutoEmu
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -33,41 +32,22 @@ print(args.dataset)
 #args.dataset = 448
 #args.outputname = 'testtest'
 
-folktable_dict = [ACSEmployment,ACSIncome,ACSPublicCoverage,ACSMobility,ACSTravelTime]
+
 
 print(args)
 
 memory_budget = 500.0
 privacy = None
 
-data_source = ACSDataSource(survey_year='2018', horizon='1-Year', survey='person')
-ca_data = data_source.get_data(states=['CA'], download=True)
-
-def get_race_att(data):
-    for att_race in range(len(data.features)):
-        if data.features[att_race] == 'RAC1P':
-            return att_race
-
 for test_holdout_dataset_id in [args.dataset]:
 
-    task = folktable_dict[test_holdout_dataset_id]
-    X, y, group = task.df_to_numpy(ca_data)
-    X[:, get_race_att(task)] = X[:, get_race_att(task)] == 1.0
-    sensitive_attribute_id = get_race_att(task)
-    categorical_indicator_hold = np.zeros(X.shape[1], dtype=bool)
-
-    print('label: ' + str(y))
-
-    X_train_hold, X_test_hold, y_train_hold, y_test_hold = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
-                                                                                train_size=0.6)
-
-
+    X_train_hold, X_test_hold, y_train_hold, y_test_hold, categorical_indicator_hold, attribute_names_hold = get_data('data', randomstate=42, task_id=test_holdout_dataset_id)
     metafeature_values_hold = data2features(X_train_hold, y_train_hold, categorical_indicator_hold)
 
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/training_sampling_min_2Drandom_machine2/my_great_model_compare_scaled.p', "rb"))
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine1/my_great_model_compare_scaled.p', "rb"))
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine4/my_great_model_compare_scaled.p', "rb"))
-    #model_success = pickle.load(open('/home/neutatz/data/my_temp/my_great_model_compare_scaled.p', "rb"))
+    model_success = pickle.load(open('/home/neutatz/data/my_temp/my_great_model_compare_scaled.p', "rb"))
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/sep14_sampling/my_great_model_compare_scaled.p', "rb"))
 
     my_list_constraints = ['global_search_time_constraint',
@@ -80,8 +60,7 @@ for test_holdout_dataset_id in [args.dataset]:
                            'sample_fraction',
                            'training_time_constraint',
                            'inference_time_constraint',
-                           'pipeline_size_constraint',
-                           'fairness_constraint']
+                           'pipeline_size_constraint']
 
     _, feature_names = get_feature_names(my_list_constraints)
 
@@ -94,77 +73,17 @@ for test_holdout_dataset_id in [args.dataset]:
     new_constraint_evaluation_default_all = []
 
     #for minutes_to_search in [1, 5, 10, 60]:#range(1, 6):
-    for fairness in [1.0, 0.999379364633232, 0.9940665258902305, 0.9807694321364909, 0.9494830824433045]:
+    for inference_time in [0.0007504010200500488, 0.0007910609245300294,0.0008180351257324219,0.0010206394195556641,0.0014590854644775393, 0.00301915740966]:
 
         minutes_to_search = 5
         search_time_frozen = minutes_to_search * 60
         pipeline_size = None
         training_time = None
 
-        '''
-        current_dynamic = []
-        new_constraint_evaluation_dynamic = ConstraintEvaluation(dataset=test_holdout_dataset_id,
-                                                                 constraint={'fairness': fairness},
-                                                                 system_def='dynamic')
-        for repeat in range(10):
-
-            mp_global.study_prune = optuna.create_study(direction='maximize')
-            mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample(trial=trial,
-                                                                                   metafeature_values_hold=metafeature_values_hold,
-                                                                                   search_time=search_time_frozen,
-                                                                                   model_success=model_success,
-                                                                                   memory_limit=memory_budget,
-                                                                                   privacy_limit=privacy,
-                                                                                   pipeline_size_limit=pipeline_size,
-                                                                                   training_time_limit=training_time,
-                                                                                   #evaluation_time=int(0.1*search_time_frozen),
-                                                                                   #hold_out_fraction=0.33,
-                                                                                   tune_space=True
-                                                                                   ), n_trials=1000, n_jobs=1)
-
-            space = mp_global.study_prune.best_trial.user_attrs['space']
-
-            for pre, _, node in RenderTree(space.parameter_tree):
-                if node.status == True:
-                    print("%s%s" % (pre, node.name))
-
-            try:
-                result = None
-                search_dynamic = None
-
-                result, search_dynamic = utils_run_AutoML(mp_global.study_prune.best_trial,
-                                                             X_train=X_train_hold,
-                                                             X_test=X_test_hold,
-                                                             y_train=y_train_hold,
-                                                             y_test=y_test_hold,
-                                                             categorical_indicator=categorical_indicator_hold,
-                                                             my_scorer=my_scorer,
-                                                             search_time=search_time_frozen,
-                                                             memory_limit=memory_budget,
-                                                             privacy_limit=privacy,
-                                                             pipeline_size_limit=pipeline_size,
-                                                             training_time_limit=training_time
-                                             )
-
-                new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
-            except:
-                result = 0
-                new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
-
-            print("test result: " + str(result))
-            current_dynamic.append(result)
-
-            print('dynamic: ' + str(current_dynamic))
-
-        dynamic_approach.append(current_dynamic)
-        new_constraint_evaluation_dynamic_all.append(new_constraint_evaluation_dynamic)
-
-        print('dynamic: ' + str(dynamic_approach))
-        '''
 
         current_static = []
         new_constraint_evaluation_default = ConstraintEvaluation(dataset=test_holdout_dataset_id,
-                                                                 constraint={'fairness': fairness},
+                                                                 constraint={'inference_time': inference_time},
                                                                  system_def='default')
 
 
@@ -183,8 +102,7 @@ for test_holdout_dataset_id in [args.dataset]:
                                           hold_out_fraction=0.33,
                                           pipeline_size_limit=pipeline_size,
                                           training_time_limit=training_time,
-                                          fairness_limit=fairness,
-                                          fairness_group_id=sensitive_attribute_id
+                                          inference_time_limit=inference_time
                                           )
 
                 best_result = search_default.fit(X_train_hold, y_train_hold,
@@ -194,8 +112,7 @@ for test_holdout_dataset_id in [args.dataset]:
                 new_constraint_evaluation_default.append(
                     ConstraintRun(space_str=space2str(space.parameter_tree), params='default',
                                   test_score=result, estimated_score=0.0))
-            except Exception as e:
-                print('exception' + str(e))
+            except:
                 result = 0
                 new_constraint_evaluation_default.append(
                     ConstraintRun(space_str=space2str(space.parameter_tree), params='default',

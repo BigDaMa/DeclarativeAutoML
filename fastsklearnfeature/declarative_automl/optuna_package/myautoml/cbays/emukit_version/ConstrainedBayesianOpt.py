@@ -176,11 +176,13 @@ class ConstrainedBayesianOpt:
         self.adversarial_robustness_constraint = adversarial_robustness_constraint
 
         self.random_key = str(time.time()) + '-' + str(np.random.randint(0, 1000))
+        self.best_pipeline = None
+        self.best_score = -np.inf
 
 
     def get_best_pipeline(self):
         try:
-            return self.study.best_trial.user_attrs['pipeline']
+            return self.best_pipeline
         except:
             return None
 
@@ -340,22 +342,11 @@ class ConstrainedBayesianOpt:
                 result_dictionary['evaluation_time'] = (time.time() - start_total, 0.0)
                 #result_dictionary['time_since_start'] = (time.time() - self.start_fitting, 0.0)
 
-
-                if result > 0:
+                if result > self.best_score:
+                    self.best_score = result
                     pickle_file_name = '/tmp/my_pipeline' + str(key) + '.p'
-                    try:
-                        if os.path.exists(pickle_file_name):
-                            if self.study.best_value < result:
-                                with open(pickle_file_name, "rb") as pickle_pipeline_file:
-                                    #result_dictionary['pipeline'] = pickle.load(pickle_pipeline_file)
-                                    pass
-                            os.remove(pickle_file_name)
-                    except:
-                        if os.path.exists(pickle_file_name):
-                            with open(pickle_file_name, "rb") as pickle_pipeline_file:
-                                #result_dictionary['pipeline'] = pickle.load(pickle_pipeline_file)
-                                pass
-                            os.remove(pickle_file_name)
+                    with open(pickle_file_name, "rb") as pickle_pipeline_file:
+                        self.best_pipeline = pickle.load(pickle_pipeline_file)
 
                 return result_dictionary['accuracy'], 0.0
             except Exception as e:
@@ -432,7 +423,7 @@ if __name__ == "__main__":
     #    print("%s%s: %s" % (pre, node.name, node.status))
 
     search = ConstrainedBayesianOpt(n_jobs=1,
-                      time_search_budget=60*10,
+                      time_search_budget=60*1,
                       space=space,
                       main_memory_budget_gb=40,
                       hold_out_fraction=0.5)
