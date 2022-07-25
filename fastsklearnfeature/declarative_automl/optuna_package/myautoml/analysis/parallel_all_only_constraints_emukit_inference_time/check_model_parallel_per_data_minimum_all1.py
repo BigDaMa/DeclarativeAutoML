@@ -1,7 +1,4 @@
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalanceDict import MyAutoML
-import optuna
 from sklearn.metrics import make_scorer
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 import pickle
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_data
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import data2features
@@ -88,12 +85,12 @@ for test_holdout_dataset_id in [args.dataset]:
 
 
         for repeat in range(10):
-            gen_new = SpaceGenerator()
+            gen_new = EmuSpaceGenerator()
             space = gen_new.generate_params()
 
             try:
                 result = None
-                search_default = MyAutoML(n_jobs=1,
+                search_default = AutoEmu(n_jobs=1,
                                           time_search_budget=search_time_frozen,
                                           space=space,
                                           evaluation_budget=int(0.1 * search_time_frozen),
