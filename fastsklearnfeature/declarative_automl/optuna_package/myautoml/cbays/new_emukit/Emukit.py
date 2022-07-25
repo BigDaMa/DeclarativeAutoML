@@ -410,8 +410,6 @@ class MyAutoML:
                                 self.best_pipeline = pickle.load(pickle_pipeline_file)
                         os.remove(pickle_file_name)
 
-                print(pipeline_size - self.pipeline_size_limit)
-
                 if type(self.pipeline_size_limit) != type(None):
                     return result, (pipeline_size - self.pipeline_size_limit) * my_factor
 
