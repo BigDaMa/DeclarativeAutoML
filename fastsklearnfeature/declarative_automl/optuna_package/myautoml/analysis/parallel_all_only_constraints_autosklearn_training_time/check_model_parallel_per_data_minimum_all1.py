@@ -63,7 +63,7 @@ for test_holdout_dataset_id in [args.dataset]:
                 automl = AutoSklearn2Classifier(time_left_for_this_task=search_time_frozen, metric=scorerr, seed=repeat, memory_limit=1024*250, tmp_folder=tmp_path, delete_tmp_folder_after_terminate=True)
                 automl.fit(X_train_hold, y_train_hold, feat_type=feat_type)
 
-                joined_pipeline_size, joined_inference_time, joined_training_time, selected_models, selected_weights = utils.return_model_size(
+                selected_models, selected_weights, joined_pipeline_size, joined_inference_time, joined_training_time, joined_fairness = utils.return_model_size(
                     automl, X_train_hold, y_train_hold, training_time_constraint=training_time)
 
                 result = 0

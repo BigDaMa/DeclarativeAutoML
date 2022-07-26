@@ -10,10 +10,14 @@ import sys
 from autosklearn.automl import _model_predict
 import numpy as np
 import logging
+from autosklearn.util.metric import true_positive_rate_score
+import pandas as pd
+import copy
+from autosklearn.util.metric import Fair
 
 import time
 
-def balanced_accuracy_score_constraints(y_true, y_pred, sample_weight=None, model=None, inference_time=None, training_time=None,pipeline_size_constraint=None,inference_time_constraint=None, training_time_constraint=None):
+def balanced_accuracy_score_constraints(y_true, y_pred, sample_weight=None, model=None, inference_time=None, training_time=None,pipeline_size_constraint=None,inference_time_constraint=None, training_time_constraint=None, fairness=None, fairness_constraint=None):
     ba = sklearn.metrics.balanced_accuracy_score(y_true, y_pred)
 
     sum_of_constraint_distance = 0
@@ -32,10 +36,15 @@ def balanced_accuracy_score_constraints(y_true, y_pred, sample_weight=None, mode
         if training_time > training_time_constraint:
             sum_of_constraint_distance += training_time - training_time_constraint
 
+    if type(fairness_constraint) != type(None) and type(fairness) != type(None):
+        if fairness < fairness_constraint:
+            sum_of_constraint_distance += fairness_constraint - fairness
+
     if sum_of_constraint_distance > 0:
         return -1 * sum_of_constraint_distance
     else:
         return ba
+
 
 
 def get_selected_model_identifiers_and_weight(automl):
@@ -48,7 +57,7 @@ def get_selected_model_identifiers_and_weight(automl):
 
     return output
 
-def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, inference_time_constraint=None, training_time_constraint=None):
+def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, inference_time_constraint=None, training_time_constraint=None, fairness_constraint=None):
     try:
         for i, tmp_model in enumerate(automl.automl_.models_.values()):
             if isinstance(tmp_model, (DummyRegressor, DummyClassifier)):
@@ -119,6 +128,19 @@ def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, i
 
                     if joined_training_time + training_time > training_time_constraint:
                         too_big = True
+
+        if type(fairness_constraint) != type(None):
+            new_models = copy.deepcopy(selected_models)
+            new_weights = copy.deepcopy(selected_weights)
+
+            new_models.append(new_model)
+            new_weights.append(current_weight)
+
+            y_pred = predict_with_models(automl, new_models, new_weights, X_train)
+            fairness = 1.0 - true_positive_rate_score(pd.DataFrame(y_train), y_pred, sensitive_data=X_train[:, [Fair.fairness_column]])
+            if fairness < fairness_constraint:
+                too_big = True
+
         if too_big:
             cv_models = []
             fold_id = 0
@@ -158,6 +180,24 @@ def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, i
                             if joined_training_time + training_time > training_time_constraint:
                                 too_big = True
 
+                if type(fairness_constraint) != type(None):
+                    new_models = copy.deepcopy(selected_models)
+                    new_weights = copy.deepcopy(selected_weights)
+                    new_cv_models = copy.deepcopy(cv_models)
+                    new_cv_models.append(est)
+
+                    eclf1 = VotingClassifier(estimators=None, voting='soft')
+                    eclf1.estimators_ = new_cv_models
+                    eclf1.le_ = preprocessing.LabelEncoder().fit(y_train)
+
+                    new_models.append(eclf1)
+                    new_weights.append(current_weight)
+
+                    y_pred = predict_with_models(automl, new_models, new_weights, X_train)
+                    fairness = 1.0 - true_positive_rate_score(pd.DataFrame(y_train), y_pred, sensitive_data=X_train[:, [Fair.fairness_column]])
+                    if fairness < fairness_constraint:
+                        too_big = True
+
                 if not too_big:
                     joined_pipeline_size += pipeline_size
                     joined_inference_time += inference_time
@@ -183,7 +223,12 @@ def return_model_size(automl, X_train, y_train, pipeline_size_constraint=None, i
             selected_models.append(new_model)
             selected_weights.append(current_weight)
 
-    return joined_pipeline_size, joined_inference_time, joined_training_time, selected_models, selected_weights
+    joined_fairness = 0
+    if type(fairness_constraint) != type(None):
+        y_pred = predict_with_models(automl, selected_models, selected_weights, X_train)
+        joined_fairness = 1.0 - true_positive_rate_score(pd.DataFrame(y_train), y_pred, sensitive_data=X_train[:, [Fair.fairness_column]])
+
+    return selected_models, selected_weights, joined_pipeline_size, joined_inference_time, joined_training_time, joined_fairness
 
 
 def predict_ensemble(predictions, weights) -> np.ndarray:
@@ -219,12 +264,12 @@ def predict_with_models(automl, selected_models, weights, X):
     X = automl.automl_.InputValidator.feature_validator.transform(X)
 
     all_predictions = []
-    print('predictions')
+    #print('predictions')
     for m in selected_models:
         all_predictions.append(_model_predict(model=m, X=X, task=automl.automl_._task, batch_size=None))
-        print(all_predictions)
+        #print(all_predictions)
 
-    print(all_predictions)
+    #print(all_predictions)
 
     predictions = predict_ensemble(all_predictions, weights)
 
