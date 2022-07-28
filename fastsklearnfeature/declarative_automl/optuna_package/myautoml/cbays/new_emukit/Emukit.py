@@ -249,7 +249,7 @@ class MyAutoML:
     def fit(self, X_new, y_new, sample_weight=None, categorical_indicator=None, scorer=None):
         self.start_fitting = time.time()
 
-        my_factor = -1
+        my_factor = 1#-1
 
         if self.sample_fraction < 1.0:
             X, _, y, _ = sklearn.model_selection.train_test_split(X_new, y_new, random_state=42, stratify=y_new, train_size=self.sample_fraction)
