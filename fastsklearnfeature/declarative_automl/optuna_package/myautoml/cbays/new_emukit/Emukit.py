@@ -138,7 +138,7 @@ def evaluatePipeline(key, return_dict):
                     p.fit(X_train, y_train)
                     training_time = time.time() - start_training
                     scores.append(scorer(p, X[test_ids, :], pd.DataFrame(y[test_ids])))
-                    fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y[test_ids]), p.predict(X[test_ids, :]), sensitive_data=X[test_ids, group_id]))
+                    fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id]))
 
         else:
             X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
@@ -154,7 +154,7 @@ def evaluatePipeline(key, return_dict):
             p.fit(X_train, y_train)
             training_time = time.time() - start_training
             scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
-            fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y_test), p.predict(X_test), sensitive_data=X_test[:, group_id]))
+            fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id]))
 
         print(fairness_scores)
         if training_sampling_factor < 1.0:
@@ -249,7 +249,7 @@ class MyAutoML:
     def fit(self, X_new, y_new, sample_weight=None, categorical_indicator=None, scorer=None):
         self.start_fitting = time.time()
 
-        my_factor = 1#-1
+        my_factor = -1
 
         if self.sample_fraction < 1.0:
             X, _, y, _ = sklearn.model_selection.train_test_split(X_new, y_new, random_state=42, stratify=y_new, train_size=self.sample_fraction)
