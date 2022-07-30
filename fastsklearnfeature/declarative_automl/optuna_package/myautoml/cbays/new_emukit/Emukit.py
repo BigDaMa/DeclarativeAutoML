@@ -138,7 +138,8 @@ def evaluatePipeline(key, return_dict):
                     p.fit(X_train, y_train)
                     training_time = time.time() - start_training
                     scores.append(scorer(p, X[test_ids, :], pd.DataFrame(y[test_ids])))
-                    fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id]))
+                    if type(fairness_limit) != type(None):
+                        fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id]))
 
         else:
             X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
@@ -154,14 +155,16 @@ def evaluatePipeline(key, return_dict):
             p.fit(X_train, y_train)
             training_time = time.time() - start_training
             scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
-            fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id]))
+            if type(fairness_limit) != type(None):
+                fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id]))
 
-        print(fairness_scores)
+        #print(fairness_scores)
         if training_sampling_factor < 1.0:
             trained_pipeline = copy.deepcopy(p)
 
         constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit,
-                              inference_time_limit, X, np.mean(fairness_scores), fairness_limit)
+                                  inference_time_limit, X, np.mean(fairness_scores), fairness_limit)
+
 
         return_dict[key + 'result'] = np.mean(scores)
 
