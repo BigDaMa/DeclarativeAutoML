@@ -5,7 +5,7 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Spa
 import pickle
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_data
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import data2features
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import optimize_accuracy_under_minimal_sample
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import optimize_accuracy_under_minimal_sample_fair
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import utils_run_AutoML
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_feature_names
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.util_classes_new import ConstraintEvaluation, ConstraintRun, space2str
@@ -33,7 +33,7 @@ print(args.dataset)
 #args.dataset = 448
 #args.outputname = 'testtest'
 
-folktable_dict = [ACSEmployment,ACSIncome,ACSPublicCoverage,ACSMobility,ACSTravelTime]
+folktable_dict = [ACSEmployment, ACSIncome, ACSPublicCoverage, ACSMobility, ACSTravelTime]
 
 print(args)
 
@@ -67,7 +67,7 @@ for test_holdout_dataset_id in [args.dataset]:
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/training_sampling_min_2Drandom_machine2/my_great_model_compare_scaled.p', "rb"))
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine1/my_great_model_compare_scaled.p', "rb"))
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine4/my_great_model_compare_scaled.p', "rb"))
-    #model_success = pickle.load(open('/home/neutatz/data/my_temp/my_great_model_compare_scaled.p', "rb"))
+    model_success = pickle.load(open('/home/neutatz/data/my_temp/my_great_model_compare_scaled.p', "rb"))
     #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/sep14_sampling/my_great_model_compare_scaled.p', "rb"))
 
     my_list_constraints = ['global_search_time_constraint',
@@ -101,7 +101,7 @@ for test_holdout_dataset_id in [args.dataset]:
         pipeline_size = None
         training_time = None
 
-        '''
+
         current_dynamic = []
         new_constraint_evaluation_dynamic = ConstraintEvaluation(dataset=test_holdout_dataset_id,
                                                                  constraint={'fairness': fairness},
@@ -109,7 +109,7 @@ for test_holdout_dataset_id in [args.dataset]:
         for repeat in range(10):
 
             mp_global.study_prune = optuna.create_study(direction='maximize')
-            mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample(trial=trial,
+            mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample_fair(trial=trial,
                                                                                    metafeature_values_hold=metafeature_values_hold,
                                                                                    search_time=search_time_frozen,
                                                                                    model_success=model_success,
@@ -117,6 +117,7 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                                    privacy_limit=privacy,
                                                                                    pipeline_size_limit=pipeline_size,
                                                                                    training_time_limit=training_time,
+                                                                                   fairness_limit=fairness,
                                                                                    #evaluation_time=int(0.1*search_time_frozen),
                                                                                    #hold_out_fraction=0.33,
                                                                                    tune_space=True
@@ -143,7 +144,9 @@ for test_holdout_dataset_id in [args.dataset]:
                                                              memory_limit=memory_budget,
                                                              privacy_limit=privacy,
                                                              pipeline_size_limit=pipeline_size,
-                                                             training_time_limit=training_time
+                                                             training_time_limit=training_time,
+                                                             fairness_limit=fairness,
+                                                             fairness_group_id=sensitive_attribute_id
                                              )
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
@@ -160,7 +163,7 @@ for test_holdout_dataset_id in [args.dataset]:
         new_constraint_evaluation_dynamic_all.append(new_constraint_evaluation_dynamic)
 
         print('dynamic: ' + str(dynamic_approach))
-        '''
+
 
         current_static = []
         new_constraint_evaluation_default = ConstraintEvaluation(dataset=test_holdout_dataset_id,
@@ -209,11 +212,11 @@ for test_holdout_dataset_id in [args.dataset]:
 
 
     results_dict_log = {}
-    #results_dict_log['dynamic'] = new_constraint_evaluation_dynamic_all
+    results_dict_log['dynamic'] = new_constraint_evaluation_dynamic_all
     results_dict_log['static'] = new_constraint_evaluation_default_all
     pickle.dump(results_dict_log, open('/home/neutatz/data/automl_runs/log_' + args.outputname + '_' + str(test_holdout_dataset_id) + '.p', 'wb+'))
 
     results_dict = {}
-    #results_dict['dynamic'] = dynamic_approach
+    results_dict['dynamic'] = dynamic_approach
     results_dict['static'] = static_approach
     pickle.dump(results_dict, open('/home/neutatz/data/automl_runs/' + args.outputname + '_' + str(test_holdout_dataset_id) + '.p', 'wb+'))
