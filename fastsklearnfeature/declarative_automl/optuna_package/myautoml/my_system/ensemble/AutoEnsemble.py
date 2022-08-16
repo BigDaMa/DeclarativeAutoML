@@ -221,6 +221,7 @@ class MyAutoML:
     def ensemble(self, X_new, y_new):
         validation_predictions = []
 
+        '''
         if self.sample_fraction < 1.0:
             X, _, y, _ = sklearn.model_selection.train_test_split(X_new, y_new, random_state=42, stratify=y_new,
                                                                   train_size=self.sample_fraction)
@@ -230,6 +231,10 @@ class MyAutoML:
 
         X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
                                                                                     test_size=self.hold_out_fraction)
+
+        '''
+        X_test = X_new
+        y_test = y_new
 
         for i in range(self.max_ensemble_models):
             try:
