@@ -221,7 +221,8 @@ class MyAutoML:
     def ensemble(self, X_new, y_new):
         validation_predictions = []
 
-        '''
+        X = None
+        y = None
         if self.sample_fraction < 1.0:
             X, _, y, _ = sklearn.model_selection.train_test_split(X_new, y_new, random_state=42, stratify=y_new,
                                                                   train_size=self.sample_fraction)
@@ -231,10 +232,6 @@ class MyAutoML:
 
         X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
                                                                                     test_size=self.hold_out_fraction)
-
-        '''
-        X_test = X_new
-        y_test = y_new
 
         for i in range(self.max_ensemble_models):
             try:
@@ -253,7 +250,7 @@ class MyAutoML:
         test_predictions = []
         for i in range(self.max_ensemble_models):
             try:
-                test_predictions.append(self.model_store[i][0].predict_proba(X_test))
+                test_predictions.append(self.model_store_full[i][0].predict_proba(X_test))
             except:
                 pass
         y_hat_test_temp = self.ensemble_selection.predict(np.array(test_predictions))
@@ -263,8 +260,8 @@ class MyAutoML:
     def fit(self, X_new, y_new, sample_weight=None, categorical_indicator=None, scorer=None):
         self.start_fitting = time.time()
 
-        #manager = multiprocessing.Manager()
         self.model_store = {}
+        self.model_store_full = {}
 
         if self.sample_fraction < 1.0:
             X, _, y, _ = sklearn.model_selection.train_test_split(X_new, y_new, random_state=42, stratify=y_new, train_size=self.sample_fraction)
@@ -423,13 +420,25 @@ class MyAutoML:
                                     min_acc = val_pipeline_accuracy[1]
                                     new_counter_id = counterid
                             if min_acc < result:
-                                self.model_store[new_counter_id] = (return_dict[key + 'pipeline'], result)
+                                try:
+                                    current_model_new = copy.deepcopy(return_dict[key + 'pipeline'])
+                                    current_model_new.fit(X, y) #todo: check constraints
+                                    self.model_store_full[new_counter_id] = (current_model_new, result)
+                                    self.model_store[new_counter_id] = (return_dict[key + 'pipeline'], result)
+                                except:
+                                    pass
                         else:
                             try:
                                 new_counter_id = max(list(self.model_store.keys())) + 1
                             except:
                                 new_counter_id = 0
-                            self.model_store[new_counter_id] = (return_dict[key + 'pipeline'], result)
+                            try:
+                                current_model_new = copy.deepcopy(return_dict[key + 'pipeline'])
+                                current_model_new.fit(X, y)#todo: check constraints
+                                self.model_store_full[new_counter_id] = (current_model_new, result)
+                                self.model_store[new_counter_id] = (return_dict[key + 'pipeline'], result)
+                            except:
+                                pass
                         print('size model store: ' + str(len(self.model_store)))
                 return result
             except Exception as e:
@@ -506,11 +515,11 @@ if __name__ == "__main__":
                       fairness_group_id=12)
     '''
     search = MyAutoML(n_jobs=1,
-                      time_search_budget=1 * 60,
+                      time_search_budget=2 * 60,
                       space=space,
                       main_memory_budget_gb=40,
-                      hold_out_fraction=0.3,
-                      max_ensemble_models=100)
+                      hold_out_fraction=0.4,
+                      max_ensemble_models=50)
 
     begin = time.time()
 
