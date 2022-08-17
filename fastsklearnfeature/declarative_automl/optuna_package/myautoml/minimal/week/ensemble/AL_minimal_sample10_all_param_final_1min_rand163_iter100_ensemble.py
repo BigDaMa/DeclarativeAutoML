@@ -14,15 +14,35 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.feature_trans
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_data
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import data2features
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import space2features
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import MyPool
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_feature_names
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import ifNull
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import generate_parameters_minimal_sample_ensemble
 from optuna.samplers import TPESampler
-import multiprocessing as mp
+import multiprocessing
 from multiprocessing import Lock
 import openml
 from sklearn.metrics import balanced_accuracy_score
+
+
+class NoDaemonProcess(multiprocessing.Process):
+    @property
+    def daemon(self):
+        return False
+
+    @daemon.setter
+    def daemon(self, value):
+        pass
+
+
+class NoDaemonContext(type(multiprocessing.get_context())):
+    Process = NoDaemonProcess
+
+# We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
+# because the latter is only a wrapper function, not a proper class.
+class NestablePool(multiprocessing.pool.Pool):
+    def __init__(self, *args, **kwargs):
+        kwargs['context'] = NoDaemonContext()
+        super(NestablePool, self).__init__(*args, **kwargs)
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -44,7 +64,7 @@ starting_time_tt = time.time()
 
 my_lock = Lock()
 
-mgr = mp.Manager()
+mgr = multiprocessing.Manager()
 dictionary = mgr.dict()
 
 
@@ -305,7 +325,7 @@ else:
             trial_id2aqval[counter_trial_id] = 0.0
             counter_trial_id += 1
 
-    with MyPool(processes=topk) as pool:
+    with NestablePool(processes=topk) as pool:
         results = pool.map(run_AutoML_global, range(len(mp_glob.my_trials)))
 
     for result_p in results:
@@ -406,7 +426,7 @@ dictionary['y_meta'] = y_meta
 dictionary['group_meta'] = group_meta
 dictionary['aquisition_function_value'] = aquisition_function_value
 
-with MyPool(processes=topk) as pool:
+with NestablePool(processes=topk) as pool:
     results = pool.map(sample_and_evaluate, range(100000))
 
 print('storing stuff')
