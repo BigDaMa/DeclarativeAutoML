@@ -250,7 +250,8 @@ class MyAutoML:
         test_predictions = []
         for i in range(self.max_ensemble_models):
             try:
-                test_predictions.append(self.model_store_full[i][0].predict_proba(X_test))
+                #test_predictions.append(self.model_store_full[i][0].predict_proba(X_test))
+                test_predictions.append(self.model_store[i][0].predict_proba(X_test))
             except:
                 pass
         y_hat_test_temp = self.ensemble_selection.predict(np.array(test_predictions))
@@ -261,7 +262,7 @@ class MyAutoML:
         self.start_fitting = time.time()
 
         self.model_store = {}
-        self.model_store_full = {}
+        #self.model_store_full = {}
 
         if self.sample_fraction < 1.0:
             X, _, y, _ = sklearn.model_selection.train_test_split(X_new, y_new, random_state=42, stratify=y_new, train_size=self.sample_fraction)
@@ -421,9 +422,11 @@ class MyAutoML:
                                     new_counter_id = counterid
                             if min_acc < result:
                                 try:
+                                    '''
                                     current_model_new = copy.deepcopy(return_dict[key + 'pipeline'])
                                     current_model_new.fit(X, y) #todo: check constraints
                                     self.model_store_full[new_counter_id] = (current_model_new, result)
+                                    '''
                                     self.model_store[new_counter_id] = (return_dict[key + 'pipeline'], result)
                                 except:
                                     pass
@@ -433,9 +436,11 @@ class MyAutoML:
                             except:
                                 new_counter_id = 0
                             try:
+                                '''
                                 current_model_new = copy.deepcopy(return_dict[key + 'pipeline'])
                                 current_model_new.fit(X, y)#todo: check constraints
                                 self.model_store_full[new_counter_id] = (current_model_new, result)
+                                '''
                                 self.model_store[new_counter_id] = (return_dict[key + 'pipeline'], result)
                             except:
                                 pass
@@ -515,10 +520,10 @@ if __name__ == "__main__":
                       fairness_group_id=12)
     '''
     search = MyAutoML(n_jobs=1,
-                      time_search_budget=2 * 60,
+                      time_search_budget=1 * 60,
                       space=space,
                       main_memory_budget_gb=40,
-                      hold_out_fraction=0.4,
+                      hold_out_fraction=0.6,
                       max_ensemble_models=50)
 
     begin = time.time()
