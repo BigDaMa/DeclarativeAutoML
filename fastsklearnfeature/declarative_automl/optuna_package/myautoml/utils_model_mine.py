@@ -27,6 +27,8 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.feature_trans
 import multiprocessing as mp
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.my_global_vars as mp_global
 import logging
+from sklearn.metrics import balanced_accuracy_score
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsemble import MyAutoML as AutoEnsemble
 
 metafeature_names_new = ['ClassEntropy', 'NumSymbols', 'SymbolsSum', 'SymbolsSTD', 'SymbolsMean', 'SymbolsMax', 'SymbolsMin', 'ClassOccurences', 'ClassProbabilitySTD', 'ClassProbabilityMean', 'ClassProbabilityMax', 'ClassProbabilityMin', 'InverseDatasetRatio', 'DatasetRatio', 'RatioNominalToNumerical', 'RatioNumericalToNominal', 'NumberOfCategoricalFeatures', 'NumberOfNumericFeatures', 'MissingValues', 'NumberOfMissingValues', 'NumberOfFeaturesWithMissingValues', 'NumberOfInstancesWithMissingValues', 'NumberOfFeatures', 'NumberOfClasses', 'NumberOfInstances', 'LogInverseDatasetRatio', 'LogDatasetRatio', 'PercentageOfMissingValues', 'PercentageOfFeaturesWithMissingValues', 'PercentageOfInstancesWithMissingValues', 'LogNumberOfFeatures', 'LogNumberOfInstances']
 
@@ -496,7 +498,107 @@ def generate_features_minimum_sample(trial, metafeature_values_hold, search_time
     except Exception as e:
         return None
 
+def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, search_time,
+                                        memory_limit=10,
+                                        privacy_limit=None,
+                                        evaluation_time=None,
+                                        hold_out_fraction=None,
+                                        training_time_limit=None,
+                                        inference_time_limit=None,
+                                        pipeline_size_limit=None,
+                                        tune_space=False,
+                                        save_data=True,
+                                        tune_eval_time=False,
+                                        tune_val_fraction=False,
+                                        tune_cv=False
+                                        ):
+    try:
+        gen = SpaceGenerator()
+        space = gen.generate_params()
 
+        if tune_space:
+            if trial.suggest_categorical('use_space_search_param', [True]):
+                space.sample_parameters(trial)
+
+
+        evaluation_time = int(0.1 * search_time)
+        cat_eval_list = [False]
+        if tune_eval_time:
+            cat_eval_list = [False, True]
+        if trial.suggest_categorical('use_evaluation_time_constraint', cat_eval_list):
+            evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
+        trial.set_user_attr('evaluation_time', evaluation_time)
+
+        # how many cvs should be used
+        cv = 1
+        number_of_cvs = 1
+        if type(hold_out_fraction) == type(None):
+
+            cat_holdout_list = [True]
+            if tune_cv:
+                cat_holdout_list = [True, False]
+
+            hold_out_fraction = None
+            if trial.suggest_categorical('use_hold_out', cat_holdout_list):
+                if tune_val_fraction:
+                    hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.1, 0.99)
+                else:
+                    hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.33, 0.33)
+            else:
+                cv = trial.suggest_int('global_cv', 2, 10, log=False)  # todo: calculate minimum number of splits based on y
+                number_of_cvs = 1
+                if trial.suggest_categorical('use_multiple_cvs', [False]):
+                    number_of_cvs = trial.suggest_int('global_number_cv', 2, 10, log=False)
+        else:
+            trial.set_user_attr('hold_out_fraction', hold_out_fraction)
+
+
+        sample_fraction = 1.0
+        if trial.suggest_categorical('use_sampling', [False]):
+            sample_fraction = trial.suggest_uniform('sample_fraction', 0, 1)
+
+        hold_out_fraction_feature = hold_out_fraction
+        if cv * number_of_cvs > 1:
+            hold_out_fraction_feature = (100.0 / cv) / 100.0
+
+        my_list_constraints_values = [search_time,
+                                      evaluation_time,
+                                      memory_limit,
+                                      cv,
+                                      number_of_cvs,
+                                      ifNull(privacy_limit, constant_value=1000),
+                                      hold_out_fraction_feature,
+                                      sample_fraction,
+                                      ifNull(training_time_limit, constant_value=search_time),
+                                      ifNull(inference_time_limit, constant_value=60),
+                                      ifNull(pipeline_size_limit, constant_value=350000000),
+                                      ]
+
+        my_list_constraints = ['global_search_time_constraint',
+                               'global_evaluation_time_constraint',
+                               'global_memory_constraint',
+                               'global_cv',
+                               'global_number_cv',
+                               'privacy',
+                               'hold_out_fraction',
+                               'sample_fraction',
+                               'training_time_constraint',
+                               'inference_time_constraint',
+                               'pipeline_size_constraint']
+
+        features = space2features(space, my_list_constraints_values, metafeature_values_hold)
+        feature_names, _ = get_feature_names(my_list_constraints)
+        features = FeatureTransformations().fit(features).transform(features, feature_names=feature_names)
+
+        if save_data:
+            trial.set_user_attr('features', features)
+
+        if not save_data:
+            return features, space
+        else:
+            return features
+    except Exception as e:
+        return None
 
 def generate_features_minimum_sample_fair(trial, metafeature_values_hold, search_time,
                                         memory_limit=10,
@@ -648,6 +750,42 @@ def optimize_accuracy_under_minimal_sample(trial, metafeature_values_hold, searc
 
                                         ):
     features, space = generate_features_minimum_sample(trial, metafeature_values_hold, search_time,
+                      memory_limit=memory_limit,
+                      privacy_limit=privacy_limit,
+                      evaluation_time=evaluation_time,
+                      hold_out_fraction=hold_out_fraction,
+                      training_time_limit=training_time_limit,
+                      inference_time_limit=inference_time_limit,
+                      pipeline_size_limit=pipeline_size_limit,
+                      tune_space=tune_space,
+                      save_data=False,
+                      tune_eval_time=tune_eval_time,
+                      tune_val_fraction=tune_val_fraction,
+                      tune_cv=tune_cv
+                      )
+
+    success_val = predict_range(model_success, features)
+
+    if trial.number == 0 or success_val > mp_global.study_prune.best_trial.value:
+        trial.set_user_attr('space', copy.deepcopy(space))
+
+    return success_val
+
+def optimize_accuracy_under_minimal_sample_ensemble(trial, metafeature_values_hold, search_time, model_success,
+                                        memory_limit=10,
+                                        privacy_limit=None,
+                                        evaluation_time=None,
+                                        hold_out_fraction=None,
+                                        training_time_limit=None,
+                                        inference_time_limit=None,
+                                        pipeline_size_limit=None,
+                                        tune_space=False,
+                                        tune_eval_time=False,
+                                        tune_val_fraction=False,
+                                        tune_cv=False
+
+                                        ):
+    features, space = generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, search_time,
                       memory_limit=memory_limit,
                       privacy_limit=privacy_limit,
                       evaluation_time=evaluation_time,
@@ -1561,6 +1699,76 @@ def utils_run_AutoML(trial, X_train=None, X_test=None, y_train=None, y_test=None
     test_score = 0.0
     if type(best_pipeline) != type(None):
         test_score = my_scorer(search.get_best_pipeline(), X_test, y_test)
+
+
+    return test_score, search
+
+def utils_run_AutoML_ensemble(trial, X_train=None, X_test=None, y_train=None, y_test=None, categorical_indicator=None, my_scorer=None,
+               search_time=None,
+               memory_limit=None,
+               privacy_limit=None,
+               training_time_limit=None,
+               inference_time_limit=None,
+               pipeline_size_limit=None,
+               fairness_limit=None,
+               fairness_group_id=None,
+               space=None
+               ):
+    if type(None) == type(space):
+        space = trial.user_attrs['space']
+
+    print(trial.params)
+
+    if 'evaluation_time' in trial.user_attrs:
+        evaluation_time = trial.user_attrs['evaluation_time']
+    else:
+        evaluation_time = search_time
+        if 'global_evaluation_time_constraint' in trial.params:
+            evaluation_time = trial.params['global_evaluation_time_constraint']
+
+    cv = 1
+    number_of_cvs = 1
+    if 'hold_out_fraction' in trial.user_attrs:
+        hold_out_fraction = trial.user_attrs['hold_out_fraction']
+    else:
+        hold_out_fraction = None
+        if 'global_cv' in trial.params:
+            cv = trial.params['global_cv']
+            if 'global_number_cv' in trial.params:
+                number_of_cvs = trial.params['global_number_cv']
+        if 'hold_out_fraction' in trial.params:
+            hold_out_fraction = trial.params['hold_out_fraction']
+
+    sample_fraction = 1.0
+    if 'sample_fraction' in trial.params:
+        sample_fraction = trial.params['sample_fraction']
+
+    search = AutoEnsemble(cv=cv,
+                      number_of_cvs=number_of_cvs,
+                      n_jobs=1,
+                      evaluation_budget=evaluation_time,
+                      time_search_budget=search_time,
+                      space=space,
+                      main_memory_budget_gb=memory_limit,
+                      differential_privacy_epsilon=privacy_limit,
+                      hold_out_fraction=hold_out_fraction,
+                      sample_fraction=sample_fraction,
+                      training_time_limit=training_time_limit,
+                      inference_time_limit=inference_time_limit,
+                      pipeline_size_limit=pipeline_size_limit,
+                      fairness_limit=fairness_limit,
+                      fairness_group_id=fairness_group_id,
+                      max_ensemble_models=50
+                      )
+    search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
+
+    test_score = 0.0
+    try:
+        search.ensemble(X_train, y_train)
+        y_hat_test = search.ensemble_predict(X_test)
+        test_score = balanced_accuracy_score(y_test, y_hat_test)
+    except:
+        pass
 
 
     return test_score, search
