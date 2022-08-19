@@ -68,9 +68,11 @@ for test_holdout_dataset_id in [args.dataset]:
                 y_hat = automl.predict(X_test_hold)
                 result = balanced_accuracy_score(y_test_hold, y_hat)
 
+                print(automl.show_models())
+
                 print(result)
 
-                new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'test', result, more='test'))
+                new_constraint_evaluation_dynamic.append(ConstraintRun(str(automl.show_models()), 'test', result, more='test'))
             except Exception as e:
                 print(e)
                 result = 0
