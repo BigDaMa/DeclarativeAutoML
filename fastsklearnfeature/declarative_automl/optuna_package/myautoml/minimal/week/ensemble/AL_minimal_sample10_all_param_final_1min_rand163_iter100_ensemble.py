@@ -172,9 +172,9 @@ def run_AutoML(trial):
         try:
             search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
 
-            best_pipeline = search.get_best_pipeline()
-            if type(best_pipeline) != type(None):
-                test_score = my_scorer(search.get_best_pipeline(), X_test, y_test)
+            search.ensemble(X_train, y_train)
+            y_hat_test = search.ensemble_predict(X_test)
+            test_score = balanced_accuracy_score(y_test, y_hat_test)
         except:
             pass
         dynamic_params.append(test_score)
@@ -207,7 +207,10 @@ def run_AutoML(trial):
 
         try:
             best_result = search_static.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
-            test_score_default = my_scorer(search_static.get_best_pipeline(), X_test, y_test)
+
+            search_static.ensemble(X_train, y_train)
+            y_hat_test = search_static.ensemble_predict(X_test)
+            test_score_default = balanced_accuracy_score(y_test, y_hat_test)
         except:
             test_score_default = 0.0
         static_params.append(test_score_default)
