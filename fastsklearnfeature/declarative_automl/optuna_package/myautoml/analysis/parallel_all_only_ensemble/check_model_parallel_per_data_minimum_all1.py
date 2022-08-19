@@ -1,4 +1,4 @@
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsemble import MyAutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsemble import MyAutoML as AutoEnsembleML
 import optuna
 from sklearn.metrics import make_scorer
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
@@ -118,14 +118,13 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                  my_scorer=my_scorer,
                                                                  search_time=search_time_frozen,
                                                                  memory_limit=memory_budget,
-                                                                 privacy_limit=privacy,
-                                                                 autoMLclass=MyAutoML
+                                                                 privacy_limit=privacy
                                                  )
                 else:
                     gen_new = SpaceGenerator()
                     space = gen_new.generate_params()
 
-                    search_default = MyAutoML(n_jobs=1,
+                    search_default = AutoEnsembleML(n_jobs=1,
                                               time_search_budget=search_time_frozen,
                                               space=space,
                                               evaluation_budget=int(0.1 * search_time_frozen),

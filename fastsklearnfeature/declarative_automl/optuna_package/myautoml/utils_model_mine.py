@@ -28,7 +28,7 @@ import multiprocessing as mp
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.my_global_vars as mp_global
 import logging
 from sklearn.metrics import balanced_accuracy_score
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsemble import MyAutoML as AutoEnsemble
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsemble import MyAutoML as AutoEnsembleML
 
 metafeature_names_new = ['ClassEntropy', 'NumSymbols', 'SymbolsSum', 'SymbolsSTD', 'SymbolsMean', 'SymbolsMax', 'SymbolsMin', 'ClassOccurences', 'ClassProbabilitySTD', 'ClassProbabilityMean', 'ClassProbabilityMax', 'ClassProbabilityMin', 'InverseDatasetRatio', 'DatasetRatio', 'RatioNominalToNumerical', 'RatioNumericalToNominal', 'NumberOfCategoricalFeatures', 'NumberOfNumericFeatures', 'MissingValues', 'NumberOfMissingValues', 'NumberOfFeaturesWithMissingValues', 'NumberOfInstancesWithMissingValues', 'NumberOfFeatures', 'NumberOfClasses', 'NumberOfInstances', 'LogInverseDatasetRatio', 'LogDatasetRatio', 'PercentageOfMissingValues', 'PercentageOfFeaturesWithMissingValues', 'PercentageOfInstancesWithMissingValues', 'LogNumberOfFeatures', 'LogNumberOfInstances']
 
@@ -1743,7 +1743,7 @@ def utils_run_AutoML_ensemble(trial, X_train=None, X_test=None, y_train=None, y_
     if 'sample_fraction' in trial.params:
         sample_fraction = trial.params['sample_fraction']
 
-    search = AutoEnsemble(cv=cv,
+    search = AutoEnsembleML(cv=cv,
                       number_of_cvs=number_of_cvs,
                       n_jobs=1,
                       evaluation_budget=evaluation_time,
