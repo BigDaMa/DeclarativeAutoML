@@ -106,8 +106,7 @@ def evaluatePipeline(key, return_dict):
         size = int(main_memory_budget_gb * 1024.0 * 1024.0 * 1024.0)
         resource.setrlimit(resource.RLIMIT_AS, (size, resource.RLIM_INFINITY))
 
-        scores = []
-        fairness_scores = []
+
 
 
         X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
@@ -119,24 +118,50 @@ def evaluatePipeline(key, return_dict):
                                                                               stratify=y_train,
                                                                               train_size=training_sampling_factor)
 
-        start_training = time.time()
-        p.fit(X_train, y_train)
-        training_time = time.time() - start_training
-        scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
-        if type(fairness_limit) != type(None):
-            fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id]))
+        invert_op = getattr(p.steps[-1][-1], "custom_iterative_fit", None)
+        if type(invert_op)==type(None):
+            scores = []
+            fairness_scores = []
+            start_training = time.time()
+            p.fit(X_train, y_train)
+            training_time = time.time() - start_training
+            scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
+            if type(fairness_limit) != type(None):
+                fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id]))
 
-        print(fairness_scores)
-        if not constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit,
-                                     inference_time_limit, X, np.mean(fairness_scores), fairness_limit):
-            return
+            if constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit,
+                                         inference_time_limit, X, np.mean(fairness_scores), fairness_limit):
+                return_dict[key + 'pipeline'] = p
+                return_dict[key + 'result'] = np.mean(scores)
+        else:
+            start_training = time.time()
+            Xt, yt, fit_params = p._fit(X_train, y_train)
+            training_time = time.time() - start_training
+            current_steps = 1
+            n_steps = int(2 ** current_steps / 2) if current_steps > 1 else 2
+            while n_steps < p.steps[-1][-1].get_max_steps():
+                scores = []
+                fairness_scores = []
+                start_training = time.time()
+                p.steps[-1][-1].custom_iterative_fit(Xt, yt, number_steps=n_steps)
+                training_time += time.time() - start_training
+                scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
+                print('current:' + str(current_steps) + ' score: ' + str(scores))
+                if type(fairness_limit) != type(None):
+                    fairness_scores.append(
+                        1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id]))
 
-        return_dict[key + 'result'] = np.mean(scores)
-        return_dict[key + 'pipeline'] = p
+                if constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit,
+                                         inference_time_limit, X, np.mean(fairness_scores), fairness_limit):
+                    if not key + 'result' in return_dict or (key + 'result' in return_dict and np.mean(scores) > return_dict[key + 'result']) :
+                        return_dict[key + 'pipeline'] = copy.deepcopy(p)
+                        return_dict[key + 'result'] = np.mean(scores)
+
+                current_steps += 1
+                n_steps = int(2 ** current_steps / 2) if current_steps > 1 else 2
+
 
     except Exception as e:
-        return_dict[key + 'result'] = -1 * np.inf
-        print(p)
         print(str(e) + '\n\n')
 
 
@@ -262,7 +287,6 @@ class MyAutoML:
         self.start_fitting = time.time()
 
         self.model_store = {}
-        #self.model_store_full = {}
 
         if self.sample_fraction < 1.0:
             X, _, y, _ = sklearn.model_selection.train_test_split(X_new, y_new, random_state=42, stratify=y_new, train_size=self.sample_fraction)
@@ -290,10 +314,14 @@ class MyAutoML:
                 preprocessor.init_hyperparameters(self.space, X, y)
 
 
+
                 if type(self.differential_privacy_epsilon) == type(None):
                     classifier = self.space.suggest_categorical('classifier', self.classifier_list)
                 else:
                     classifier = self.space.suggest_categorical('private_classifier', self.private_classifier_list)
+
+                #from fastsklearnfeature.declarative_automl.optuna_package.classifiers.SGDClassifierOptuna import SGDClassifierOptuna
+                #classifier = SGDClassifierOptuna()
 
                 classifier.init_hyperparameters(self.space, X, y)
 
@@ -422,11 +450,6 @@ class MyAutoML:
                                     new_counter_id = counterid
                             if min_acc < result:
                                 try:
-                                    '''
-                                    current_model_new = copy.deepcopy(return_dict[key + 'pipeline'])
-                                    current_model_new.fit(X, y) #todo: check constraints
-                                    self.model_store_full[new_counter_id] = (current_model_new, result)
-                                    '''
                                     self.model_store[new_counter_id] = (return_dict[key + 'pipeline'], result)
                                 except:
                                     pass
@@ -436,11 +459,6 @@ class MyAutoML:
                             except:
                                 new_counter_id = 0
                             try:
-                                '''
-                                current_model_new = copy.deepcopy(return_dict[key + 'pipeline'])
-                                current_model_new.fit(X, y)#todo: check constraints
-                                self.model_store_full[new_counter_id] = (current_model_new, result)
-                                '''
                                 self.model_store[new_counter_id] = (return_dict[key + 'pipeline'], result)
                             except:
                                 pass
@@ -524,7 +542,8 @@ if __name__ == "__main__":
                       space=space,
                       main_memory_budget_gb=40,
                       hold_out_fraction=0.6,
-                      max_ensemble_models=50)
+                      max_ensemble_models=50,
+                      evaluation_budget=3)
 
     begin = time.time()
 

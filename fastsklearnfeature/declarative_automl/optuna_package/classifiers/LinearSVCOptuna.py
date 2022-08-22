@@ -1,8 +1,7 @@
 from sklearn.svm import LinearSVC
 from fastsklearnfeature.declarative_automl.optuna_package.optuna_utils import id_name
 from sklearn.utils.class_weight import compute_sample_weight
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.wrapper.ClassifierWrapper import \
-    calculate_class_weight
+from autosklearn.pipeline.implementations.util import softmax
 
 class LinearSVCOptuna(LinearSVC):
 
@@ -43,3 +42,7 @@ class LinearSVCOptuna(LinearSVC):
             return super().fit(X, y, sample_weight=compute_sample_weight(class_weight=self.custom_weight, y=y))
         else:
             return super().fit(X, y)
+
+    def predict_proba(self, X):
+        df = self.decision_function(X)
+        return softmax(df)

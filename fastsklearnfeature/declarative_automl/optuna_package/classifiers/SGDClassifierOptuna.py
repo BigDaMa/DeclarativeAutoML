@@ -1,8 +1,7 @@
 from sklearn.linear_model import SGDClassifier
 from fastsklearnfeature.declarative_automl.optuna_package.optuna_utils import id_name
 from sklearn.utils.class_weight import compute_sample_weight
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.wrapper.ClassifierWrapper import \
-    calculate_class_weight
+from autosklearn.pipeline.implementations.util import softmax
 
 class SGDClassifierOptuna(SGDClassifier):
 
@@ -25,7 +24,7 @@ class SGDClassifierOptuna(SGDClassifier):
             self.power_t = trial.suggest_uniform(self.name + "power_t", 1e-5, 1)
         self.average = trial.suggest_categorical(self.name + "average", [False, True])
 
-        self.max_iter = trial.suggest_int(self.name + "max_iter", 10, 1024)
+        self.max_iter = 2
 
         #todo: add conditional parameters
 
@@ -44,8 +43,6 @@ class SGDClassifierOptuna(SGDClassifier):
         space_gen.generate_number(self.name + "power_t", 0.5, depending_node=category_learn[1], low=1e-5, high=1)
         space_gen.generate_cat(self.name + "average", [False, True], False, depending_node=depending_node)
 
-        space_gen.generate_number(self.name + "max_iter", 1000, depending_node=depending_node, low=10, high=1024, is_float=False)
-
     def set_weight(self, custom_weight):
         self.custom_weight = custom_weight
 
@@ -54,3 +51,32 @@ class SGDClassifierOptuna(SGDClassifier):
             return super().fit(X, y, sample_weight=compute_sample_weight(class_weight=self.custom_weight, y=y))
         else:
             return super().fit(X, y)
+
+    def predict_proba(self, X):
+        if self.loss in ["log", "modified_huber"]:
+            return super().predict_proba(X)
+        else:
+            df = self.decision_function(X)
+            return softmax(df)
+
+    def custom_iterative_fit(self, X, y=None, sample_weight=None, number_steps=2):
+        self.max_iter = number_steps
+        try:
+            self._partial_fit(
+                X,
+                y,
+                alpha=self.alpha,
+                C=1.0,
+                loss=self.loss,
+                learning_rate=self.learning_rate,
+                max_iter=number_steps,
+                sample_weight=sample_weight,
+                classes=None,
+                coef_init=None,
+                intercept_init=None,
+            )
+        except:
+            self.fit(X,y)
+
+    def get_max_steps(self):
+        return 1024

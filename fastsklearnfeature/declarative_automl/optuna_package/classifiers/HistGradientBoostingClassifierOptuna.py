@@ -2,6 +2,7 @@ from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import HistGradientBoostingClassifier
 import numpy as np
 from fastsklearnfeature.declarative_automl.optuna_package.optuna_utils import id_name
+from sklearn.utils.class_weight import compute_sample_weight
 
 class HistGradientBoostingClassifierOptuna(HistGradientBoostingClassifier):
 
@@ -20,9 +21,7 @@ class HistGradientBoostingClassifierOptuna(HistGradientBoostingClassifier):
         self.vn_iter_no_change = trial.suggest_int(self.name + "n_iter_no_change", 1, 20)
         self.validation_fraction = trial.suggest_uniform(self.name + "validation_fraction", 0.01, 0.4)
         self.classes_ = np.unique(y.astype(int))
-
-        #new
-        self.max_iter = trial.suggest_int(self.name + "max_iter", 10, 512)
+        self.max_iter = 2
 
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('HistGradientBoostingClassifier_')
@@ -35,6 +34,19 @@ class HistGradientBoostingClassifierOptuna(HistGradientBoostingClassifier):
         space_gen.generate_number(self.name + "n_iter_no_change", 10, depending_node=depending_node, low=1, high=20, is_float=False)
         space_gen.generate_number(self.name + "validation_fraction", 0.1, depending_node=depending_node, low=0.01, high=0.4)
 
-        space_gen.generate_number(self.name + "max_iter", 100, depending_node=depending_node, low=10, high=512, is_float=False)
 
+    def set_weight(self, custom_weight):
+        self.custom_weight = custom_weight
 
+    def fit(self, X, y=None, sample_weight=None):
+        if hasattr(self, 'custom_weight'):
+            return super().fit(X, y, sample_weight=compute_sample_weight(class_weight=self.custom_weight, y=y))
+        else:
+            return super().fit(X, y)
+
+    def custom_iterative_fit(self, X, y=None, sample_weight=None, number_steps=2):
+        self.max_iter = number_steps
+        return self.fit(X, y=y, sample_weight=sample_weight)
+
+    def get_max_steps(self):
+        return 512

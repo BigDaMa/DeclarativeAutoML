@@ -1,9 +1,8 @@
 from sklearn.ensemble import RandomForestClassifier
-import numpy as np
 from fastsklearnfeature.declarative_automl.optuna_package.optuna_utils import id_name
 from sklearn.utils.class_weight import compute_sample_weight
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.wrapper.ClassifierWrapper import \
-    calculate_class_weight
+from autosklearn.pipeline.implementations.util import convert_multioutput_multiclass_to_multilabel
+
 
 class RandomForestClassifierOptuna(RandomForestClassifier):
 
@@ -25,9 +24,7 @@ class RandomForestClassifierOptuna(RandomForestClassifier):
         #self.classes_ = 2
         self.n_jobs = 1
 
-        #hyperopt config
-        #self.n_estimators = trial.suggest_int(self.name + "n_estimators", 10, 512, log=True)
-        self.n_estimators = trial.suggest_int(self.name + "n_estimators", 10, 100, log=True)
+        self.n_estimators = 1
 
     def generate_hyperparameters(self, space_gen, depending_node=None):
         self.name = id_name('RandomForestClassifier_')
@@ -38,8 +35,6 @@ class RandomForestClassifierOptuna(RandomForestClassifier):
         space_gen.generate_number(self.name + "min_samples_leaf", 1, depending_node=depending_node, low=1, high=20, is_float=False)
         space_gen.generate_cat(self.name + "bootstrap", [True, False], True, depending_node=depending_node)
 
-        space_gen.generate_number(self.name + "n_estimators", 100, depending_node=depending_node, low=10, high=100, is_float=False, is_log=True)
-
     def set_weight(self, custom_weight):
         self.custom_weight = custom_weight
 
@@ -48,3 +43,15 @@ class RandomForestClassifierOptuna(RandomForestClassifier):
             return super().fit(X, y, sample_weight=compute_sample_weight(class_weight=self.custom_weight, y=y))
         else:
             return super().fit(X, y)
+
+    def predict_proba(self, X):
+        probas = super().predict_proba(X)
+        probas = convert_multioutput_multiclass_to_multilabel(probas)
+        return probas
+
+    def custom_iterative_fit(self, X, y=None, sample_weight=None, number_steps=2):
+        self.n_estimators = number_steps
+        return self.fit(X, y=y, sample_weight=sample_weight)
+
+    def get_max_steps(self):
+        return 512
