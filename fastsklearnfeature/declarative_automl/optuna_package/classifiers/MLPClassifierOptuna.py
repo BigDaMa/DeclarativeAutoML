@@ -5,7 +5,6 @@ class MLPClassifierOptuna(MLPClassifier):
 
     def init_hyperparameters(self, trial, X, y):
         self.name = id_name('MLPClassifier_')
-        self.n_jobs = 1
 
         self.n_iter_no_change = 32
         self.validation_fraction = 0.1

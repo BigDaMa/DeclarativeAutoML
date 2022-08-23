@@ -316,8 +316,8 @@ class MyAutoML:
                 else:
                     classifier = self.space.suggest_categorical('private_classifier', self.private_classifier_list)
 
-                #from fastsklearnfeature.declarative_automl.optuna_package.classifiers.HistGradientBoostingClassifierOptuna import HistGradientBoostingClassifierOptuna
-                #classifier = HistGradientBoostingClassifierOptuna()
+                #from fastsklearnfeature.declarative_automl.optuna_package.classifiers.MLPClassifierOptuna import MLPClassifierOptuna
+                #classifier = MLPClassifierOptuna()
 
                 classifier.init_hyperparameters(self.space, X, y)
 
