@@ -98,14 +98,15 @@ for test_holdout_dataset_id in [args.dataset]:
 
                 best_result = search_default.fit(X_train_hold, y_train_hold, categorical_indicator=categorical_indicator_hold, scorer=my_scorer)
 
-                search_default.ensemble(X_train_hold, y_train_hold)
-                y_hat_test = search_default.ensemble_predict(X_test_hold)
-                result = balanced_accuracy_score(y_test_hold, y_hat_test)
+                #search_default.ensemble(X_train_hold, y_train_hold)
+                #y_hat_test = search_default.ensemble_predict(X_test_hold)
+                #result = balanced_accuracy_score(y_test_hold, y_hat_test)
+                result = my_scorer(search_default.get_best_pipeline(), X_test_hold, y_test_hold)
 
-                new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params='full', test_score=result, estimated_score=0.0))
+                new_constraint_evaluation_dynamic.append(ConstraintRun(space_str='None', params='full', test_score=result, estimated_score=0.0))
             except:
                 result = 0
-                new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params='full', test_score=result, estimated_score=0.0))
+                new_constraint_evaluation_dynamic.append(ConstraintRun(space_str='None', params='full', test_score=result, estimated_score=0.0))
 
             print("test result: " + str(result))
             current_dynamic.append(result)

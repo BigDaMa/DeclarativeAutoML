@@ -106,8 +106,10 @@ def evaluatePipeline(key, return_dict):
 
 
 
-        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
-                                                              test_size=hold_out_fraction)
+        #X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
+        #                                                      test_size=hold_out_fraction)
+        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=int(time.time()), stratify=y,
+                                                                                    test_size=hold_out_fraction)
 
         if training_sampling_factor < 1.0:
             X_train, _, y_train, _ = sklearn.model_selection.train_test_split(X_train, y_train,
@@ -403,7 +405,7 @@ class MyAutoML:
 
                 if already_used_time + 2 >= self.time_search_budget:  # already over budget
                     time.sleep(2)
-                    return -1 * (time.time() - start_total)
+                    return -1.0
 
                 remaining_time = np.min([self.evaluation_budget, self.time_search_budget - already_used_time])
 
@@ -420,7 +422,7 @@ class MyAutoML:
 
                 #del mp_global.mp_store[key]
 
-                result = -1 * (time.time() - start_total)
+                result = -1.0
                 if key + 'result' in return_dict:
                     result = return_dict[key + 'result']
 
@@ -539,35 +541,47 @@ if __name__ == "__main__":
                       fairness_limit=0.95,
                       fairness_group_id=12)
     '''
-    search = MyAutoML(n_jobs=1,
-                      time_search_budget=1 * 60,
-                      space=space,
-                      main_memory_budget_gb=40,
-                      hold_out_fraction=0.6,
-                      max_ensemble_models=50,
-                      evaluation_budget=3)
+    single_perf = []
+    ensemble_perf = []
+    for _ in range(10):
+        search = MyAutoML(n_jobs=1,
+                          time_search_budget=1 * 60,
+                          space=space,
+                          main_memory_budget_gb=40,
+                          hold_out_fraction=0.6,
+                          max_ensemble_models=50,
+                          evaluation_budget=3)
 
-    begin = time.time()
+        begin = time.time()
 
-    best_result = search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=auc)
+        best_result = search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=auc)
 
-    print(search.model_store)
+        print(search.model_store)
 
-    #from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import show_progress
+        #from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model import show_progress
 
-    #show_progress(search, X_test, y_test, auc)
+        #show_progress(search, X_test, y_test, auc)
 
-    # importances = optuna.importance.get_param_importances(search.study)
-    # print(importances)
+        # importances = optuna.importance.get_param_importances(search.study)
+        # print(importances)
 
-    test_score = auc(search.get_best_pipeline(), X_test, y_test)
+        test_score = auc(search.get_best_pipeline(), X_test, y_test)
+        single_perf.append(test_score)
 
-    print("single model: " + str(test_score))
 
-    search.ensemble(X_train, y_train)
-    y_hat_test = search.ensemble_predict(X_test)
-    print(len(y_test))
-    print(len(y_hat_test))
-    print('ensemble result: ' + str(balanced_accuracy_score(y_test, y_hat_test)))
+        search.ensemble(X_train, y_train)
+        y_hat_test = search.ensemble_predict(X_test)
+        print(len(y_test))
+        print(len(y_hat_test))
 
-    print(time.time() - begin)
+        ensemble_perf.append(balanced_accuracy_score(y_test, y_hat_test))
+
+        print('ensemble result: ' + str(balanced_accuracy_score(y_test, y_hat_test)))
+        print(ensemble_perf)
+        print("single model: " + str(test_score))
+        print(single_perf)
+
+        print(time.time() - begin)
+
+    print('ensemble: ' + str(np.mean(ensemble_perf)))
+    print('single: ' + str(np.mean(single_perf)))
