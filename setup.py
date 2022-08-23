@@ -31,7 +31,7 @@ setup(
                       #"auto-sklearn==0.10.0",
                       "libtmux",
                       "matplotlib",
-                      "imbalanced-learn==0.8.0",
+                      "imbalanced-learn==0.7.0",
                       "smac==0.13.1",
                       "pyDOE==0.3.8",
                       "emcee==3.0.2",
