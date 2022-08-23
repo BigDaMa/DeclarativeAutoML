@@ -81,7 +81,8 @@ def constraints_satisfied(p, return_dict, key, training_time, training_time_limi
 
 
 def evaluatePipeline(key, return_dict):
-    try:
+    #try:
+    if True:
         p = return_dict['p']
         number_of_cvs = return_dict['number_of_cvs']
         cv = return_dict['cv']
@@ -157,8 +158,8 @@ def evaluatePipeline(key, return_dict):
                 n_steps = int(2 ** current_steps / 2) if current_steps > 1 else 2
 
 
-    except Exception as e:
-        print(str(e) + '\n\n')
+    #except Exception as e:
+    #    print(str(e) + '\n\n')
 
 
 
