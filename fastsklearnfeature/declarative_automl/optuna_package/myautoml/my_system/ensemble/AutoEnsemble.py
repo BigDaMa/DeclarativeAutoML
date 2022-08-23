@@ -29,6 +29,7 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.fai
 from autosklearn.ensembles.ensemble_selection import EnsembleSelection
 from autosklearn.metrics import balanced_accuracy as ba
 from autosklearn.constants import MULTICLASS_CLASSIFICATION
+import traceback
 
 @dataclass
 class StopWhenOptimumReachedCallback:
@@ -81,8 +82,7 @@ def constraints_satisfied(p, return_dict, key, training_time, training_time_limi
 
 
 def evaluatePipeline(key, return_dict):
-    #try:
-    if True:
+    try:
         p = return_dict['p']
         number_of_cvs = return_dict['number_of_cvs']
         cv = return_dict['cv']
@@ -158,8 +158,9 @@ def evaluatePipeline(key, return_dict):
                 n_steps = int(2 ** current_steps / 2) if current_steps > 1 else 2
 
 
-    #except Exception as e:
-    #    print(str(e) + '\n\n')
+    except Exception as e:
+        print(str(e) + '\n\n')
+        traceback.print_exc()
 
 
 
@@ -293,8 +294,7 @@ class MyAutoML:
         def objective1(trial):
             start_total = time.time()
 
-            #try:
-            if True:
+            try:
                 self.space.trial = trial
 
                 imputer = SimpleImputerOptuna()
@@ -310,15 +310,14 @@ class MyAutoML:
                 preprocessor.init_hyperparameters(self.space, X, y)
 
 
-                '''
+
                 if type(self.differential_privacy_epsilon) == type(None):
                     classifier = self.space.suggest_categorical('classifier', self.classifier_list)
                 else:
                     classifier = self.space.suggest_categorical('private_classifier', self.private_classifier_list)
-                '''
 
-                from fastsklearnfeature.declarative_automl.optuna_package.classifiers.HistGradientBoostingClassifierOptuna import HistGradientBoostingClassifierOptuna
-                classifier = HistGradientBoostingClassifierOptuna()
+                #from fastsklearnfeature.declarative_automl.optuna_package.classifiers.HistGradientBoostingClassifierOptuna import HistGradientBoostingClassifierOptuna
+                #classifier = HistGradientBoostingClassifierOptuna()
 
                 classifier.init_hyperparameters(self.space, X, y)
 
@@ -463,11 +462,12 @@ class MyAutoML:
                         #print('size model store: ' + str(len(self.model_store)))
                 return result
 
-            '''
+
             except Exception as e:
                 print('Exception: ' + str(e) + '\n\n')
+                traceback.print_exc()
                 return -1 * np.inf
-            '''
+
 
 
         if type(self.study) == type(None):
