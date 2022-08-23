@@ -1,5 +1,4 @@
 import optuna
-#from sklearn.pipeline import Pipeline
 from imblearn.pipeline import Pipeline
 import sklearn.metrics
 from sklearn.metrics import make_scorer
@@ -11,22 +10,19 @@ from sklearn.compose import ColumnTransformer
 from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.SimpleImputerOptuna import SimpleImputerOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.QuadraticDiscriminantAnalysisOptuna import QuadraticDiscriminantAnalysisOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.KNeighborsClassifierOptuna import KNeighborsClassifierOptuna
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.HistGradientBoostingClassifierOptuna import HistGradientBoostingClassifierOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.MLPClassifierOptuna import MLPClassifierOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateLogisticRegressionOptuna import PrivateLogisticRegressionOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateGaussianNBOptuna import PrivateGaussianNBOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
-from sklearn.model_selection import StratifiedKFold
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.PassiveAggressiveOptuna import PassiveAggressiveOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.LinearDiscriminantAnalysisOptuna import LinearDiscriminantAnalysisOptuna
+
 import pandas as pd
 import time
 import resource
 import copy
-import fastsklearnfeature.declarative_automl.optuna_package.myautoml.automl_parameters as mp_global
 import multiprocessing
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.define_space as myspace
 import pickle
-import os
-import glob
 from dataclasses import dataclass
 import sys
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.fairness.metric import true_positive_rate_score
@@ -119,7 +115,7 @@ def evaluatePipeline(key, return_dict):
                                                                               train_size=training_sampling_factor)
 
         invert_op = getattr(p.steps[-1][-1], "custom_iterative_fit", None)
-        if type(invert_op)==type(None):
+        if type(invert_op) == type(None):
             scores = []
             fairness_scores = []
             start_training = time.time()
@@ -146,7 +142,7 @@ def evaluatePipeline(key, return_dict):
                 p.steps[-1][-1].custom_iterative_fit(Xt, yt, number_steps=n_steps)
                 training_time += time.time() - start_training
                 scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
-                print('current:' + str(current_steps) + ' score: ' + str(scores))
+                #print('current:' + str(current_steps) + ' score: ' + str(scores))
                 if type(fairness_limit) != type(None):
                     fairness_scores.append(
                         1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id]))
@@ -275,7 +271,6 @@ class MyAutoML:
         test_predictions = []
         for i in range(self.max_ensemble_models):
             try:
-                #test_predictions.append(self.model_store_full[i][0].predict_proba(X_test))
                 test_predictions.append(self.model_store[i][0].predict_proba(X_test))
             except:
                 pass
@@ -298,7 +293,6 @@ class MyAutoML:
             start_total = time.time()
 
             try:
-
                 self.space.trial = trial
 
                 imputer = SimpleImputerOptuna()
@@ -314,14 +308,15 @@ class MyAutoML:
                 preprocessor.init_hyperparameters(self.space, X, y)
 
 
-
+                '''
                 if type(self.differential_privacy_epsilon) == type(None):
                     classifier = self.space.suggest_categorical('classifier', self.classifier_list)
                 else:
                     classifier = self.space.suggest_categorical('private_classifier', self.private_classifier_list)
+                '''
 
-                #from fastsklearnfeature.declarative_automl.optuna_package.classifiers.SGDClassifierOptuna import SGDClassifierOptuna
-                #classifier = SGDClassifierOptuna()
+                from fastsklearnfeature.declarative_automl.optuna_package.classifiers.HistGradientBoostingClassifierOptuna import HistGradientBoostingClassifierOptuna
+                classifier = HistGradientBoostingClassifierOptuna()
 
                 classifier.init_hyperparameters(self.space, X, y)
 
@@ -331,9 +326,10 @@ class MyAutoML:
 
                 if isinstance(classifier, KNeighborsClassifierOptuna) or \
                         isinstance(classifier, QuadraticDiscriminantAnalysisOptuna) or \
-                        isinstance(classifier, HistGradientBoostingClassifierOptuna) or \
                         isinstance(classifier, PrivateLogisticRegressionOptuna) or \
-                        isinstance(classifier, PrivateGaussianNBOptuna):
+                        isinstance(classifier, PrivateGaussianNBOptuna) or \
+                        isinstance(classifier, MLPClassifierOptuna) or \
+                        isinstance(classifier, LinearDiscriminantAnalysisOptuna):
                     pass
                 else:
                     class_weighting = self.space.suggest_categorical('class_weighting', [True, False])
@@ -462,11 +458,13 @@ class MyAutoML:
                                 self.model_store[new_counter_id] = (return_dict[key + 'pipeline'], result)
                             except:
                                 pass
-                        print('size model store: ' + str(len(self.model_store)))
+                        #print('size model store: ' + str(len(self.model_store)))
                 return result
+
             except Exception as e:
                 print('Exception: ' + str(e) + '\n\n')
                 return -1 * np.inf
+
 
         if type(self.study) == type(None):
             self.study = optuna.create_study(direction='maximize')

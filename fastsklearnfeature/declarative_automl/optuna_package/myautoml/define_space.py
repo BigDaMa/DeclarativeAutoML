@@ -2,6 +2,7 @@ from fastsklearnfeature.declarative_automl.optuna_package.feature_preprocessing.
 
 from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.categorical_encoding.FrequencyEncodingOptuna import FrequencyEncodingOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.categorical_encoding.OneHotEncoderOptuna import OneHotEncoderOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.categorical_encoding.LabelEncoderOptuna import LabelEncoderOptuna
 
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.RandomForestClassifierOptuna import RandomForestClassifierOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.AdaBoostClassifierOptuna import AdaBoostClassifierOptuna
@@ -17,6 +18,8 @@ from fastsklearnfeature.declarative_automl.optuna_package.classifiers.PassiveAgg
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.QuadraticDiscriminantAnalysisOptuna import QuadraticDiscriminantAnalysisOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.SGDClassifierOptuna import SGDClassifierOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.SVCOptuna import SVCOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.MLPClassifierOptuna import MLPClassifierOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.LinearDiscriminantAnalysisOptuna import LinearDiscriminantAnalysisOptuna
 
 from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.scaling.MinMaxScalerOptuna import MinMaxScalerOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.scaling.NormalizerOptuna import NormalizerOptuna
@@ -52,12 +55,14 @@ classifier_list = [RandomForestClassifierOptuna(),
                                 GaussianNBOptuna(),
                                 HistGradientBoostingClassifierOptuna(),
                                 KNeighborsClassifierOptuna(),
-                                #LinearSVCOptuna(),
+                                LinearSVCOptuna(),
                                 MultinomialNBOptuna(),
                                 PassiveAggressiveOptuna(),
                                 QuadraticDiscriminantAnalysisOptuna(),
                                 SGDClassifierOptuna(),
-                                SVCOptuna()
+                                SVCOptuna(),
+                                MLPClassifierOptuna(),
+                                LinearDiscriminantAnalysisOptuna()
                                 ]
 
 private_classifier_list = [PrivateLogisticRegressionOptuna(), PrivateGaussianNBOptuna()]
@@ -101,5 +106,7 @@ augmentation_list = [IdentityTransformation(),
 
 
 categorical_encoding_list = [OneHotEncoderOptuna(),
-                                          FrequencyEncodingOptuna()]
+                             FrequencyEncodingOptuna(),
+                             LabelEncoderOptuna()]
+
 
