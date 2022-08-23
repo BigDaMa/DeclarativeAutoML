@@ -292,7 +292,8 @@ class MyAutoML:
         def objective1(trial):
             start_total = time.time()
 
-            try:
+            #try:
+            if True:
                 self.space.trial = trial
 
                 imputer = SimpleImputerOptuna()
@@ -461,9 +462,11 @@ class MyAutoML:
                         #print('size model store: ' + str(len(self.model_store)))
                 return result
 
+            '''
             except Exception as e:
                 print('Exception: ' + str(e) + '\n\n')
                 return -1 * np.inf
+            '''
 
 
         if type(self.study) == type(None):
