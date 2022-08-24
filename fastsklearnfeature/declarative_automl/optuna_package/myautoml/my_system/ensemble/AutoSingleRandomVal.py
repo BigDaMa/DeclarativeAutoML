@@ -106,7 +106,9 @@ def evaluatePipeline(key, return_dict):
 
 
 
-        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
+        #X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
+        #                                                      test_size=hold_out_fraction)
+        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=int(time.time()), stratify=y,
                                                                                     test_size=hold_out_fraction)
 
         if training_sampling_factor < 1.0:
@@ -222,8 +224,6 @@ class MyAutoML:
         self.max_ensemble_models = max_ensemble_models
         self.ensemble_selection = None
 
-        self.dummy_result = -1
-
 
     def get_best_pipeline(self):
         try:
@@ -258,12 +258,11 @@ class MyAutoML:
         X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
                                                                                     test_size=self.hold_out_fraction)
 
-        sorted_keys = sorted(list(self.model_store.keys()))
-        for run_key in sorted_keys:
+        for i in range(self.max_ensemble_models):
             try:
-                validation_predictions.append(self.model_store[run_key][0].predict_proba(X_test))
+                validation_predictions.append(self.model_store[i][0].predict_proba(X_test))
             except:
-                del self.model_store[run_key]
+                pass
 
         self.ensemble_selection = EnsembleSelection(ensemble_size=len(validation_predictions),
                                                task_type=MULTICLASS_CLASSIFICATION,
@@ -274,9 +273,11 @@ class MyAutoML:
 
     def ensemble_predict(self, X_test):
         test_predictions = []
-        sorted_keys = sorted(list(self.model_store.keys()))
-        for run_key in sorted_keys:
-            test_predictions.append(self.model_store[run_key][0].predict_proba(X_test))
+        for i in range(self.max_ensemble_models):
+            try:
+                test_predictions.append(self.model_store[i][0].predict_proba(X_test))
+            except:
+                pass
         y_hat_test_temp = self.ensemble_selection.predict(np.array(test_predictions))
         y_hat_test_temp = np.argmax(y_hat_test_temp, axis=1)
         return y_hat_test_temp
@@ -291,62 +292,6 @@ class MyAutoML:
         else:
             X = X_new
             y = y_new
-
-        def run_dummy(training_sampling_factor):
-            classifier = sklearn.dummy.DummyClassifier()
-            my_pipeline = Pipeline([('classifier', classifier)])
-
-            key = 'My_automl' + self.random_key + 'My_process' + str(time.time()) + "##" + str(
-                np.random.randint(0, 1000))
-
-            manager = multiprocessing.Manager()
-            return_dict = manager.dict()
-
-            return_dict['p'] = copy.deepcopy(my_pipeline)
-            return_dict['number_of_cvs'] = self.number_of_cvs
-            return_dict['cv'] = self.cv
-            return_dict['training_sampling_factor'] = training_sampling_factor
-            return_dict['scorer'] = scorer
-            return_dict['X'] = X
-            return_dict['y'] = y
-            return_dict['main_memory_budget_gb'] = self.main_memory_budget_gb
-            return_dict['hold_out_fraction'] = self.hold_out_fraction
-            return_dict['training_time_limit'] = self.training_time_limit
-            return_dict['inference_time_limit'] = self.inference_time_limit
-            return_dict['pipeline_size_limit'] = self.pipeline_size_limit
-            return_dict['adversarial_robustness_constraint'] = self.adversarial_robustness_constraint
-            return_dict['fairness_limit'] = self.fairness_limit
-            return_dict['fairness_group_id'] = self.fairness_group_id
-
-            try:
-                return_dict['study_best_value'] = self.study.best_value
-            except ValueError:
-                return_dict['study_best_value'] = -np.inf
-
-            already_used_time = time.time() - self.start_fitting
-
-            if already_used_time + 2 >= self.time_search_budget:  # already over budget
-                time.sleep(2)
-                return -1.0
-
-            remaining_time = np.min([self.evaluation_budget, self.time_search_budget - already_used_time])
-
-            my_process = multiprocessing.Process(target=evaluatePipeline, name='start' + key, args=(key, return_dict,))
-            my_process.start()
-            my_process.join(int(remaining_time))
-
-            # If thread is active
-            while my_process.is_alive():
-                # Terminate foo
-                my_process.terminate()
-                my_process.join()
-
-            print('dummy result: ' + str(return_dict[key + 'result']))
-
-            if key + 'result' in return_dict:
-                self.dummy_result = return_dict[key + 'result']
-            else:
-                self.dummy_result = 0.0
 
         def objective1(trial):
             start_total = time.time()
@@ -409,8 +354,6 @@ class MyAutoML:
                 if use_training_sampling:
                     training_sampling_factor = self.space.suggest_uniform('training_sampling_factor', 0.0, 1.0)
 
-                if self.dummy_result == -1:
-                    run_dummy(training_sampling_factor)
 
                 augmentation = self.space.suggest_categorical('augmentation', self.augmentation_list)
                 augmentation.init_hyperparameters(self.space, X, y)
@@ -495,28 +438,29 @@ class MyAutoML:
                 trial.set_user_attr('evaluation_time', time.time() - start_total)
                 trial.set_user_attr('time_since_start', time.time() - self.start_fitting)
 
-                if result > self.dummy_result:
+                if result > 0:
                     if key + 'pipeline' in return_dict:
-                        if len(self.model_store) >= self.max_ensemble_models:
-                            run_keys = []
-                            run_accuracies = []
-                            for run_key, run_info in self.model_store.items():
-                                run_accuracies.append(run_info[1])
-                                run_keys.append(run_key)
-
-                            run_keys = np.array(run_keys)
-                            run_accuracies = np.array(run_accuracies)
-                            sorted_ids = np.argsort(run_accuracies * -1)
-
-                            to_be_droped = self.max_ensemble_models
-                            if result > run_accuracies[sorted_ids][self.max_ensemble_models - 1]:
-                                to_be_droped = self.max_ensemble_models - 1
-                                self.model_store[key] = (return_dict[key + 'pipeline'], result)
-
-                            for drop_key in run_keys[sorted_ids][to_be_droped:]:
-                                del self.model_store[drop_key]
+                        new_counter_id = -1
+                        if len(self.model_store) == self.max_ensemble_models:
+                            min_acc = np.inf
+                            for counterid, val_pipeline_accuracy in self.model_store.items():
+                                if min_acc > val_pipeline_accuracy[1]:
+                                    min_acc = val_pipeline_accuracy[1]
+                                    new_counter_id = counterid
+                            if min_acc < result:
+                                try:
+                                    self.model_store[new_counter_id] = (return_dict[key + 'pipeline'], result)
+                                except:
+                                    pass
                         else:
-                            self.model_store[key] = (return_dict[key + 'pipeline'], result)
+                            try:
+                                new_counter_id = max(list(self.model_store.keys())) + 1
+                            except:
+                                new_counter_id = 0
+                            try:
+                                self.model_store[new_counter_id] = (return_dict[key + 'pipeline'], result)
+                            except:
+                                pass
                         #print('size model store: ' + str(len(self.model_store)))
                 return result
 
