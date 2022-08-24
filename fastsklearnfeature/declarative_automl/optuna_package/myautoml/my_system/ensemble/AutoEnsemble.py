@@ -223,6 +223,7 @@ class MyAutoML:
         self.ensemble_selection = None
 
         self.dummy_result = -1
+        self.dummy_classifier = None
 
 
     def get_best_pipeline(self):
@@ -273,13 +274,16 @@ class MyAutoML:
         self.ensemble_selection.fit(validation_predictions, y_test, identifiers=None)
 
     def ensemble_predict(self, X_test):
-        test_predictions = []
-        sorted_keys = sorted(list(self.model_store.keys()))
-        for run_key in sorted_keys:
-            test_predictions.append(self.model_store[run_key][0].predict_proba(X_test))
-        y_hat_test_temp = self.ensemble_selection.predict(np.array(test_predictions))
-        y_hat_test_temp = np.argmax(y_hat_test_temp, axis=1)
-        return y_hat_test_temp
+        if len(self.model_store) > 0:
+            test_predictions = []
+            sorted_keys = sorted(list(self.model_store.keys()))
+            for run_key in sorted_keys:
+                test_predictions.append(self.model_store[run_key][0].predict_proba(X_test))
+            y_hat_test_temp = self.ensemble_selection.predict(np.array(test_predictions))
+            y_hat_test_temp = np.argmax(y_hat_test_temp, axis=1)
+            return y_hat_test_temp
+        else:
+            return self.dummy_classifier.predict(X_test)
 
     def fit(self, X_new, y_new, sample_weight=None, categorical_indicator=None, scorer=None):
         self.start_fitting = time.time()
@@ -293,8 +297,8 @@ class MyAutoML:
             y = y_new
 
         def run_dummy(training_sampling_factor):
-            classifier = sklearn.dummy.DummyClassifier()
-            my_pipeline = Pipeline([('classifier', classifier)])
+            dummy_classifier = sklearn.dummy.DummyClassifier()
+            my_pipeline = Pipeline([('classifier', dummy_classifier)])
 
             key = 'My_automl' + self.random_key + 'My_process' + str(time.time()) + "##" + str(
                 np.random.randint(0, 1000))
@@ -325,10 +329,6 @@ class MyAutoML:
 
             already_used_time = time.time() - self.start_fitting
 
-            if already_used_time + 2 >= self.time_search_budget:  # already over budget
-                time.sleep(2)
-                return -1.0
-
             remaining_time = np.min([self.evaluation_budget, self.time_search_budget - already_used_time])
 
             my_process = multiprocessing.Process(target=evaluatePipeline, name='start' + key, args=(key, return_dict,))
@@ -345,6 +345,7 @@ class MyAutoML:
 
             if key + 'result' in return_dict:
                 self.dummy_result = return_dict[key + 'result']
+                self.dummy_classifier = return_dict[key + 'pipeline']
             else:
                 self.dummy_result = 0.0
 
@@ -601,7 +602,7 @@ if __name__ == "__main__":
     ensemble_perf = []
     for _ in range(10):
         search = MyAutoML(n_jobs=1,
-                          time_search_budget=1 * 60,
+                          time_search_budget=10,
                           space=space,
                           main_memory_budget_gb=40,
                           hold_out_fraction=0.6,
