@@ -1,4 +1,5 @@
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsemble import MyAutoML as AutoEn
+#from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsemble import MyAutoML as AutoEn
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsembleSuccessive import MyAutoML as AutoEn
 import optuna
 from sklearn.metrics import make_scorer
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
