@@ -119,7 +119,7 @@ def evaluatePipeline(key, return_dict):
         X_train_big = copy.deepcopy(X_train)
         y_train_big = copy.deepcopy(y_train)
 
-        current_size = len(np.unique(y_train)) * 10
+        current_size = len(np.unique(y_train)) * 100
 
         full_size_reached = False
         while not full_size_reached:
