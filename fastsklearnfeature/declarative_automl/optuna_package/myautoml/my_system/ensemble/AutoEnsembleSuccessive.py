@@ -82,8 +82,7 @@ def constraints_satisfied(p, return_dict, key, training_time, training_time_limi
 
 
 def evaluatePipeline(key, return_dict):
-    #try:
-    if True:
+    try:
         p = return_dict['p']
         number_of_cvs = return_dict['number_of_cvs']
         cv = return_dict['cv']
@@ -100,6 +99,10 @@ def evaluatePipeline(key, return_dict):
         adversarial_robustness_constraint = return_dict['adversarial_robustness_constraint']
         fairness_limit = return_dict['fairness_limit']
         group_id = return_dict['fairness_group_id']
+
+        trial = None
+        if 'trial' in return_dict:
+            trial = return_dict['trial']
 
         size = int(main_memory_budget_gb * 1024.0 * 1024.0 * 1024.0)
         resource.setrlimit(resource.RLIMIT_AS, (size, resource.RLIM_INFINITY))
@@ -122,6 +125,9 @@ def evaluatePipeline(key, return_dict):
         current_size = len(np.unique(y_train)) * 100
 
         full_size_reached = False
+        current_size_iter = 0
+        return_dict[key + 'intermediate_results'] = {}
+        print('trial: ' + str(trial))
         while not full_size_reached:
             print('current: ' + str(current_size))
 
@@ -181,10 +187,21 @@ def evaluatePipeline(key, return_dict):
                     current_steps += 1
                     n_steps = int(2 ** current_steps / 2) if current_steps > 1 else 2
 
+            if type(trial) != type(None):
+                print('hello ' + str(return_dict[key + 'result']))
+                trial.report(return_dict[key + 'result'], current_size_iter)
+                return_dict[key + 'intermediate_results_' + str(current_size_iter)] = return_dict[key + 'result']
+                if trial.should_prune():
+                    print('I prunet it!')
+                    return
+                else:
+                    print('dont prunet it!')
 
-    #except Exception as e:
-    #    print(str(e) + '\n\n')
-    #    traceback.print_exc()
+            current_size_iter += 1
+
+    except Exception as e:
+        print(str(e) + '\n\n')
+        traceback.print_exc()
 
 
 
@@ -247,7 +264,6 @@ class MyAutoML:
         self.ensemble_selection = None
 
         self.dummy_result = -1
-        self.dummy_classifier = None
 
 
     def get_best_pipeline(self):
@@ -298,16 +314,13 @@ class MyAutoML:
         self.ensemble_selection.fit(validation_predictions, y_test, identifiers=None)
 
     def ensemble_predict(self, X_test):
-        if len(self.model_store) > 0:
-            test_predictions = []
-            sorted_keys = sorted(list(self.model_store.keys()))
-            for run_key in sorted_keys:
-                test_predictions.append(self.model_store[run_key][0].predict_proba(X_test))
-            y_hat_test_temp = self.ensemble_selection.predict(np.array(test_predictions))
-            y_hat_test_temp = np.argmax(y_hat_test_temp, axis=1)
-            return y_hat_test_temp
-        else:
-            return self.dummy_classifier.predict(X_test)
+        test_predictions = []
+        sorted_keys = sorted(list(self.model_store.keys()))
+        for run_key in sorted_keys:
+            test_predictions.append(self.model_store[run_key][0].predict_proba(X_test))
+        y_hat_test_temp = self.ensemble_selection.predict(np.array(test_predictions))
+        y_hat_test_temp = np.argmax(y_hat_test_temp, axis=1)
+        return y_hat_test_temp
 
     def fit(self, X_new, y_new, sample_weight=None, categorical_indicator=None, scorer=None):
         self.start_fitting = time.time()
@@ -369,11 +382,11 @@ class MyAutoML:
 
             if key + 'result' in return_dict:
                 self.dummy_result = return_dict[key + 'result']
-                self.dummy_classifier = return_dict[key + 'pipeline']
             else:
                 self.dummy_result = 0.0
 
         def objective1(trial):
+            should_be_pruned = False
             start_total = time.time()
 
             try:
@@ -478,6 +491,8 @@ class MyAutoML:
                 return_dict['fairness_limit'] = self.fairness_limit
                 return_dict['fairness_group_id'] = self.fairness_group_id
 
+                return_dict['trial'] = trial
+
                 try:
                     return_dict['study_best_value'] = self.study.best_value
                 except ValueError:
@@ -543,10 +558,25 @@ class MyAutoML:
                         else:
                             self.model_store[key] = (return_dict[key + 'pipeline'], result)
                         #print('size model store: ' + str(len(self.model_store)))
+
+                current_size_iter = 0
+                print('return: ' + str(return_dict))
+                while key + 'intermediate_results_' + str(current_size_iter) in return_dict:
+                    trial.report(return_dict[key + 'intermediate_results_' + str(current_size_iter)], current_size_iter)
+                    if trial.should_prune():
+                        print('should be pruned')
+                        should_be_pruned = True
+                        raise optuna.TrialPruned()
+                    else:
+                        print('should not be pruned')
+                    current_size_iter += 1
+
                 return result
 
 
             except Exception as e:
+                if should_be_pruned:
+                    raise optuna.TrialPruned()
                 print('Exception: ' + str(e) + '\n\n')
                 traceback.print_exc()
                 return -1 * np.inf
@@ -554,11 +584,14 @@ class MyAutoML:
 
 
         if type(self.study) == type(None):
-            self.study = optuna.create_study(direction='maximize')
+            self.study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner(
+                                n_startup_trials=3, n_warmup_steps=0, interval_steps=1
+                            ))
         self.study.optimize(objective1, timeout=self.time_search_budget,
                             n_jobs=self.n_jobs,
                             catch=(TimeException,),
-                            callbacks=[StopWhenOptimumReachedCallback(1.0)]) # todo: check for scorer to know what is the optimum
+                            callbacks=[StopWhenOptimumReachedCallback(1.0)],
+                            ) # todo: check for scorer to know what is the optimum
 
         return self.study.best_value
 
@@ -573,8 +606,8 @@ if __name__ == "__main__":
 
     # dataset = openml.datasets.get_dataset(1114)
 
-    # dataset = openml.datasets.get_dataset(1116)
-    dataset = openml.datasets.get_dataset(31)  # 51
+    dataset = openml.datasets.get_dataset(1116)
+    #dataset = openml.datasets.get_dataset(31)  # 51
 
     X, y, categorical_indicator, attribute_names = dataset.get_data(
         dataset_format='array',
@@ -626,7 +659,7 @@ if __name__ == "__main__":
     ensemble_perf = []
     for _ in range(10):
         search = MyAutoML(n_jobs=1,
-                          time_search_budget=60,
+                          time_search_budget=60*2,
                           space=space,
                           main_memory_budget_gb=40,
                           hold_out_fraction=0.6,
