@@ -82,7 +82,8 @@ def constraints_satisfied(p, return_dict, key, training_time, training_time_limi
 
 
 def evaluatePipeline(key, return_dict):
-    try:
+    #try:
+    if True:
         p = return_dict['p']
         number_of_cvs = return_dict['number_of_cvs']
         cv = return_dict['cv']
@@ -120,13 +121,21 @@ def evaluatePipeline(key, return_dict):
 
         current_size = len(np.unique(y_train)) * 10
 
-        while current_size < len(X_train_big):
+        full_size_reached = False
+        while not full_size_reached:
             print('current: ' + str(current_size))
-            X_train, _, y_train, _ = sklearn.model_selection.train_test_split(X_train_big, y_train_big,
-                                                                              random_state=42,
-                                                                              stratify=y_train_big,
-                                                                              train_size=current_size)
-            current_size *= 3
+
+            if current_size < len(X_train_big):
+                X_train, _, y_train, _ = sklearn.model_selection.train_test_split(X_train_big, y_train_big,
+                                                                                  random_state=42,
+                                                                                  stratify=y_train_big,
+                                                                                  train_size=current_size)
+                current_size *= 3
+                current_size = min(current_size, len(X_train_big))
+            else:
+                X_train = X_train_big
+                y_train = y_train_big
+                full_size_reached = True
 
             invert_op = getattr(p.steps[-1][-1], "custom_iterative_fit", None)
             if type(invert_op) == type(None):
@@ -173,9 +182,9 @@ def evaluatePipeline(key, return_dict):
                     n_steps = int(2 ** current_steps / 2) if current_steps > 1 else 2
 
 
-    except Exception as e:
-        print(str(e) + '\n\n')
-        traceback.print_exc()
+    #except Exception as e:
+    #    print(str(e) + '\n\n')
+    #    traceback.print_exc()
 
 
 
