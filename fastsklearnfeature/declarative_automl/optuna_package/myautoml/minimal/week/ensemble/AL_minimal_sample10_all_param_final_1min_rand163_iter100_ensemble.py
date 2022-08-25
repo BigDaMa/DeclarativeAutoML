@@ -1,4 +1,5 @@
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsemble import MyAutoML
+#from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsemble import MyAutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsembleSuccessive import MyAutoML as AutoSuccess
 import optuna
 import time
 from sklearn.metrics import make_scorer
@@ -153,7 +154,7 @@ def run_AutoML(trial):
 
     dynamic_params = []
     for random_i in range(repetitions_count):
-        search = MyAutoML(cv=cv,
+        search = AutoSuccess(cv=cv,
                           number_of_cvs=number_of_cvs,
                           n_jobs=1,
                           evaluation_budget=evaluation_time,
@@ -192,7 +193,7 @@ def run_AutoML(trial):
             if node.status == True:
                 print("%s%s" % (pre, node.name))
 
-        search_static = MyAutoML(n_jobs=1,
+        search_static = AutoSuccess(n_jobs=1,
                           time_search_budget=search_time,
                           space=space_new,
                           evaluation_budget=int(0.1 * search_time),
