@@ -1,4 +1,6 @@
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsemble import MyAutoML as AutoEnsembleML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsembleSuccessive import \
+    MyAutoML as AutoEnsembleML
+
 import optuna
 from sklearn.metrics import make_scorer
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
@@ -130,11 +132,12 @@ for test_holdout_dataset_id in [args.dataset]:
                                               evaluation_budget=int(0.1 * search_time_frozen),
                                               main_memory_budget_gb=memory_budget,
                                               differential_privacy_epsilon=privacy,
-                                              hold_out_fraction=0.33
-                                              )
+                                              hold_out_fraction=0.33)
 
                     best_result = search_default.fit(X_train_hold, y_train_hold, categorical_indicator=categorical_indicator_hold, scorer=my_scorer)
-                    result = my_scorer(search_default.get_best_pipeline(), X_test_hold, y_test_hold)
+                    search_default.ensemble(X_train_hold, y_train_hold)
+                    y_hat_test = search_default.ensemble_predict(X_test_hold)
+                    result = balanced_accuracy_score(y_test_hold, y_hat_test)
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
             except:
