@@ -1,4 +1,4 @@
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalanceDict import MyAutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsembleSuccessive import MyAutoML
 import optuna
 import time
 from sklearn.metrics import make_scorer
@@ -14,7 +14,6 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.feature_trans
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_data
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import data2features
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import space2features
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import MyPool
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_feature_names
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import ifNull
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import generate_parameters_minimal_sample_constraints
@@ -23,6 +22,27 @@ import multiprocessing as mp
 from multiprocessing import Lock
 import openml
 from sklearn.metrics import balanced_accuracy_score
+import multiprocessing
+
+class NoDaemonProcess(multiprocessing.Process):
+    @property
+    def daemon(self):
+        return False
+
+    @daemon.setter
+    def daemon(self, value):
+        pass
+
+
+class NoDaemonContext(type(multiprocessing.get_context())):
+    Process = NoDaemonProcess
+
+# We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
+# because the latter is only a wrapper function, not a proper class.
+class NestablePool(multiprocessing.pool.Pool):
+    def __init__(self, *args, **kwargs):
+        kwargs['context'] = NoDaemonContext()
+        super(NestablePool, self).__init__(*args, **kwargs)
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -37,7 +57,7 @@ my_scorer = make_scorer(balanced_accuracy_score)
 
 
 mp_glob.total_search_time = 5*60#60
-topk = 26#26 # 20
+topk = 20#26 # 20
 continue_from_checkpoint = True
 
 starting_time_tt = time.time()
@@ -151,9 +171,9 @@ def run_AutoML(trial):
         try:
             search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
 
-            best_pipeline = search.get_best_pipeline()
-            if type(best_pipeline) != type(None):
-                test_score = my_scorer(search.get_best_pipeline(), X_test, y_test)
+            search.ensemble(X_train, y_train)
+            y_hat_test = search.ensemble_predict(X_test)
+            test_score = balanced_accuracy_score(y_test, y_hat_test)
         except:
             pass
         dynamic_params.append(test_score)
@@ -185,7 +205,10 @@ def run_AutoML(trial):
 
         try:
             best_result = search_static.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
-            test_score_default = my_scorer(search_static.get_best_pipeline(), X_test, y_test)
+
+            search_static.ensemble(X_train, y_train)
+            y_hat_test = search_static.ensemble_predict(X_test)
+            test_score_default = balanced_accuracy_score(y_test, y_hat_test)
         except:
             test_score_default = 0.0
         static_params.append(test_score_default)
@@ -229,7 +252,7 @@ def sample_configuration(trial):
 
         trial.set_user_attr('space', copy.deepcopy(space))
 
-        search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, task_id = generate_parameters_minimal_sample_constraints(
+        search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, task_id, fairness_limit = generate_parameters_minimal_sample_constraints(
             trial, mp_glob.total_search_time, my_openml_tasks, use_training_time_constraint=True,
             use_inference_time_constraint=True,
             use_pipeline_size_constraint=True)
@@ -305,7 +328,7 @@ else:
             trial_id2aqval[counter_trial_id] = 0.0
             counter_trial_id += 1
 
-    with MyPool(processes=topk) as pool:
+    with NestablePool(processes=topk) as pool:
         results = pool.map(run_AutoML_global, range(len(mp_glob.my_trials)))
 
     for result_p in results:
@@ -345,7 +368,7 @@ def get_best_trial(model_uncertainty):
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24:
+    if time.time() - starting_time_tt > 60*60*24*1:
         return -1
 
     X_meta = copy.deepcopy(dictionary['X_meta'])
@@ -407,7 +430,7 @@ dictionary['y_meta'] = y_meta
 dictionary['group_meta'] = group_meta
 dictionary['aquisition_function_value'] = aquisition_function_value
 
-with MyPool(processes=topk) as pool:
+with NestablePool(processes=topk) as pool:
     results = pool.map(sample_and_evaluate, range(100000))
 
 print('storing stuff')
