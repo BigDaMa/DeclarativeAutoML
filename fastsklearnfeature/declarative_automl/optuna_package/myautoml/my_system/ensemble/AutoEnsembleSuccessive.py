@@ -31,6 +31,8 @@ from autosklearn.metrics import balanced_accuracy as ba
 from autosklearn.constants import MULTICLASS_CLASSIFICATION
 import traceback
 
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.EnsembleClassifier import EnsembleClassifier
+
 @dataclass
 class StopWhenOptimumReachedCallback:
     optimum: float
@@ -45,12 +47,15 @@ class TimeException(Exception):
         super().__init__(self.message)
 
 
-def constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X, fairness=None, fairness_limit=None):
+def constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit, inference_time_limit, X, y, group_id=None, fairness_limit=None):
 
-    return_dict[key + 'result' + '_fairness'] = fairness
-    if type(fairness_limit) != type(None) and type(fairness) != type(None) and fairness < fairness_limit:
-        return_dict[key + 'result'] = -1 * (fairness_limit - fairness)  # return the difference to satisfying the constraint
-        return False
+    return_dict[key + 'result' + '_fairness'] = -1
+    if type(group_id) != type(None):
+        fairness = 1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id])
+        return_dict[key + 'result' + '_fairness'] = fairness
+        if type(fairness_limit) != type(None) and fairness < fairness_limit:
+            return_dict[key + 'result'] = -1 * (fairness_limit - fairness)  # return the difference to satisfying the constraint
+            return False
 
     return_dict[key + 'result' + '_training_time'] = training_time
     if type(training_time_limit) != type(None) and training_time > training_time_limit:
@@ -146,16 +151,22 @@ def evaluatePipeline(key, return_dict):
             invert_op = getattr(p.steps[-1][-1], "custom_iterative_fit", None)
             if type(invert_op) == type(None):
                 scores = []
-                fairness_scores = []
                 start_training = time.time()
                 p.fit(X_train, y_train)
                 training_time = time.time() - start_training
                 scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
-                if type(fairness_limit) != type(None):
-                    fairness_scores.append(1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id]))
 
-                if constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit,
-                                             inference_time_limit, X, np.mean(fairness_scores), fairness_limit):
+                if constraints_satisfied(p,
+                                             return_dict,
+                                             key,
+                                             training_time,
+                                             training_time_limit,
+                                             pipeline_size_limit,
+                                             inference_time_limit,
+                                             X,
+                                             y,
+                                             group_id,
+                                             fairness_limit):
                     if not key + 'result' in return_dict or (
                             key + 'result' in return_dict and np.mean(scores) > return_dict[key + 'result']):
                         return_dict[key + 'pipeline'] = p
@@ -168,18 +179,22 @@ def evaluatePipeline(key, return_dict):
                 n_steps = int(2 ** current_steps / 2) if current_steps > 1 else 2
                 while n_steps < p.steps[-1][-1].get_max_steps():
                     scores = []
-                    fairness_scores = []
                     start_training = time.time()
                     p.steps[-1][-1].custom_iterative_fit(Xt, yt, number_steps=n_steps)
                     training_time += time.time() - start_training
                     scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
-                    #print('current:' + str(current_steps) + ' score: ' + str(scores))
-                    if type(fairness_limit) != type(None):
-                        fairness_scores.append(
-                            1 - true_positive_rate_score(pd.DataFrame(y), p.predict(X), sensitive_data=X[:, group_id]))
 
-                    if constraints_satisfied(p, return_dict, key, training_time, training_time_limit, pipeline_size_limit,
-                                             inference_time_limit, X, np.mean(fairness_scores), fairness_limit):
+                    if constraints_satisfied(p,
+                                             return_dict,
+                                             key,
+                                             training_time,
+                                             training_time_limit,
+                                             pipeline_size_limit,
+                                             inference_time_limit,
+                                             X,
+                                             y,
+                                             group_id,
+                                             fairness_limit):
                         if not key + 'result' in return_dict or (key + 'result' in return_dict and np.mean(scores) > return_dict[key + 'result']) :
                             return_dict[key + 'pipeline'] = copy.deepcopy(p)
                             return_dict[key + 'result'] = np.mean(scores)
@@ -188,7 +203,6 @@ def evaluatePipeline(key, return_dict):
                     n_steps = int(2 ** current_steps / 2) if current_steps > 1 else 2
 
             if type(trial) != type(None):
-                print('hello ' + str(return_dict[key + 'result']))
                 trial.report(return_dict[key + 'result'], current_size_iter)
                 return_dict[key + 'intermediate_results_' + str(current_size_iter)] = return_dict[key + 'result']
                 if trial.should_prune():
@@ -306,21 +320,89 @@ class MyAutoML:
             except:
                 del self.model_store[run_key]
 
-        self.ensemble_selection = EnsembleSelection(ensemble_size=len(validation_predictions),
-                                               task_type=MULTICLASS_CLASSIFICATION,
-                                               random_state=0,
-                                               metric=ba)
 
-        self.ensemble_selection.fit(validation_predictions, y_test, identifiers=None)
+        #sort based on accuracy
+        #train ensemble => check whether ensemble satisfies
+        sorted_keys = np.array(sorted(list(self.model_store.keys())))
+        accuracies_for_keys = np.array([self.model_store[run_key][1] for run_key in sorted_keys])
+        training_time_for_keys = np.array([self.model_store[run_key][2] for run_key in sorted_keys])
+
+        sorted_ids = np.argsort(accuracies_for_keys * -1)
+        desc_sorted_keys = sorted_keys[sorted_ids]
+        desc_sorted_training_time = training_time_for_keys[sorted_ids]
+
+        print('acc: ' + str(accuracies_for_keys[sorted_ids]))
+        ensemble_models = []
+        validation_predictions = []
+        calc_training_time = 0
+        self.run_key_order = []
+        for run_key in desc_sorted_keys:
+            print('actual: ' + str(self.run_key_order))
+            new_run_key_order = copy.deepcopy(self.run_key_order)
+            new_run_key_order.append(run_key)
+            new_ensemble_models = copy.deepcopy(ensemble_models)
+            new_ensemble_models.append(self.model_store[run_key][0])
+
+            new_calc_training_time = copy.deepcopy(calc_training_time)
+            print('training_time: ' + str(new_calc_training_time))
+            try:
+                start = time.time()
+                validation_predictions_new = copy.deepcopy(validation_predictions)
+                validation_predictions_new.append(self.model_store[run_key][0].predict_proba(X_test))
+                new_calc_training_time += time.time() - start
+
+                new_calc_training_time += self.model_store[run_key][2]
+
+                ensemble_time = 0
+                ensemble_sel = None
+                p_ensemble = None
+                if len(new_ensemble_models) > 1:
+                    start = time.time()
+                    ensemble_sel = EnsembleSelection(ensemble_size=len(validation_predictions_new),
+                                      task_type=MULTICLASS_CLASSIFICATION,
+                                      random_state=0,
+                                      metric=ba)
+                    ensemble_sel.fit(validation_predictions_new, y_test, identifiers=None)
+                    print('weights: ' + str(ensemble_sel.weights_))
+                    ensemble_time = time.time() - start
+                    p_ensemble = EnsembleClassifier(models=new_ensemble_models, ensemble_selection=ensemble_sel)
+                else:
+                    p_ensemble = self.model_store[run_key][0]
+
+                my_dict = {}
+                if constraints_satisfied(p_ensemble,
+                                             my_dict,
+                                             '',
+                                             new_calc_training_time + ensemble_time,
+                                             self.training_time_limit,
+                                             self.pipeline_size_limit,
+                                             self.inference_time_limit,
+                                             X_new,
+                                             y_new,
+                                             self.fairness_group_id,
+                                             self.fairness_limit):
+                    ensemble_models = new_ensemble_models
+                    validation_predictions = validation_predictions_new
+                    self.ensemble_selection = ensemble_sel
+                    self.run_key_order = new_run_key_order
+                    calc_training_time = new_calc_training_time
+                else:
+                    del self.model_store[run_key]
+
+            except:
+                del self.model_store[run_key]
 
     def ensemble_predict(self, X_test):
-        test_predictions = []
-        sorted_keys = sorted(list(self.model_store.keys()))
-        for run_key in sorted_keys:
-            test_predictions.append(self.model_store[run_key][0].predict_proba(X_test))
-        y_hat_test_temp = self.ensemble_selection.predict(np.array(test_predictions))
-        y_hat_test_temp = np.argmax(y_hat_test_temp, axis=1)
-        return y_hat_test_temp
+        if len(self.run_key_order) == 1:
+            return self.model_store[self.run_key_order[0]][0].predict(X_test)
+        else:
+            test_predictions = []
+            for run_key in self.run_key_order:
+                test_predictions.append(self.model_store[run_key][0].predict_proba(X_test))
+
+            y_hat_test_temp = self.ensemble_selection.predict(np.array(test_predictions))
+            y_hat_test_temp = np.argmax(y_hat_test_temp, axis=1)
+            return y_hat_test_temp
 
     def fit(self, X_new, y_new, sample_weight=None, categorical_indicator=None, scorer=None):
         self.start_fitting = time.time()
@@ -523,8 +605,10 @@ class MyAutoML:
                 if key + 'result' in return_dict:
                     result = return_dict[key + 'result']
 
+                training_time_current = -1
                 if key + 'result' + '_training_time' in return_dict:
                     trial.set_user_attr('training_time', return_dict[key + 'result' + '_training_time'])
+                    training_time_current = return_dict[key + 'result' + '_training_time']
                 if key + 'result' + '_pipeline_size' in return_dict:
                     trial.set_user_attr('pipeline_size', return_dict[key + 'result' + '_pipeline_size'])
                 if key + 'result' + '_inference_time' in return_dict:
@@ -551,12 +635,12 @@ class MyAutoML:
                             to_be_droped = self.max_ensemble_models
                             if result > run_accuracies[sorted_ids][self.max_ensemble_models - 1]:
                                 to_be_droped = self.max_ensemble_models - 1
-                                self.model_store[key] = (return_dict[key + 'pipeline'], result)
+                                self.model_store[key] = (return_dict[key + 'pipeline'], result, training_time_current)
 
                             for drop_key in run_keys[sorted_ids][to_be_droped:]:
                                 del self.model_store[drop_key]
                         else:
-                            self.model_store[key] = (return_dict[key + 'pipeline'], result)
+                            self.model_store[key] = (return_dict[key + 'pipeline'], result, training_time_current)
                         #print('size model store: ' + str(len(self.model_store)))
 
                 current_size_iter = 0
@@ -606,8 +690,8 @@ if __name__ == "__main__":
 
     # dataset = openml.datasets.get_dataset(1114)
 
-    dataset = openml.datasets.get_dataset(1116)
-    #dataset = openml.datasets.get_dataset(31)  # 51
+    #dataset = openml.datasets.get_dataset(1116)
+    dataset = openml.datasets.get_dataset(31)  # 51
 
     X, y, categorical_indicator, attribute_names = dataset.get_data(
         dataset_format='array',
@@ -659,12 +743,18 @@ if __name__ == "__main__":
     ensemble_perf = []
     for _ in range(10):
         search = MyAutoML(n_jobs=1,
-                          time_search_budget=60*2,
+                          time_search_budget=60*1,
                           space=space,
                           main_memory_budget_gb=40,
                           hold_out_fraction=0.6,
                           max_ensemble_models=50,
-                          evaluation_budget=60*0.1)
+                          evaluation_budget=60*0.1,
+                          inference_time_limit=0.00102
+                          #training_time_limit=0.02
+                          #pipeline_size_limit=10000
+                          #fairness_limit=0.95,
+                          #fairness_group_id=12
+                          )
 
         begin = time.time()
 
