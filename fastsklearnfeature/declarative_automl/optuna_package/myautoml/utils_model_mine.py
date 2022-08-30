@@ -1330,7 +1330,7 @@ def generate_parameters_minimal_sample_constraints(trial, total_search_time_minu
     number_of_cvs = 1
     hold_out_fraction = None
     if trial.suggest_categorical('use_hold_out', [True]):
-        hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.33, 0.33)
+        hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.1, 0.99)
     else:
         cv = trial.suggest_int('global_cv', 2, 20, log=False)  # todo: calculate minimum number of splits based on y
         number_of_cvs = 1
@@ -1338,7 +1338,7 @@ def generate_parameters_minimal_sample_constraints(trial, total_search_time_minu
             number_of_cvs = trial.suggest_int('global_number_cv', 2, 10, log=False)
 
     sample_fraction = 1.0
-    if trial.suggest_categorical('use_sampling', [True]):
+    if trial.suggest_categorical('use_sampling', [False]):
         sample_fraction = trial.suggest_uniform('sample_fraction', 0, 1)
 
     dataset_id = None
