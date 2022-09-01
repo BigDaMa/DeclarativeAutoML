@@ -263,8 +263,13 @@ def evaluatePipeline(key, return_dict):
                     n_steps = int(2 ** current_steps / 2) if current_steps > 1 else 2
 
             if type(trial) != type(None):
-                trial.report(return_dict[key + 'result'], current_size_iter)
-                return_dict[key + 'intermediate_results_' + str(current_size_iter)] = return_dict[key + 'result']
+                if key + 'result' in return_dict:
+                    trial.report(return_dict[key + 'result'], current_size_iter)
+                    return_dict[key + 'intermediate_results_' + str(current_size_iter)] = return_dict[key + 'result']
+                else:
+                    trial.report(-1, current_size_iter)
+                    return_dict[key + 'intermediate_results_' + str(current_size_iter)] = -1
+
                 if trial.should_prune():
                     print('I prunet it!')
                     return
