@@ -195,8 +195,9 @@ def evaluatePipeline(key, return_dict):
                 training_time = time.time() - start_training
                 scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
 
+                new_return_dict = {}
                 if constraints_satisfied(p,
-                                             return_dict,
+                                             new_return_dict,
                                              key,
                                              training_time,
                                              training_time_limit,
@@ -210,6 +211,16 @@ def evaluatePipeline(key, return_dict):
                             key + 'result' in return_dict and np.mean(scores) > return_dict[key + 'result']):
                         return_dict[key + 'pipeline'] = p
                         return_dict[key + 'result'] = np.mean(scores)
+
+                        for k_return, val_return in new_return_dict.items():
+                            return_dict[k_return] = val_return
+
+                    else:
+                        if not key + 'pipeline' in return_dict:
+                            if not key + 'result' in return_dict or return_dict[key + 'result'] < new_return_dict[key + 'result']:
+                                for k_return, val_return in new_return_dict.items():
+                                    return_dict[k_return] = val_return
+
             else:
                 start_training = time.time()
                 Xt, yt, fit_params = p._fit(X_train, y_train)
@@ -223,8 +234,9 @@ def evaluatePipeline(key, return_dict):
                     training_time += time.time() - start_training
                     scores.append(scorer(p, X_test, pd.DataFrame(y_test)))
 
+                    new_return_dict = {}
                     if constraints_satisfied(p,
-                                             return_dict,
+                                             new_return_dict,
                                              key,
                                              training_time,
                                              training_time_limit,
@@ -237,6 +249,15 @@ def evaluatePipeline(key, return_dict):
                         if not key + 'result' in return_dict or (key + 'result' in return_dict and np.mean(scores) > return_dict[key + 'result']) :
                             return_dict[key + 'pipeline'] = copy.deepcopy(p)
                             return_dict[key + 'result'] = np.mean(scores)
+
+                            for k_return, val_return in new_return_dict.items():
+                                return_dict[k_return] = val_return
+                        else:
+                            if not key + 'pipeline' in return_dict:
+                                if not key + 'result' in return_dict or return_dict[key + 'result'] < new_return_dict[
+                                    key + 'result']:
+                                    for k_return, val_return in new_return_dict.items():
+                                        return_dict[k_return] = val_return
 
                     current_steps += 1
                     n_steps = int(2 ** current_steps / 2) if current_steps > 1 else 2
@@ -750,10 +771,11 @@ if __name__ == "__main__":
     # dataset = openml.datasets.get_dataset(1114)
 
     #dataset = openml.datasets.get_dataset(1116)
-    #dataset = openml.datasets.get_dataset(31)  # 51
+    #ddataset = openml.datasets.get_dataset(31)  # 51
     #dataset = openml.datasets.get_dataset(40685)
     #dataset = openml.datasets.get_dataset(1596)
-    dataset = openml.datasets.get_dataset(41167)
+    #dataset = openml.datasets.get_dataset(41167)
+    dataset = openml.datasets.get_dataset(41147)
 
     X, y, categorical_indicator, attribute_names = dataset.get_data(
         dataset_format='array',
