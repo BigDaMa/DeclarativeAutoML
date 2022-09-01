@@ -23,6 +23,8 @@ class SpaceGenerator:
 
     def generate_params(self):
 
+        self.space.generate_cat('multi_class_support', ['default', 'one_vs_rest'], 'default')
+
         class_weighting_p = self.space.generate_cat('class_weighting', [True, False], True)
         custom_weighting_p = self.space.generate_cat('custom_weighting', [True, False], False, depending_node=class_weighting_p[0])
 

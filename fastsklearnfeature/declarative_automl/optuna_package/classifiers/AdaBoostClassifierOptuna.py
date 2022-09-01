@@ -3,8 +3,6 @@ from sklearn.ensemble import AdaBoostClassifier
 from fastsklearnfeature.declarative_automl.optuna_package.optuna_utils import id_name
 import numpy as np
 from sklearn.utils.class_weight import compute_sample_weight
-from fastsklearnfeature.declarative_automl.optuna_package.classifiers.wrapper.ClassifierWrapper import \
-    calculate_class_weight
 
 
 class AdaBoostClassifierOptuna(AdaBoostClassifier):

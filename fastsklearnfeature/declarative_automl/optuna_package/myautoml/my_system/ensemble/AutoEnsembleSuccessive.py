@@ -5,7 +5,6 @@ from sklearn.metrics import make_scorer
 from sklearn.metrics import roc_auc_score
 import openml
 import numpy as np
-from fastsklearnfeature.declarative_automl.optuna_package.feature_preprocessing.CategoricalMissingTransformer import CategoricalMissingTransformer
 from sklearn.compose import ColumnTransformer
 from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.SimpleImputerOptuna import SimpleImputerOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.QuadraticDiscriminantAnalysisOptuna import QuadraticDiscriminantAnalysisOptuna
@@ -15,6 +14,9 @@ from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.Pr
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.private.PrivateGaussianNBOptuna import PrivateGaussianNBOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.LinearDiscriminantAnalysisOptuna import LinearDiscriminantAnalysisOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.classifiers.multiclass.OneVsRestClassifierOptuna import OneVsRestClassifierOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.categorical_encoding.LabelEncoderOptuna import LabelEncoderOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.categorical_encoding.OneHotEncoderOptuna import OneHotEncoderOptuna
 
 import pandas as pd
 import time
@@ -32,6 +34,26 @@ from autosklearn.constants import MULTICLASS_CLASSIFICATION
 import traceback
 
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.EnsembleClassifier import EnsembleClassifier
+from fastsklearnfeature.declarative_automl.optuna_package.feature_preprocessing.MyIdentity import IdentityTransformation
+
+
+def my_train_test_split(X, y, random_state=42, train_size=100):
+    y_vals, y_counts = np.unique(y, return_counts=True)
+
+    class_indices = []
+    for y_i in range(len(y_vals)):
+        class_indices.append(np.where(y == y_vals[y_i])[0])
+
+    train_ids = []
+    test_ids = []
+    for row_id in range(train_size):
+        for y_i in range(len(y_vals)):
+            if row_id < len(class_indices[y_i]):
+                if len(train_ids) < train_size:
+                    train_ids.append(class_indices[y_i][row_id])
+                else:
+                    test_ids.append(class_indices[y_i][row_id])
+    return X[train_ids], X[test_ids], y[train_ids], y[test_ids]
 
 @dataclass
 class StopWhenOptimumReachedCallback:
@@ -85,6 +107,12 @@ def constraints_satisfied(p, return_dict, key, training_time, training_time_limi
     return True
 
 
+def has_iterative_fit(p):
+    if isinstance(p.steps[-1][-1], OneVsRestClassifierOptuna):
+        return p.steps[-1][-1].has_iterative_fit()
+    else:
+        invert_op = getattr(p.steps[-1][-1], "custom_iterative_fit", None)
+        return type(invert_op) != type(None)
 
 def evaluatePipeline(key, return_dict):
     try:
@@ -127,20 +155,20 @@ def evaluatePipeline(key, return_dict):
         X_train_big = copy.deepcopy(X_train)
         y_train_big = copy.deepcopy(y_train)
 
-        current_size = len(np.unique(y_train)) * 100
+        current_size = len(np.unique(y_train)) * 10
 
         full_size_reached = False
         current_size_iter = 0
         return_dict[key + 'intermediate_results'] = {}
         print('trial: ' + str(trial))
+
+        p_new = copy.deepcopy(p)
+
         while not full_size_reached:
             print('current: ' + str(current_size))
 
             if current_size < len(X_train_big):
-                X_train, _, y_train, _ = sklearn.model_selection.train_test_split(X_train_big, y_train_big,
-                                                                                  random_state=42,
-                                                                                  stratify=y_train_big,
-                                                                                  train_size=current_size)
+                X_train, _, y_train, _ = my_train_test_split(X_train_big, y_train_big, random_state=42, train_size=current_size)
                 current_size *= 3
                 current_size = min(current_size, len(X_train_big))
             else:
@@ -148,8 +176,19 @@ def evaluatePipeline(key, return_dict):
                 y_train = y_train_big
                 full_size_reached = True
 
-            invert_op = getattr(p.steps[-1][-1], "custom_iterative_fit", None)
-            if type(invert_op) == type(None):
+            y_class_counts = np.unique(y_train, return_counts=True)[1]
+            print('class_counts: ' + str(y_class_counts))
+            p = copy.deepcopy(p_new)
+            if np.all(y_class_counts == y_class_counts[0]):
+                for element_step_i in range(len(p.steps)):
+                    if p.steps[element_step_i][0] == 'augmentation':
+                        p.steps.pop(element_step_i)
+                        break
+
+            print('new steps: ' + str(p.steps))
+
+
+            if not has_iterative_fit(p):
                 scores = []
                 start_training = time.time()
                 p.fit(X_train, y_train)
@@ -460,12 +499,12 @@ class MyAutoML:
                 my_process.terminate()
                 my_process.join()
 
-            print('dummy result: ' + str(return_dict[key + 'result']))
-
             if key + 'result' in return_dict:
                 self.dummy_result = return_dict[key + 'result']
             else:
                 self.dummy_result = 0.0
+
+            print('dummy result: ' + str(self.dummy_result))
 
         def objective1(trial):
             should_be_pruned = False
@@ -493,10 +532,12 @@ class MyAutoML:
                 else:
                     classifier = self.space.suggest_categorical('private_classifier', self.private_classifier_list)
 
-                #from fastsklearnfeature.declarative_automl.optuna_package.classifiers.MLPClassifierOptuna import MLPClassifierOptuna
-                #classifier = MLPClassifierOptuna()
+                #from fastsklearnfeature.declarative_automl.optuna_package.classifiers.DecisionTreeClassifierOptuna import DecisionTreeClassifierOptuna
+                #classifier = DecisionTreeClassifierOptuna()
 
                 classifier.init_hyperparameters(self.space, X, y)
+
+                multi_class_support = self.space.suggest_categorical('multi_class_support', ['default', 'one_vs_rest'])
 
                 class_weighting = False
                 custom_weighting = False
@@ -507,7 +548,8 @@ class MyAutoML:
                         isinstance(classifier, PrivateLogisticRegressionOptuna) or \
                         isinstance(classifier, PrivateGaussianNBOptuna) or \
                         isinstance(classifier, MLPClassifierOptuna) or \
-                        isinstance(classifier, LinearDiscriminantAnalysisOptuna):
+                        isinstance(classifier, LinearDiscriminantAnalysisOptuna) or \
+                        multi_class_support == 'one_vs_rest':
                     pass
                 else:
                     class_weighting = self.space.suggest_categorical('class_weighting', [True, False])
@@ -532,11 +574,18 @@ class MyAutoML:
                 if self.dummy_result == -1:
                     run_dummy(training_sampling_factor)
 
-                augmentation = self.space.suggest_categorical('augmentation', self.augmentation_list)
-                augmentation.init_hyperparameters(self.space, X, y)
+                y_class_counts = np.unique(y, return_counts=True)[1]
+                augmentation = IdentityTransformation()
+                if not np.all(y_class_counts == y_class_counts[0]):
+                    augmentation = self.space.suggest_categorical('augmentation', self.augmentation_list)
+                    augmentation.init_hyperparameters(self.space, X, y)
 
                 numeric_transformer = Pipeline([('imputation', imputer), ('scaler', scaler)])
-                categorical_transformer = Pipeline([('removeNAN', CategoricalMissingTransformer()), ('onehot_transform', onehot_transformer)])
+
+                if isinstance(onehot_transformer, OneHotEncoderOptuna):
+                    categorical_transformer = Pipeline([('removeNAN', LabelEncoderOptuna()), ('onehot_transform', onehot_transformer)])
+                else:
+                    categorical_transformer = Pipeline([('onehot_transform', onehot_transformer)])
 
 
                 my_transformers = []
@@ -549,8 +598,18 @@ class MyAutoML:
 
                 data_preprocessor = ColumnTransformer(transformers=my_transformers)
 
+                multiclass_classifier = classifier
+                if multi_class_support == 'one_vs_rest':
+                    multiclass_classifier = OneVsRestClassifierOptuna(estimator=classifier, n_jobs=1)
+
+                #multiclass_classifier = OneVsRestClassifierOptuna(estimator=classifier, n_jobs=1)
+
+
                 my_pipeline = Pipeline([('data_preprocessing', data_preprocessor), ('preprocessing', preprocessor), ('augmentation', augmentation),
-                              ('classifier', classifier)])
+                              ('classifier', multiclass_classifier)])
+
+                #my_pipeline = Pipeline([('data_preprocessing', data_preprocessor), ('preprocessing', preprocessor),
+                #                        ('classifier', multiclass_classifier)])
 
                 key = 'My_automl' + self.random_key + 'My_process' + str(time.time()) + "##" + str(np.random.randint(0,1000))
 
@@ -691,18 +750,21 @@ if __name__ == "__main__":
     # dataset = openml.datasets.get_dataset(1114)
 
     #dataset = openml.datasets.get_dataset(1116)
-    dataset = openml.datasets.get_dataset(31)  # 51
+    #dataset = openml.datasets.get_dataset(31)  # 51
+    #dataset = openml.datasets.get_dataset(40685)
+    #dataset = openml.datasets.get_dataset(1596)
+    dataset = openml.datasets.get_dataset(41167)
 
     X, y, categorical_indicator, attribute_names = dataset.get_data(
         dataset_format='array',
         target=dataset.default_target_attribute
     )
 
-    print(X[:, 12])
+    #print(X[:, 12])
 
-    X[:,12] = X[:,12] > np.mean(X[:,12])
+    #X[:,12] = X[:,12] > np.mean(X[:,12])
 
-    print(X[:,12])
+    #print(X[:,12])
 
     print(X.shape)
 
@@ -749,7 +811,7 @@ if __name__ == "__main__":
                           hold_out_fraction=0.6,
                           max_ensemble_models=50,
                           evaluation_budget=60*0.1,
-                          inference_time_limit=0.00102
+                          #inference_time_limit=0.00102
                           #training_time_limit=0.02
                           #pipeline_size_limit=10000
                           #fairness_limit=0.95,
@@ -768,6 +830,7 @@ if __name__ == "__main__":
 
         # importances = optuna.importance.get_param_importances(search.study)
         # print(importances)
+
 
         test_score = auc(search.get_best_pipeline(), X_test, y_test)
         single_perf.append(test_score)
