@@ -1,6 +1,7 @@
 from sklearn.naive_bayes import MultinomialNB
 from fastsklearnfeature.declarative_automl.optuna_package.optuna_utils import id_name
 from sklearn.utils.class_weight import compute_sample_weight
+import numpy as np
 
 class MultinomialNBOptuna(MultinomialNB):
 
@@ -21,6 +22,18 @@ class MultinomialNBOptuna(MultinomialNB):
 
     def fit(self, X, y=None, sample_weight=None):
         if hasattr(self, 'custom_weight'):
-            return super().fit(X, y, sample_weight=compute_sample_weight(class_weight=self.custom_weight, y=y))
+            return super().fit(np.abs(X), y, sample_weight=compute_sample_weight(class_weight=self.custom_weight, y=y))
         else:
-            return super().fit(X, y)
+            return super().fit(np.abs(X), y)
+
+    def partial_fit(self, X, y, classes=None, sample_weight=None):
+        return super().partial_fit(np.abs(X), y, classes=classes, sample_weight=sample_weight)
+
+    def predict_proba(self, X):
+        return super().predict_proba(np.abs(X))
+
+    def predict_log_proba(self, X):
+        return super().predict_log_proba(np.abs(X))
+
+    def predict(self, X):
+        return super().predict(np.abs(X))
