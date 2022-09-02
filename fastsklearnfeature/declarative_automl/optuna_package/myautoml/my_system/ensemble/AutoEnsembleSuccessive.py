@@ -215,11 +215,10 @@ def evaluatePipeline(key, return_dict):
                         for k_return, val_return in new_return_dict.items():
                             return_dict[k_return] = val_return
 
-                    else:
-                        if not key + 'pipeline' in return_dict:
-                            if not key + 'result' in return_dict or return_dict[key + 'result'] < new_return_dict[key + 'result']:
-                                for k_return, val_return in new_return_dict.items():
-                                    return_dict[k_return] = val_return
+                if not key + 'pipeline' in return_dict:
+                    if not key + 'result' in return_dict or return_dict[key + 'result'] < new_return_dict[key + 'result']:
+                        for k_return, val_return in new_return_dict.items():
+                            return_dict[k_return] = val_return
 
             else:
                 start_training = time.time()
@@ -252,12 +251,12 @@ def evaluatePipeline(key, return_dict):
 
                             for k_return, val_return in new_return_dict.items():
                                 return_dict[k_return] = val_return
-                        else:
-                            if not key + 'pipeline' in return_dict:
-                                if not key + 'result' in return_dict or return_dict[key + 'result'] < new_return_dict[
-                                    key + 'result']:
-                                    for k_return, val_return in new_return_dict.items():
-                                        return_dict[k_return] = val_return
+
+                    if not key + 'pipeline' in return_dict:
+                        if not key + 'result' in return_dict or return_dict[key + 'result'] < new_return_dict[
+                            key + 'result']:
+                            for k_return, val_return in new_return_dict.items():
+                                return_dict[k_return] = val_return
 
                     current_steps += 1
                     n_steps = int(2 ** current_steps / 2) if current_steps > 1 else 2
@@ -268,7 +267,7 @@ def evaluatePipeline(key, return_dict):
                     return_dict[key + 'intermediate_results_' + str(current_size_iter)] = return_dict[key + 'result']
                 else:
                     trial.report(-1, current_size_iter)
-                    return_dict[key + 'intermediate_results_' + str(current_size_iter)] = -1
+                    return_dict[key + 'intermediate_results_' + str(current_size_iter)] = -1 * np.inf
 
                 if trial.should_prune():
                     print('I prunet it!')
@@ -669,7 +668,7 @@ class MyAutoML:
 
                 if already_used_time + 2 >= self.time_search_budget:  # already over budget
                     time.sleep(2)
-                    return -1.0
+                    return -1 * np.inf
 
                 remaining_time = np.min([self.evaluation_budget, self.time_search_budget - already_used_time])
 
@@ -686,7 +685,7 @@ class MyAutoML:
 
                 #del mp_global.mp_store[key]
 
-                result = -1.0
+                result = -1.0 * np.inf
                 if key + 'result' in return_dict:
                     result = return_dict[key + 'result']
 
@@ -776,11 +775,11 @@ if __name__ == "__main__":
     # dataset = openml.datasets.get_dataset(1114)
 
     #dataset = openml.datasets.get_dataset(1116)
-    #ddataset = openml.datasets.get_dataset(31)  # 51
+    dataset = openml.datasets.get_dataset(31)  # 51
     #dataset = openml.datasets.get_dataset(40685)
     #dataset = openml.datasets.get_dataset(1596)
     #dataset = openml.datasets.get_dataset(41167)
-    dataset = openml.datasets.get_dataset(41147)
+    #dataset = openml.datasets.get_dataset(41147)
 
     X, y, categorical_indicator, attribute_names = dataset.get_data(
         dataset_format='array',
@@ -837,8 +836,8 @@ if __name__ == "__main__":
                           main_memory_budget_gb=40,
                           hold_out_fraction=0.6,
                           max_ensemble_models=50,
-                          evaluation_budget=60*0.1,
-                          #inference_time_limit=0.00102
+                          #evaluation_budget=60*0.1,
+                          inference_time_limit=0.002
                           #training_time_limit=0.02
                           #pipeline_size_limit=10000
                           #fairness_limit=0.95,
