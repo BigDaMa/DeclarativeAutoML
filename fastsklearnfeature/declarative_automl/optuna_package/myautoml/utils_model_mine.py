@@ -1208,7 +1208,10 @@ def generate_parameters_minimal_sample_ensemble(trial, total_search_time_minutes
     if sample_data:
         dataset_id = trial.suggest_categorical('dataset_id', my_openml_datasets)
 
-    return search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, dataset_id
+    use_ensemble = trial.suggest_categorical('use_ensemble', [True, False])
+    use_incremental_data = trial.suggest_categorical('use_incremental_data', [True, False])
+
+    return search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, dataset_id, use_ensemble, use_incremental_data
 
 
 

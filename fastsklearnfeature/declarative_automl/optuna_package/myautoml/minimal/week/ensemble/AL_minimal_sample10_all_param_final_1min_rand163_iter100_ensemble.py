@@ -57,7 +57,7 @@ my_openml_tasks = [75126, 75125, 75121, 75120, 75116, 75115, 75114, 189859, 1898
 my_scorer = make_scorer(balanced_accuracy_score)
 
 
-mp_glob.total_search_time = 5*60#60
+mp_glob.total_search_time = 1*60#60
 topk = 20 # 20
 continue_from_checkpoint = False
 
@@ -79,7 +79,10 @@ my_list_constraints = ['global_search_time_constraint',
                            'sample_fraction',
                            'training_time_constraint',
                            'inference_time_constraint',
-                           'pipeline_size_constraint']
+                           'pipeline_size_constraint',
+                       'use_ensemble',
+                       'use_incremental_data'
+                       ]
 
 feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
@@ -139,6 +142,12 @@ def run_AutoML(trial):
     if 'dataset_id' in trial.params:
         task_id = trial.params['dataset_id'] #get same random seed
 
+    ensemble_size = 50
+    if not trial.params['use_ensemble']:
+        ensemble_size = 1
+
+    use_incremental_data = trial.params['use_incremental_data']
+
     for pre, _, node in RenderTree(space.parameter_tree):
         if node.status == True:
             print("%s%s" % (pre, node.name))
@@ -167,7 +176,8 @@ def run_AutoML(trial):
                           training_time_limit=training_time_limit,
                           inference_time_limit=inference_time_limit,
                           pipeline_size_limit=pipeline_size_limit,
-                          max_ensemble_models=50)
+                          max_ensemble_models=ensemble_size,
+                          use_incremental_data=use_incremental_data)
 
         test_score = 0.0
         try:
@@ -255,7 +265,7 @@ def sample_configuration(trial):
 
         trial.set_user_attr('space', copy.deepcopy(space))
 
-        search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, task_id = generate_parameters_minimal_sample_ensemble(
+        search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, task_id, use_ensemble, use_incremental_data = generate_parameters_minimal_sample_ensemble(
             trial, mp_glob.total_search_time, my_openml_tasks)
 
         my_random_seed = int(time.time())
@@ -275,7 +285,9 @@ def sample_configuration(trial):
                                       sample_fraction,
                                       training_time_limit,
                                       inference_time_limit,
-                                      pipeline_size_limit]
+                                      pipeline_size_limit,
+                                      int(use_ensemble),
+                                      int(use_incremental_data)]
 
         metafeature_values = data2features(X_train, y_train, categorical_indicator)
         features = space2features(space, my_list_constraints_values, metafeature_values)
@@ -369,7 +381,7 @@ def get_best_trial(model_uncertainty):
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24*7:
+    if time.time() - starting_time_tt > 60*60*24*1:
         return -1
 
     X_meta = copy.deepcopy(dictionary['X_meta'])

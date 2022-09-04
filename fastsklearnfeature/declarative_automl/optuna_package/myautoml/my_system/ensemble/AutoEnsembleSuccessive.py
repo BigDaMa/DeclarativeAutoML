@@ -132,6 +132,7 @@ def evaluatePipeline(key, return_dict):
         adversarial_robustness_constraint = return_dict['adversarial_robustness_constraint']
         fairness_limit = return_dict['fairness_limit']
         group_id = return_dict['fairness_group_id']
+        use_incremental_data = return_dict['use_incremental_data']
 
         trial = None
         if 'trial' in return_dict:
@@ -156,9 +157,12 @@ def evaluatePipeline(key, return_dict):
         y_train_big = copy.deepcopy(y_train)
 
         current_size = len(np.unique(y_train)) * 10
+        if not use_incremental_data:
+            current_size = len(X_train_big)
 
         full_size_reached = False
         current_size_iter = 0
+
         return_dict[key + 'intermediate_results'] = {}
         print('trial: ' + str(trial))
 
@@ -269,7 +273,7 @@ def evaluatePipeline(key, return_dict):
                     trial.report(-1, current_size_iter)
                     return_dict[key + 'intermediate_results_' + str(current_size_iter)] = -1 * np.inf
 
-                if trial.should_prune():
+                if use_incremental_data and trial.should_prune():
                     print('I prunet it!')
                     return
                 else:
@@ -303,7 +307,8 @@ class MyAutoML:
                  adversarial_robustness_constraint=None,
                  fairness_limit=None,
                  fairness_group_id=None,
-                 max_ensemble_models=50
+                 max_ensemble_models=50,
+                 use_incremental_data=True
                  ):
         self.cv = cv
         self.time_search_budget = time_search_budget
@@ -311,6 +316,7 @@ class MyAutoML:
         self.evaluation_budget = evaluation_budget
         self.number_of_cvs = number_of_cvs
         self.hold_out_fraction = hold_out_fraction
+        self.use_incremental_data = use_incremental_data
 
         self.classifier_list = myspace.classifier_list
         self.private_classifier_list = myspace.private_classifier_list
@@ -504,6 +510,7 @@ class MyAutoML:
             return_dict['adversarial_robustness_constraint'] = self.adversarial_robustness_constraint
             return_dict['fairness_limit'] = self.fairness_limit
             return_dict['fairness_group_id'] = self.fairness_group_id
+            return_dict['use_incremental_data'] = False
 
             try:
                 return_dict['study_best_value'] = self.study.best_value
@@ -656,6 +663,7 @@ class MyAutoML:
                 return_dict['adversarial_robustness_constraint'] = self.adversarial_robustness_constraint
                 return_dict['fairness_limit'] = self.fairness_limit
                 return_dict['fairness_group_id'] = self.fairness_group_id
+                return_dict['use_incremental_data'] = self.use_incremental_data
 
                 return_dict['trial'] = trial
 
@@ -727,17 +735,18 @@ class MyAutoML:
                             self.model_store[key] = (return_dict[key + 'pipeline'], result, training_time_current)
                         #print('size model store: ' + str(len(self.model_store)))
 
-                current_size_iter = 0
-                print('return: ' + str(return_dict))
-                while key + 'intermediate_results_' + str(current_size_iter) in return_dict:
-                    trial.report(return_dict[key + 'intermediate_results_' + str(current_size_iter)], current_size_iter)
-                    if trial.should_prune():
-                        print('should be pruned')
-                        should_be_pruned = True
-                        raise optuna.TrialPruned()
-                    else:
-                        print('should not be pruned')
-                    current_size_iter += 1
+                if self.use_incremental_data:
+                    current_size_iter = 0
+                    print('return: ' + str(return_dict))
+                    while key + 'intermediate_results_' + str(current_size_iter) in return_dict:
+                        trial.report(return_dict[key + 'intermediate_results_' + str(current_size_iter)], current_size_iter)
+                        if trial.should_prune():
+                            print('should be pruned')
+                            should_be_pruned = True
+                            raise optuna.TrialPruned()
+                        else:
+                            print('should not be pruned')
+                        current_size_iter += 1
 
                 return result
 
@@ -780,6 +789,7 @@ if __name__ == "__main__":
     #dataset = openml.datasets.get_dataset(1596)
     #dataset = openml.datasets.get_dataset(41167)
     #dataset = openml.datasets.get_dataset(41147)
+    #dataset = openml.datasets.get_dataset(1596)
 
     X, y, categorical_indicator, attribute_names = dataset.get_data(
         dataset_format='array',
@@ -831,13 +841,14 @@ if __name__ == "__main__":
     ensemble_perf = []
     for _ in range(10):
         search = MyAutoML(n_jobs=1,
-                          time_search_budget=60*1,
+                          time_search_budget=2*60*1,
                           space=space,
                           main_memory_budget_gb=40,
                           hold_out_fraction=0.6,
-                          max_ensemble_models=50,
-                          #evaluation_budget=60*0.1,
-                          inference_time_limit=0.002
+                          max_ensemble_models=1,
+                          evaluation_budget=2*60*0.1,
+                          use_incremental_data=False,
+                          #inference_time_limit=0.002
                           #training_time_limit=0.02
                           #pipeline_size_limit=10000
                           #fairness_limit=0.95,
