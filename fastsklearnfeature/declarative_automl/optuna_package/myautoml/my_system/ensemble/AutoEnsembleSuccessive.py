@@ -106,6 +106,21 @@ def constraints_satisfied(p, return_dict, key, training_time, training_time_limi
         return False
     return True
 
+def are_monotonic_constraints_satisfied(return_dict, key, training_time_limit, pipeline_size_limit, inference_time_limit):
+    if type(training_time_limit) != type(None):
+        if return_dict[key + 'result' + '_training_time'] > training_time_limit:
+            return False
+
+    if type(pipeline_size_limit) != type(None):
+        if return_dict[key + 'result' + '_pipeline_size'] > pipeline_size_limit:
+            return False
+
+    if type(inference_time_limit) != type(None):
+        if return_dict[key + 'result' + '_inference_time'] > inference_time_limit:
+            return False
+
+    return True
+
 
 def has_iterative_fit(p):
     if isinstance(p.steps[-1][-1], OneVsRestClassifierOptuna):
@@ -224,6 +239,9 @@ def evaluatePipeline(key, return_dict):
                         for k_return, val_return in new_return_dict.items():
                             return_dict[k_return] = val_return
 
+                if not are_monotonic_constraints_satisfied(return_dict, key, training_time_limit, pipeline_size_limit, inference_time_limit):
+                    return
+
             else:
                 start_training = time.time()
                 Xt, yt, fit_params = p._fit(X_train, y_train)
@@ -261,6 +279,10 @@ def evaluatePipeline(key, return_dict):
                             key + 'result']:
                             for k_return, val_return in new_return_dict.items():
                                 return_dict[k_return] = val_return
+
+                    if not are_monotonic_constraints_satisfied(return_dict, key, training_time_limit,
+                                                               pipeline_size_limit, inference_time_limit):
+                        return
 
                     current_steps += 1
                     n_steps = int(2 ** current_steps / 2) if current_steps > 1 else 2
@@ -395,11 +417,11 @@ class MyAutoML:
         #train ensemble => check whether ensemble satisfies
         sorted_keys = np.array(sorted(list(self.model_store.keys())))
         accuracies_for_keys = np.array([self.model_store[run_key][1] for run_key in sorted_keys])
-        training_time_for_keys = np.array([self.model_store[run_key][2] for run_key in sorted_keys])
 
         sorted_ids = np.argsort(accuracies_for_keys * -1)
         desc_sorted_keys = sorted_keys[sorted_ids]
-        desc_sorted_training_time = training_time_for_keys[sorted_ids]
+
+        single_best = (desc_sorted_keys[0], copy.deepcopy(self.model_store[desc_sorted_keys[0]]))
 
         print('acc: ' + str(accuracies_for_keys[sorted_ids]))
         ensemble_models = []
@@ -459,11 +481,18 @@ class MyAutoML:
                 else:
                     del self.model_store[run_key]
 
-            except:
+
+            except Exception as e:
+                print(str(e) + '\n\n')
+                traceback.print_exc()
                 del self.model_store[run_key]
 
+        if type(self.ensemble_selection) == type(None):
+            self.run_key_order = [single_best[0]]
+            self.model_store[single_best[0]] = single_best[1]
+
     def ensemble_predict(self, X_test):
-        if len(self.run_key_order) == 1:
+        if type(self.ensemble_selection) == type(None):
             return self.model_store[self.run_key_order[0]][0].predict(X_test)
         else:
             test_predictions = []
@@ -841,15 +870,15 @@ if __name__ == "__main__":
     ensemble_perf = []
     for _ in range(10):
         search = MyAutoML(n_jobs=1,
-                          time_search_budget=2*60*1,
+                          time_search_budget=1*60*1,
                           space=space,
                           main_memory_budget_gb=40,
                           hold_out_fraction=0.6,
-                          max_ensemble_models=1,
+                          max_ensemble_models=50,
                           evaluation_budget=2*60*0.1,
                           use_incremental_data=False,
                           #inference_time_limit=0.002
-                          #training_time_limit=0.02
+                          training_time_limit=0.02
                           #pipeline_size_limit=10000
                           #fairness_limit=0.95,
                           #fairness_group_id=12
