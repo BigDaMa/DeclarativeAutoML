@@ -94,7 +94,8 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                                    training_time_limit=training_time,
                                                                                    #evaluation_time=int(0.1*search_time_frozen),
                                                                                    #hold_out_fraction=0.33,
-                                                                                   tune_space=True
+                                                                                   tune_space=True,
+                                                                                   tune_val_fraction=True
                                                                                    ), n_trials=1000, n_jobs=1)
 
             space = mp_global.study_prune.best_trial.user_attrs['space']
