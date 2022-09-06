@@ -560,6 +560,9 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
         if cv * number_of_cvs > 1:
             hold_out_fraction_feature = (100.0 / cv) / 100.0
 
+        use_ensemble = trial.suggest_categorical('use_ensemble', [True, False])
+        use_incremental_data = trial.suggest_categorical('use_incremental_data', [True, False])
+
         my_list_constraints_values = [search_time,
                                       evaluation_time,
                                       memory_limit,
@@ -571,6 +574,8 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
                                       ifNull(training_time_limit, constant_value=search_time),
                                       ifNull(inference_time_limit, constant_value=60),
                                       ifNull(pipeline_size_limit, constant_value=350000000),
+                                      int(use_ensemble),
+                                      int(use_incremental_data)
                                       ]
 
         my_list_constraints = ['global_search_time_constraint',
@@ -583,7 +588,10 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
                                'sample_fraction',
                                'training_time_constraint',
                                'inference_time_constraint',
-                               'pipeline_size_constraint']
+                               'pipeline_size_constraint',
+                               'use_ensemble',
+                               'use_incremental_data'
+                               ]
 
         features = space2features(space, my_list_constraints_values, metafeature_values_hold)
         feature_names, _ = get_feature_names(my_list_constraints)
@@ -1745,6 +1753,12 @@ def utils_run_AutoML_ensemble(trial, X_train=None, X_test=None, y_train=None, y_
     if 'sample_fraction' in trial.params:
         sample_fraction = trial.params['sample_fraction']
 
+    ensemble_size = 50
+    if not trial.params['use_ensemble']:
+        ensemble_size = 1
+
+    use_incremental_data = trial.params['use_incremental_data']
+
     from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsembleSuccessive import MyAutoML as AutoEnsembleML
     search = AutoEnsembleML(cv=cv,
                       number_of_cvs=number_of_cvs,
@@ -1761,7 +1775,8 @@ def utils_run_AutoML_ensemble(trial, X_train=None, X_test=None, y_train=None, y_
                       pipeline_size_limit=pipeline_size_limit,
                       fairness_limit=fairness_limit,
                       fairness_group_id=fairness_group_id,
-                      max_ensemble_models=50
+                      max_ensemble_models=ensemble_size,
+                      use_incremental_data=use_incremental_data
                       )
     search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
 
