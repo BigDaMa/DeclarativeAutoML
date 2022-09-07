@@ -59,7 +59,7 @@ my_openml_tasks = [75126, 75125, 75121, 75120, 75116, 75115, 75114, 189859, 1898
 my_scorer = make_scorer(balanced_accuracy_score)
 
 
-mp_glob.total_search_time = 1*60#60
+mp_glob.total_search_time = 5*60#60
 topk = 40 # 20
 continue_from_checkpoint = False
 
@@ -383,7 +383,7 @@ def get_best_trial(model_uncertainty):
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24*1:
+    if time.time() - starting_time_tt > 60*60*24*7:
         return -1
 
     X_meta = copy.deepcopy(dictionary['X_meta'])
