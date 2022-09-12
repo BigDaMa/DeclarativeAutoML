@@ -109,7 +109,10 @@ my_list_constraints = ['global_search_time_constraint',
                            'training_time_constraint',
                            'inference_time_constraint',
                            'pipeline_size_constraint',
-                           'fairness_constraint']
+                           'fairness_constraint',
+                           'use_ensemble',
+                           'use_incremental_data'
+                       ]
 
 feature_names, feature_names_new = get_feature_names(my_list_constraints)
 
@@ -155,6 +158,12 @@ def run_AutoML(trial):
     fairness_limit = 0.0
     if 'fairness_constraint' in trial.params:
         fairness_limit = trial.params['fairness_constraint']
+
+    ensemble_size = 50
+    if not trial.params['use_ensemble']:
+        ensemble_size = 1
+
+    use_incremental_data = trial.params['use_incremental_data']
 
     cv = 1
     number_of_cvs = 1
@@ -209,15 +218,17 @@ def run_AutoML(trial):
                           inference_time_limit=inference_time_limit,
                           pipeline_size_limit=pipeline_size_limit,
                           fairness_limit=fairness_limit,
-                          fairness_group_id=sensitive_attribute_id)
+                          fairness_group_id=sensitive_attribute_id,
+                          max_ensemble_models=ensemble_size,
+                          use_incremental_data=use_incremental_data)
 
         test_score = 0.0
         try:
             search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
 
-            best_pipeline = search.get_best_pipeline()
-            if type(best_pipeline) != type(None):
-                test_score = my_scorer(search.get_best_pipeline(), X_test, y_test)
+            search.ensemble(X_train, y_train)
+            y_hat_test = search.ensemble_predict(X_test)
+            test_score = balanced_accuracy_score(y_test, y_hat_test)
         except:
             pass
         dynamic_params.append(test_score)
@@ -250,8 +261,9 @@ def run_AutoML(trial):
                           )
 
         try:
-            best_result = search_static.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
-            test_score_default = my_scorer(search_static.get_best_pipeline(), X_test, y_test)
+            search_static.ensemble(X_train, y_train)
+            y_hat_test = search_static.ensemble_predict(X_test)
+            test_score_default = balanced_accuracy_score(y_test, y_hat_test)
         except:
             test_score_default = 0.0
         static_params.append(test_score_default)
@@ -295,7 +307,7 @@ def sample_configuration(trial):
 
         trial.set_user_attr('space', copy.deepcopy(space))
 
-        search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, task_id, fairness_limit = generate_parameters_minimal_sample_constraints(
+        search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, task_id, fairness_limit, use_ensemble, use_incremental_data = generate_parameters_minimal_sample_constraints(
             trial, mp_glob.total_search_time, my_openml_tasks,
             use_training_time_constraint=False,
             use_inference_time_constraint=False,
@@ -325,7 +337,9 @@ def sample_configuration(trial):
                                       training_time_limit,
                                       inference_time_limit,
                                       pipeline_size_limit,
-                                      fairness_limit]
+                                      fairness_limit,
+                                      int(use_ensemble),
+                                      int(use_incremental_data)]
 
         metafeature_values = data2features(X_train, y_train, categorical_indicator)
         features = space2features(space, my_list_constraints_values, metafeature_values)
