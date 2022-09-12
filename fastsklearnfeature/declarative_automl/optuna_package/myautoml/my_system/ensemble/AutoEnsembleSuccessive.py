@@ -108,15 +108,15 @@ def constraints_satisfied(p, return_dict, key, training_time, training_time_limi
 
 def are_monotonic_constraints_satisfied(return_dict, key, training_time_limit, pipeline_size_limit, inference_time_limit):
     if type(training_time_limit) != type(None):
-        if return_dict[key + 'result' + '_training_time'] > training_time_limit:
+        if key + 'result' + '_training_time' in return_dict and return_dict[key + 'result' + '_training_time'] > training_time_limit:
             return False
 
     if type(pipeline_size_limit) != type(None):
-        if return_dict[key + 'result' + '_pipeline_size'] > pipeline_size_limit:
+        if key + 'result' + '_pipeline_size' in return_dict and return_dict[key + 'result' + '_pipeline_size'] > pipeline_size_limit:
             return False
 
     if type(inference_time_limit) != type(None):
-        if return_dict[key + 'result' + '_inference_time'] > inference_time_limit:
+        if key + 'result' + '_inference_time' in return_dict and return_dict[key + 'result' + '_inference_time'] > inference_time_limit:
             return False
 
     return True
