@@ -540,7 +540,7 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
             hold_out_fraction = None
             if trial.suggest_categorical('use_hold_out', cat_holdout_list):
                 if tune_val_fraction:
-                    hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.1, 0.99)
+                    hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.0, 0.99)
                 else:
                     hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.33, 0.33)
             else:
@@ -606,6 +606,82 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
             return features
     except Exception as e:
         return None
+
+
+def generate_features_minimum_sample_ensemble_smac(trial, metafeature_values_hold, search_time,
+                                        memory_limit=10,
+                                        privacy_limit=None,
+                                        evaluation_time=None,
+                                        hold_out_fraction=None,
+                                        training_time_limit=None,
+                                        inference_time_limit=None,
+                                        pipeline_size_limit=None,
+                                        tune_space=False,
+                                        save_data=True,
+                                        tune_eval_time=False,
+                                        tune_val_fraction=False,
+                                        tune_cv=False,
+                                        cs=None,
+                                        space=None
+                                        ):
+    #try:
+    if True:
+        space.sample_parameters_SMAC(trial)
+
+        evaluation_time = int(0.1 * search_time)
+
+
+         # how many cvs should be used
+        cv = 1
+        number_of_cvs = 1
+        hold_out_fraction = trial['hold_out_fraction']
+
+        sample_fraction = 1.0
+
+        hold_out_fraction_feature = hold_out_fraction
+
+        #use_ensemble = trial.suggest_categorical('use_ensemble', [True, False])
+        #use_incremental_data = trial.suggest_categorical('use_incremental_data', [True, False])
+
+        my_list_constraints_values = [search_time,
+                                      evaluation_time,
+                                      memory_limit,
+                                      cv,
+                                      number_of_cvs,
+                                      ifNull(privacy_limit, constant_value=1000),
+                                      hold_out_fraction_feature,
+                                      sample_fraction,
+                                      ifNull(training_time_limit, constant_value=search_time),
+                                      ifNull(inference_time_limit, constant_value=60),
+                                      ifNull(pipeline_size_limit, constant_value=350000000),
+                                      #int(use_ensemble),
+                                      #int(use_incremental_data)
+                                      ]
+
+        #print(my_list_constraints_values)
+
+        my_list_constraints = ['global_search_time_constraint',
+                               'global_evaluation_time_constraint',
+                               'global_memory_constraint',
+                               'global_cv',
+                               'global_number_cv',
+                               'privacy',
+                               'hold_out_fraction',
+                               'sample_fraction',
+                               'training_time_constraint',
+                               'inference_time_constraint',
+                               'pipeline_size_constraint',
+                               #'use_ensemble',
+                               #'use_incremental_data'
+                               ]
+
+        features = space2features(space, my_list_constraints_values, metafeature_values_hold)
+        feature_names, _ = get_feature_names(my_list_constraints)
+        features = FeatureTransformations().fit(features).transform(features, feature_names=feature_names)
+
+        return features
+    #except Exception as e:
+    #    return None
 
 def generate_features_minimum_sample_fair(trial, metafeature_values_hold, search_time,
                                         memory_limit=10,
@@ -790,7 +866,6 @@ def optimize_accuracy_under_minimal_sample_ensemble(trial, metafeature_values_ho
                                         tune_eval_time=False,
                                         tune_val_fraction=False,
                                         tune_cv=False
-
                                         ):
     features, space = generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, search_time,
                       memory_limit=memory_limit,
@@ -813,6 +888,41 @@ def optimize_accuracy_under_minimal_sample_ensemble(trial, metafeature_values_ho
         trial.set_user_attr('space', copy.deepcopy(space))
 
     return success_val
+
+def optimize_accuracy_under_minimal_sample_ensemble_smac(trial, metafeature_values_hold=None, search_time=None, model_success=None,
+                                        memory_limit=10,
+                                        privacy_limit=None,
+                                        evaluation_time=None,
+                                        hold_out_fraction=None,
+                                        training_time_limit=None,
+                                        inference_time_limit=None,
+                                        pipeline_size_limit=None,
+                                        tune_space=False,
+                                        tune_eval_time=False,
+                                        tune_val_fraction=False,
+                                        tune_cv=False,
+                                        space=None
+                                        ):
+    features = generate_features_minimum_sample_ensemble_smac(trial, metafeature_values_hold, search_time,
+                      memory_limit=memory_limit,
+                      privacy_limit=privacy_limit,
+                      evaluation_time=evaluation_time,
+                      hold_out_fraction=hold_out_fraction,
+                      training_time_limit=training_time_limit,
+                      inference_time_limit=inference_time_limit,
+                      pipeline_size_limit=pipeline_size_limit,
+                      tune_space=tune_space,
+                      save_data=False,
+                      tune_eval_time=tune_eval_time,
+                      tune_val_fraction=tune_val_fraction,
+                      tune_cv=tune_cv,
+                      space=space
+                      )
+    #print('features: ' + str(features))
+
+    success_val = predict_range(model_success, features)
+    print('success: ' + str(success_val))
+    return -1 * success_val
 
 
 def optimize_accuracy_under_minimal_sample_fair(trial, metafeature_values_hold, search_time, model_success,
@@ -1201,7 +1311,7 @@ def generate_parameters_minimal_sample_ensemble(trial, total_search_time_minutes
     number_of_cvs = 1
     hold_out_fraction = None
     if trial.suggest_categorical('use_hold_out', [True]):
-        hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.1, 0.99)
+        hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.0, 1.0)
     else:
         cv = trial.suggest_int('global_cv', 2, 20, log=False)  # todo: calculate minimum number of splits based on y
         number_of_cvs = 1
@@ -1341,7 +1451,7 @@ def generate_parameters_minimal_sample_constraints(trial, total_search_time_minu
     number_of_cvs = 1
     hold_out_fraction = None
     if trial.suggest_categorical('use_hold_out', [True]):
-        hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.1, 0.99)
+        hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.0, 1.0)
     else:
         cv = trial.suggest_int('global_cv', 2, 20, log=False)  # todo: calculate minimum number of splits based on y
         number_of_cvs = 1
