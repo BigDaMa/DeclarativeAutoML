@@ -540,7 +540,7 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
             hold_out_fraction = None
             if trial.suggest_categorical('use_hold_out', cat_holdout_list):
                 if tune_val_fraction:
-                    hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.0, 0.99)
+                    hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.0, 1.0)
                 else:
                     hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.33, 0.33)
             else:
@@ -560,8 +560,8 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
         if cv * number_of_cvs > 1:
             hold_out_fraction_feature = (100.0 / cv) / 100.0
 
-        #use_ensemble = trial.suggest_categorical('use_ensemble', [True, False])
-        #use_incremental_data = trial.suggest_categorical('use_incremental_data', [True, False])
+        use_ensemble = trial.suggest_categorical('use_ensemble', [True, False])
+        use_incremental_data = trial.suggest_categorical('use_incremental_data', [True, False])
 
         my_list_constraints_values = [search_time,
                                       evaluation_time,
@@ -574,8 +574,8 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
                                       ifNull(training_time_limit, constant_value=search_time),
                                       ifNull(inference_time_limit, constant_value=60),
                                       ifNull(pipeline_size_limit, constant_value=350000000),
-                                      #int(use_ensemble),
-                                      #int(use_incremental_data)
+                                      int(use_ensemble),
+                                      int(use_incremental_data)
                                       ]
 
         my_list_constraints = ['global_search_time_constraint',
@@ -589,8 +589,8 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
                                'training_time_constraint',
                                'inference_time_constraint',
                                'pipeline_size_constraint',
-                               #'use_ensemble',
-                               #'use_incremental_data'
+                               'use_ensemble',
+                               'use_incremental_data'
                                ]
 
         features = space2features(space, my_list_constraints_values, metafeature_values_hold)
