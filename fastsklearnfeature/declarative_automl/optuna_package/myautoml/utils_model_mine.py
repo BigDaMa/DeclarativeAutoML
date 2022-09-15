@@ -1867,11 +1867,11 @@ def utils_run_AutoML_ensemble(trial, X_train=None, X_test=None, y_train=None, y_
         sample_fraction = trial.params['sample_fraction']
 
     ensemble_size = 50
-    #if not trial.params['use_ensemble']:
-    #    ensemble_size = 1
+    if not trial.params['use_ensemble']:
+        ensemble_size = 1
 
-    use_incremental_data = True
-    #use_incremental_data = trial.params['use_incremental_data']
+    #use_incremental_data = True
+    use_incremental_data = trial.params['use_incremental_data']
 
     from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsembleSuccessive import MyAutoML as AutoEnsembleML
     search = AutoEnsembleML(cv=cv,
