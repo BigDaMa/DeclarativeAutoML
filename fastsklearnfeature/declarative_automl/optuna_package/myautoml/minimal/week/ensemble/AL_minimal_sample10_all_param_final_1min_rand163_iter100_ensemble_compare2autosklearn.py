@@ -1,4 +1,5 @@
 import os
+import shutil
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 #from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsemble import MyAutoML
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsembleSuccessive import MyAutoML as AutoSuccess
@@ -207,6 +208,7 @@ def run_AutoML(trial):
             if node.status == True:
                 print("%s%s" % (pre, node.name))
 
+        tmp_path = "/home/neutatz/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(np.random.randint(100))
         try:
             scorerr = autosklearn.metrics.make_scorer(
                 'balanced_accuracy_score',
@@ -220,7 +222,6 @@ def run_AutoML(trial):
                 else:
                     feat_type.append('Numerical')
 
-            tmp_path = "/home/neutatz/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(np.random.randint(100))
             automl = AutoSklearn2Classifier(time_left_for_this_task=search_time, metric=scorerr, seed=random_i,
                                             memory_limit=memory_limit, tmp_folder=tmp_path,
                                             delete_tmp_folder_after_terminate=True)
@@ -229,6 +230,9 @@ def run_AutoML(trial):
             test_score_default = balanced_accuracy_score(y_test, y_hat)
         except:
             test_score_default = 0.0
+        finally:
+            if os.path.exists(tmp_path) and os.path.isdir(tmp_path):
+                shutil.rmtree(tmp_path)
         static_params.append(test_score_default)
 
     static_values = np.array(static_params)
@@ -386,7 +390,7 @@ def get_best_trial(model_uncertainty):
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24*1:
+    if time.time() - starting_time_tt > 60*60*24*7:
         return -1
 
     X_meta = copy.deepcopy(dictionary['X_meta'])
