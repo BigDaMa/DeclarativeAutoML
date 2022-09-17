@@ -223,7 +223,7 @@ def run_AutoML(trial):
                     feat_type.append('Numerical')
 
             automl = AutoSklearn2Classifier(time_left_for_this_task=search_time, metric=scorerr, seed=random_i,
-                                            memory_limit=memory_limit, tmp_folder=tmp_path,
+                                            memory_limit=1024*250, tmp_folder=tmp_path,
                                             delete_tmp_folder_after_terminate=True)
             automl.fit(X_train, y_train, feat_type=feat_type)
             y_hat = automl.predict(X_test)
