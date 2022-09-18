@@ -236,7 +236,7 @@ def run_AutoML(trial):
                 shutil.rmtree(tmp_path)
         static_params.append(test_score_default)
 
-    static_values_autosklearn = np.array(static_params)
+    static_values_autosklearn = copy.deepcopy(np.array(static_params))
 
     static_params = []
     for random_i in range(repetitions_count):
