@@ -28,6 +28,7 @@ import openml
 from sklearn.metrics import balanced_accuracy_score
 from autosklearn.experimental.askl2 import AutoSklearn2Classifier
 import autosklearn
+import getpass
 
 
 class NoDaemonProcess(multiprocessing.Process):
@@ -51,7 +52,7 @@ class NestablePool(multiprocessing.pool.Pool):
         super(NestablePool, self).__init__(*args, **kwargs)
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
-openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
+openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_openml'
 
 def predict_range(model, X):
     y_pred = model.predict(X)
@@ -208,7 +209,7 @@ def run_AutoML(trial):
             if node.status == True:
                 print("%s%s" % (pre, node.name))
 
-        tmp_path = "/home/neutatz/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(np.random.randint(100))
+        tmp_path = "/home/" + getpass.getuser() + "/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(np.random.randint(100))
         test_score_default = 0.0
         try:
             scorerr = autosklearn.metrics.make_scorer(
@@ -360,8 +361,7 @@ group_meta = []
 aquisition_function_value = []
 
 
-#path2files = '/home/neutatz/phd2/decAutoML2weeks_compare2default/single_cpu_machine1_4D_start_and_class_imbalance'
-path2files = '/home/neutatz/data/my_temp'
+path2files = '/home/' + getpass.getuser() + '/data/my_temp'
 
 
 if continue_from_checkpoint:
@@ -430,7 +430,7 @@ def get_best_trial(model_uncertainty):
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24*7:
+    if time.time() - starting_time_tt > 60*60*24*3:
         return -1
 
     X_meta = copy.deepcopy(dictionary['X_meta'])
@@ -499,17 +499,17 @@ print('storing stuff')
 model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
 model_uncertainty.fit(dictionary['X_meta'], dictionary['y_meta'])
 
-with open('/home/neutatz/data/my_temp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/' + getpass.getuser() + '/data/my_temp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(model_uncertainty, pickle_model_file)
 
-with open('/home/neutatz/data/my_temp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['X_meta'], pickle_model_file)
 
-with open('/home/neutatz/data/my_temp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['y_meta'], pickle_model_file)
 
-with open('/home/neutatz/data/my_temp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
+with open('/home/' + getpass.getuser() + '/data/my_temp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['group_meta'], pickle_model_file)
 
-with open('/home/neutatz/data/my_temp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
+with open('/home/' + getpass.getuser() + '/data/my_temp/felix_acquisition function value_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['aquisition_function_value'], pickle_model_file)
