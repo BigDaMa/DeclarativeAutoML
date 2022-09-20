@@ -162,7 +162,14 @@ for test_holdout_dataset_id in [args.dataset]:
 
                 best_result = search_default.fit(X_train_hold, y_train_hold,
                                                  categorical_indicator=categorical_indicator_hold, scorer=my_scorer)
-                result = my_scorer(search_default.get_best_pipeline(), X_test_hold, y_test_hold)
+
+                result = 0.0
+                try:
+                    search_default.ensemble(X_train_hold, y_train_hold)
+                    y_hat_test = search_default.ensemble_predict(X_test_hold)
+                    result = balanced_accuracy_score(y_test_hold, y_hat_test)
+                except:
+                    pass
 
                 new_constraint_evaluation_default.append(
                     ConstraintRun(space_str=space2str(space.parameter_tree), params='default',
