@@ -1,12 +1,12 @@
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalanceDict import MyAutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsembleSuccessive import MyAutoML
 import optuna
 from sklearn.metrics import make_scorer
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 import pickle
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_data
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import data2features
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import optimize_accuracy_under_minimal_sample
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import utils_run_AutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import optimize_accuracy_under_minimal_sample_ensemble
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import utils_run_AutoML_ensemble
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_feature_names
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.util_classes_new import ConstraintEvaluation, ConstraintRun, space2str
 from anytree import RenderTree
@@ -83,7 +83,7 @@ for test_holdout_dataset_id in [args.dataset]:
         for repeat in range(10):
 
             mp_global.study_prune = optuna.create_study(direction='maximize')
-            mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample(trial=trial,
+            mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample_ensemble(trial=trial,
                                                                                    metafeature_values_hold=metafeature_values_hold,
                                                                                    search_time=search_time_frozen,
                                                                                    model_success=model_success,
@@ -92,7 +92,8 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                                    pipeline_size_limit=pipeline_size,
                                                                                    #evaluation_time=int(0.1*search_time_frozen),
                                                                                    #hold_out_fraction=0.33,
-                                                                                   tune_space=True
+                                                                                   tune_space=True,
+                                                                                   tune_val_fraction=True
                                                                                    ), n_trials=1000, n_jobs=1)
 
             space = mp_global.study_prune.best_trial.user_attrs['space']
@@ -105,7 +106,7 @@ for test_holdout_dataset_id in [args.dataset]:
                 result = None
                 search_dynamic = None
 
-                result, search_dynamic = utils_run_AutoML(mp_global.study_prune.best_trial,
+                result, search_dynamic = utils_run_AutoML_ensemble(mp_global.study_prune.best_trial,
                                                              X_train=X_train_hold,
                                                              X_test=X_test_hold,
                                                              y_train=y_train_hold,
@@ -157,7 +158,14 @@ for test_holdout_dataset_id in [args.dataset]:
 
                 best_result = search_default.fit(X_train_hold, y_train_hold,
                                                  categorical_indicator=categorical_indicator_hold, scorer=my_scorer)
-                result = my_scorer(search_default.get_best_pipeline(), X_test_hold, y_test_hold)
+
+                result = 0.0
+                try:
+                    search_default.ensemble(X_train_hold, y_train_hold)
+                    y_hat_test = search_default.ensemble_predict(X_test_hold)
+                    result = balanced_accuracy_score(y_test_hold, y_hat_test)
+                except:
+                    pass
 
                 new_constraint_evaluation_default.append(
                     ConstraintRun(space_str=space2str(space.parameter_tree), params='default',
