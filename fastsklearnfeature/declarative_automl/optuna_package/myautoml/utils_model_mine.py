@@ -740,8 +740,11 @@ def generate_features_minimum_sample_fair(trial, metafeature_values_hold, search
 
 
         sample_fraction = 1.0
-        if trial.suggest_categorical('use_sampling', [True]):
+        if trial.suggest_categorical('use_sampling', [False]):
             sample_fraction = trial.suggest_uniform('sample_fraction', 0, 1)
+
+        use_ensemble = trial.suggest_categorical('use_ensemble', [True, False])
+        use_incremental_data = trial.suggest_categorical('use_incremental_data', [True, False])
 
         hold_out_fraction_feature = hold_out_fraction
         if cv * number_of_cvs > 1:
@@ -759,6 +762,8 @@ def generate_features_minimum_sample_fair(trial, metafeature_values_hold, search
                                       ifNull(inference_time_limit, constant_value=60),
                                       ifNull(pipeline_size_limit, constant_value=350000000),
                                       ifNull(fairness_limit, constant_value=0.0),
+                                      int(use_ensemble),
+                                      int(use_incremental_data)
                                       ]
 
         my_list_constraints = ['global_search_time_constraint',
@@ -772,7 +777,10 @@ def generate_features_minimum_sample_fair(trial, metafeature_values_hold, search
                                'training_time_constraint',
                                'inference_time_constraint',
                                'pipeline_size_constraint',
-                               'fairness_constraint']
+                               'fairness_constraint',
+                               'use_ensemble',
+                               'use_incremental_data'
+                               ]
 
         features = space2features(space, my_list_constraints_values, metafeature_values_hold)
         feature_names, _ = get_feature_names(my_list_constraints)
