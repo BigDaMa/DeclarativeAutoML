@@ -209,45 +209,6 @@ def run_AutoML(trial):
             if node.status == True:
                 print("%s%s" % (pre, node.name))
 
-        tmp_path = "/home/" + getpass.getuser() + "/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(np.random.randint(100))
-        test_score_default = 0.0
-        try:
-            scorerr = autosklearn.metrics.make_scorer(
-                'balanced_accuracy_score',
-                balanced_accuracy_score
-            )
-
-            feat_type = []
-            for c_i in range(len(categorical_indicator)):
-                if categorical_indicator[c_i]:
-                    feat_type.append('Categorical')
-                else:
-                    feat_type.append('Numerical')
-
-            automl = AutoSklearn2Classifier(time_left_for_this_task=search_time, metric=scorerr, seed=random_i,
-                                            memory_limit=1024*250, tmp_folder=tmp_path,
-                                            delete_tmp_folder_after_terminate=True)
-            automl.fit(X_train, y_train, feat_type=feat_type)
-            y_hat = automl.predict(X_test)
-            test_score_default = balanced_accuracy_score(y_test, y_hat)
-        except:
-            test_score_default = 0.0
-        finally:
-            if os.path.exists(tmp_path) and os.path.isdir(tmp_path):
-                shutil.rmtree(tmp_path)
-        static_params.append(test_score_default)
-
-    static_values_autosklearn = copy.deepcopy(np.array(static_params))
-
-    static_params = []
-    for random_i in range(repetitions_count):
-        # default params
-        gen_new = SpaceGenerator()
-        space_new = gen_new.generate_params()
-        for pre, _, node in RenderTree(space_new.parameter_tree):
-            if node.status == True:
-                print("%s%s" % (pre, node.name))
-
         search_static = AutoSuccess(n_jobs=1,
                                     time_search_budget=search_time,
                                     space=space_new,
@@ -274,6 +235,40 @@ def run_AutoML(trial):
         static_params.append(test_score_default)
 
     static_values = np.array(static_params)
+
+
+    #autosklearn
+    tmp_path_pickle = "/home/" + getpass.getuser() + "/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(
+        np.random.randint(100))
+
+    send_data = {}
+    send_data['categorical_indicator'] = categorical_indicator
+    send_data['search_time'] = search_time
+    send_data['X_train'] = X_train
+    send_data['y_train'] = y_train
+    send_data['X_test'] = X_test
+    send_data['y_test'] = y_test
+    with open(tmp_path_pickle + ".pickle", "wb+") as output_file:
+        pickle.dump(send_data, output_file)
+    os.popen(
+        "python /home/" + getpass.getuser() + "/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/minimal/week/ensemble/run_autosklearn.py " + str(
+            tmp_path_pickle)).read()
+
+    static_values_autosklearn = copy.deepcopy(static_values)
+    try:
+        with open(tmp_path_pickle + "_result.pickle", 'rb') as result_file:
+            static_values_autosklearn = pickle.load(result_file)['static_values']
+            print('########################################################')
+            print('autosklearn result: ' + str(static_values_autosklearn))
+            print('********************************************************')
+    except:
+        pass
+
+    if os.path.exists(tmp_path_pickle + "_result.pickle"):
+        os.remove(tmp_path_pickle + "_result.pickle")
+
+    if os.path.exists(tmp_path_pickle + ".pickle"):
+        os.remove(tmp_path_pickle + "_result.pickle")
 
     if np.mean(static_values) < np.mean(static_values_autosklearn):
         static_values = static_values_autosklearn
