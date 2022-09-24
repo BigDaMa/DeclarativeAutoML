@@ -96,38 +96,80 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                                    tune_val_fraction=True
                                                                                    ), n_trials=1000, n_jobs=1)
 
-            space = mp_global.study_prune.best_trial.user_attrs['space']
 
-            for pre, _, node in RenderTree(space.parameter_tree):
-                if node.status == True:
-                    print("%s%s" % (pre, node.name))
+            if mp_global.study_prune.best_value > 0.5:
 
-            try:
-                result = None
-                search_dynamic = None
+                space = mp_global.study_prune.best_trial.user_attrs['space']
 
-                result, search_dynamic = utils_run_AutoML_ensemble(mp_global.study_prune.best_trial,
-                                                             X_train=X_train_hold,
-                                                             X_test=X_test_hold,
-                                                             y_train=y_train_hold,
-                                                             y_test=y_test_hold,
-                                                             categorical_indicator=categorical_indicator_hold,
-                                                             my_scorer=my_scorer,
-                                                             search_time=search_time_frozen,
-                                                             memory_limit=memory_budget,
-                                                             privacy_limit=privacy,
-                                                             pipeline_size_limit=pipeline_size
-                                             )
+                for pre, _, node in RenderTree(space.parameter_tree):
+                    if node.status == True:
+                        print("%s%s" % (pre, node.name))
 
-                new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
-            except:
-                result = 0
-                new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
+                try:
+                    result = None
+                    search_dynamic = None
 
-            print("test result: " + str(result))
-            current_dynamic.append(result)
+                    result, search_dynamic = utils_run_AutoML_ensemble(mp_global.study_prune.best_trial,
+                                                                 X_train=X_train_hold,
+                                                                 X_test=X_test_hold,
+                                                                 y_train=y_train_hold,
+                                                                 y_test=y_test_hold,
+                                                                 categorical_indicator=categorical_indicator_hold,
+                                                                 my_scorer=my_scorer,
+                                                                 search_time=search_time_frozen,
+                                                                 memory_limit=memory_budget,
+                                                                 privacy_limit=privacy,
+                                                                 pipeline_size_limit=pipeline_size
+                                                 )
 
-            print('dynamic: ' + str(current_dynamic))
+                    new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
+                except:
+                    result = 0
+                    new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
+
+                print("test result: " + str(result))
+                current_dynamic.append(result)
+
+                print('dynamic: ' + str(current_dynamic))
+
+            else:
+                gen_new = SpaceGenerator()
+                space = gen_new.generate_params()
+
+                try:
+                    result = None
+                    search_default = MyAutoML(n_jobs=1,
+                                              time_search_budget=search_time_frozen,
+                                              space=space,
+                                              evaluation_budget=int(0.1 * search_time_frozen),
+                                              main_memory_budget_gb=memory_budget,
+                                              differential_privacy_epsilon=privacy,
+                                              hold_out_fraction=0.33,
+                                              pipeline_size_limit=pipeline_size
+                                              )
+
+                    best_result = search_default.fit(X_train_hold, y_train_hold,
+                                                     categorical_indicator=categorical_indicator_hold, scorer=my_scorer)
+
+                    result = 0.0
+                    try:
+                        search_default.ensemble(X_train_hold, y_train_hold)
+                        y_hat_test = search_default.ensemble_predict(X_test_hold)
+                        result = balanced_accuracy_score(y_test_hold, y_hat_test)
+                    except:
+                        pass
+
+                    new_constraint_evaluation_dynamic.append(
+                        ConstraintRun(space_str=space2str(space.parameter_tree), params='default',
+                                      test_score=result, estimated_score=0.0))
+                except:
+                    result = 0
+                    new_constraint_evaluation_dynamic.append(
+                        ConstraintRun(space_str=space2str(space.parameter_tree), params='default',
+                                      test_score=result, estimated_score=0.0))
+
+                current_dynamic.append(result)
+
 
         dynamic_approach.append(current_dynamic)
         new_constraint_evaluation_dynamic_all.append(new_constraint_evaluation_dynamic)
