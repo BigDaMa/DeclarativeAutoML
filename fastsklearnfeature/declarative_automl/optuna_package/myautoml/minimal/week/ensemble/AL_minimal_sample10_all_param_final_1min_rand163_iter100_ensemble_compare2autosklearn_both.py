@@ -64,7 +64,7 @@ my_scorer = make_scorer(balanced_accuracy_score)
 
 
 mp_glob.total_search_time = 5*60#60
-topk = 40 # 20
+topk = 20 # 20
 continue_from_checkpoint = False
 
 starting_time_tt = time.time()
