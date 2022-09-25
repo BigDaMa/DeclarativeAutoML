@@ -248,14 +248,14 @@ def run_AutoML(trial):
     send_data['y_train'] = y_train
     send_data['X_test'] = X_test
     send_data['y_test'] = y_test
-    with open(tmp_path_pickle + ".pickle", "wb+") as output_file:
-        pickle.dump(send_data, output_file)
-    os.popen(
-        "python /home/" + getpass.getuser() + "/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/minimal/week/ensemble/run_autosklearn.py " + str(
-            tmp_path_pickle)).read()
 
     static_values_autosklearn = copy.deepcopy(static_values)
     try:
+        with open(tmp_path_pickle + ".pickle", "wb+") as output_file:
+            pickle.dump(send_data, output_file)
+        os.popen("python /home/" + getpass.getuser() + "/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/minimal/week/ensemble/run_autosklearn.py " + str(
+                tmp_path_pickle)).read()
+
         with open(tmp_path_pickle + "_result.pickle", 'rb') as result_file:
             static_values_autosklearn = pickle.load(result_file)['static_values']
             print('########################################################')

@@ -73,3 +73,4 @@ if __name__ == '__main__':
     send_data['static_values'] = static_values
     with open(tmp_path_pickle + "_result.pickle", "wb+") as output_file:
         pickle.dump(send_data, output_file)
+    print('done')
