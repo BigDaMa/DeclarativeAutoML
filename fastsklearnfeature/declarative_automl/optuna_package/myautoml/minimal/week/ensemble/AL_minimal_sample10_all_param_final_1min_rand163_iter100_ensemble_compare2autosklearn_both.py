@@ -260,9 +260,7 @@ def run_AutoML(trial):
         session = server.new_session(session_name="data" + current_id_name, kill_session=True, attach=False)
         session.attached_pane.send_keys('exec bash')
         session.attached_pane.send_keys('conda activate ' + conda_name)
-        session.attached_pane.send_keys('cd /home/' + getpass.getuser() + '/Software/DeclarativeAutoML')
         session.attached_pane.send_keys("python /home/" + getpass.getuser() + "/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/minimal/week/ensemble/run_autosklearn.py " + str(tmp_path_pickle))
-        session.attached_pane.send_keys('exit')
 
         while True:
             if os.path.exists(tmp_path_pickle + "_result.pickle"):
@@ -275,6 +273,7 @@ def run_AutoML(trial):
                     break
             else:
                 time.sleep(10)
+        session.attached_pane.send_keys('exit')
 
     except:
         pass
