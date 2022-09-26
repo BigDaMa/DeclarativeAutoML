@@ -265,7 +265,7 @@ def run_AutoML(trial):
         session.attached_pane.send_keys('exit')
 
         while True:
-            if os.path.isfile(tmp_path_pickle + "_result.pickle"):
+            if os.path.exists(tmp_path_pickle + "_result.pickle"):
                 time.sleep(60)
                 with open(tmp_path_pickle + "_result.pickle", 'rb') as result_file:
                     static_values_autosklearn = pickle.load(result_file)['static_values']
