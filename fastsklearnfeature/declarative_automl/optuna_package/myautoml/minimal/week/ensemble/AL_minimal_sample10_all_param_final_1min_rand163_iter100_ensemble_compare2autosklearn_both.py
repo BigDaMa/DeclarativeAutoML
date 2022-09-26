@@ -239,7 +239,7 @@ def run_AutoML(trial):
 
 
     #autosklearn
-    current_id_name = str(time.time()) + '_' + str(np.random.randint(100))
+    current_id_name = str(str(time.time()) + '_' + str(np.random.randint(100))).replace('.', '_')
     tmp_path_pickle = "/home/" + getpass.getuser() + "/data/auto_tmp/autosklearn" + current_id_name
 
     send_data = {}
