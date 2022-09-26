@@ -29,6 +29,7 @@ from sklearn.metrics import balanced_accuracy_score
 from autosklearn.experimental.askl2 import AutoSklearn2Classifier
 import autosklearn
 import getpass
+import libtmux
 
 
 class NoDaemonProcess(multiprocessing.Process):
@@ -238,8 +239,8 @@ def run_AutoML(trial):
 
 
     #autosklearn
-    tmp_path_pickle = "/home/" + getpass.getuser() + "/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(
-        np.random.randint(100))
+    current_id_name = str(time.time()) + '_' + str(np.random.randint(100))
+    tmp_path_pickle = "/home/" + getpass.getuser() + "/data/auto_tmp/autosklearn" + current_id_name
 
     send_data = {}
     send_data['categorical_indicator'] = categorical_indicator
@@ -253,14 +254,28 @@ def run_AutoML(trial):
     try:
         with open(tmp_path_pickle + ".pickle", "wb+") as output_file:
             pickle.dump(send_data, output_file)
-        os.popen("python /home/" + getpass.getuser() + "/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/minimal/week/ensemble/run_autosklearn.py " + str(
-                tmp_path_pickle)).read()
 
-        with open(tmp_path_pickle + "_result.pickle", 'rb') as result_file:
-            static_values_autosklearn = pickle.load(result_file)['static_values']
-            print('########################################################')
-            print('autosklearn result: ' + str(static_values_autosklearn))
-            print('********************************************************')
+        server = libtmux.Server()
+        conda_name = 'AutoMLD'
+        session = server.new_session(session_name="data" + current_id_name, kill_session=True, attach=False)
+        session.attached_pane.send_keys('exec bash')
+        session.attached_pane.send_keys('conda activate ' + conda_name)
+        session.attached_pane.send_keys('cd /home/' + getpass.getuser() + '/Software/DeclarativeAutoML')
+        session.attached_pane.send_keys("python /home/" + getpass.getuser() + "/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/minimal/week/ensemble/run_autosklearn.py " + str(tmp_path_pickle))
+        session.attached_pane.send_keys('exit')
+
+        while True:
+            if os.path.isfile(tmp_path_pickle + "_result.pickle"):
+                time.sleep(60)
+                with open(tmp_path_pickle + "_result.pickle", 'rb') as result_file:
+                    static_values_autosklearn = pickle.load(result_file)['static_values']
+                    print('########################################################')
+                    print('autosklearn result: ' + str(static_values_autosklearn))
+                    print('********************************************************')
+                    break
+            else:
+                time.sleep(10)
+
     except:
         pass
 
