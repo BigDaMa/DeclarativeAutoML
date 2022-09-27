@@ -374,10 +374,10 @@ class Objective(object):
         return objective
 
 def get_best_trial(model_uncertainty):
-    sampler = TPESampler()
+    sampler = RandomSampler()
     study_uncertainty = optuna.create_study(direction='maximize', sampler=sampler)
     my_objective = Objective(model_uncertainty)
-    study_uncertainty.optimize(my_objective, n_trials=100, n_jobs=1)
+    study_uncertainty.optimize(my_objective, n_trials=1, n_jobs=1)
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
