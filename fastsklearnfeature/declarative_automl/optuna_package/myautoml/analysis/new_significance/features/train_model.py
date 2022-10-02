@@ -12,6 +12,7 @@ from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error
 import numpy as np
 import optuna
+from sklearn.model_selection import LeaveOneGroupOut
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -47,7 +48,8 @@ def objective(trial):
                                           max_depth=trial.suggest_int("max_depth", 1, 100, log=True),
                                           random_state=42, n_jobs=-1)
 
-    group_kfold = GroupKFold(n_splits=10)
+    #group_kfold = GroupKFold(n_splits=10)
+    group_kfold = LeaveOneGroupOut()
     scores = []
     errors = []
     for train_index, test_index in group_kfold.split(X, y, groups):
