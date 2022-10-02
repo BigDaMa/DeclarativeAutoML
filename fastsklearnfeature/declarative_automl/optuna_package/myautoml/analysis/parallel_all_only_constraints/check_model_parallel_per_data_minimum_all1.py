@@ -44,7 +44,7 @@ for test_holdout_dataset_id in [args.dataset]:
     metafeature_values_hold = data2features(X_train_hold, y_train_hold, categorical_indicator_hold)
 
     model_success = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/my_great_model_compare_scaled.p', "rb"))
-    
+
     my_list_constraints = ['global_search_time_constraint',
                            'global_evaluation_time_constraint',
                            'global_memory_constraint',
@@ -94,7 +94,8 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                                    ), n_trials=1000, n_jobs=1)
 
 
-            if mp_global.study_prune.best_value > 0.5:
+            #if mp_global.study_prune.best_value > 0.5:
+            if True:
 
                 space = mp_global.study_prune.best_trial.user_attrs['space']
 
