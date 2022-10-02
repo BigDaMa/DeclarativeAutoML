@@ -45,7 +45,7 @@ def objective(trial):
                                           min_samples_split=trial.suggest_int("min_samples_split", 2, 20),
                                           min_samples_leaf=trial.suggest_int("min_samples_leaf", 1, 20),
                                           max_features=trial.suggest_float("max_features", 0.0, 1.0),
-                                          max_depth=trial.suggest_int("max_depth", 1, 100, log=True),
+                                          max_depth=trial.suggest_int("max_depth", 1, 200, log=True),
                                           random_state=42, n_jobs=-1)
 
     #group_kfold = GroupKFold(n_splits=10)
@@ -70,7 +70,7 @@ def objective(trial):
 
 #study = optuna.create_study(direction='maximize')
 study = optuna.create_study(direction='minimize')
-study.optimize(objective, n_trials=1000)
+study.optimize(objective, n_trials=100)
 
 print(study.best_params)
 
