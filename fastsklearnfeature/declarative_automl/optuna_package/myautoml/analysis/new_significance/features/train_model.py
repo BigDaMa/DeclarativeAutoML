@@ -39,7 +39,7 @@ print(X.shape)
 #model_success.fit(X, y)
 
 def objective(trial):
-    model_success = RandomForestRegressor(n_estimators=trial.suggest_int('n_estimators', 1, 1200, log=True),
+    model_success = RandomForestRegressor(n_estimators=trial.suggest_int('n_estimators', 1, 1500, log=True),
                                           bootstrap=trial.suggest_categorical("bootstrap", [True, False]),
                                           min_samples_split=trial.suggest_int("min_samples_split", 2, 20),
                                           min_samples_leaf=trial.suggest_int("min_samples_leaf", 1, 20),
@@ -47,7 +47,7 @@ def objective(trial):
                                           max_depth=trial.suggest_int("max_depth", 1, 100, log=True),
                                           random_state=42, n_jobs=-1)
 
-    group_kfold = GroupKFold(n_splits=5)
+    group_kfold = GroupKFold(n_splits=10)
     scores = []
     errors = []
     for train_index, test_index in group_kfold.split(X, y, groups):
