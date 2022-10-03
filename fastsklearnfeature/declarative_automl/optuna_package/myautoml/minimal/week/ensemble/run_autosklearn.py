@@ -9,6 +9,7 @@ import os
 import copy
 import shutil
 import pickle
+import traceback
 
 if __name__ == '__main__':
 
@@ -60,7 +61,9 @@ if __name__ == '__main__':
             automl.fit(X_train, y_train, feat_type=feat_type)
             y_hat = automl.predict(X_test)
             test_score_default = balanced_accuracy_score(y_test, y_hat)
-        except:
+        except Exception as e:
+            print(str(e) + '\n\n')
+            traceback.print_exc()
             test_score_default = 0.0
         finally:
             if os.path.exists(tmp_path) and os.path.isdir(tmp_path):
