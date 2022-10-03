@@ -23,10 +23,12 @@ openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
 #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/my_great_model_compare_scaled.p', "rb"))
 
 
+#X = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_X_compare_scaled.p', "rb"))
+#y = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_y_compare_scaled.p', "rb"))
+#groups = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_group_compare_scaled.p', "rb"))
+
 X = pickle.load(open('/home/felix/data/my_temp/felix_X_compare_scaled.p', "rb"))
-
 y = pickle.load(open('/home/felix/data/my_temp/felix_y_compare_scaled.p', "rb"))
-
 groups = pickle.load(open('/home/felix/data/my_temp/felix_group_compare_scaled.p', "rb"))
 
 
@@ -39,7 +41,15 @@ print(X.shape)
 # Fit the model using predictor X and response y.
 #model_success.fit(X, y)
 
+study = optuna.create_study(direction='minimize')
+
 def objective(trial):
+
+    try:
+        print('best: ' + str(study.best_params))
+    except:
+        pass
+
     model_success = RandomForestRegressor(n_estimators=trial.suggest_int('n_estimators', 1, 1500, log=True),
                                           bootstrap=trial.suggest_categorical("bootstrap", [True, False]),
                                           min_samples_split=trial.suggest_int("min_samples_split", 2, 20),
@@ -69,7 +79,7 @@ def objective(trial):
     return np.mean(errors)
 
 #study = optuna.create_study(direction='maximize')
-study = optuna.create_study(direction='minimize')
+
 study.optimize(objective, n_trials=1000)
 
 print(study.best_params)
