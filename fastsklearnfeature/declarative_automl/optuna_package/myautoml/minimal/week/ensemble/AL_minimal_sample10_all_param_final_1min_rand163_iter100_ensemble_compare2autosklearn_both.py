@@ -65,7 +65,7 @@ my_scorer = make_scorer(balanced_accuracy_score)
 
 
 mp_glob.total_search_time = 5*60#60
-topk = 40 # 20
+topk = 60 # 20
 continue_from_checkpoint = False
 
 starting_time_tt = time.time()
@@ -260,20 +260,23 @@ def run_AutoML(trial):
         session = server.new_session(session_name="data" + current_id_name, kill_session=True, attach=False)
         session.attached_pane.send_keys('exec bash')
         session.attached_pane.send_keys('conda activate ' + conda_name)
-        session.attached_pane.send_keys("python /home/" + getpass.getuser() + "/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/minimal/week/ensemble/run_autosklearn.py " + str(tmp_path_pickle))
+        session.attached_pane.send_keys("python /home/" + getpass.getuser() + "/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/minimal/week/ensemble/run_autosklearn.py " + str(tmp_path_pickle) + " ; exit")
 
         while True:
-            if os.path.exists(tmp_path_pickle + "_result.pickle"):
-                time.sleep(60)
-                with open(tmp_path_pickle + "_result.pickle", 'rb') as result_file:
-                    static_values_autosklearn = pickle.load(result_file)['static_values']
-                    print('########################################################')
-                    print('autosklearn result: ' + str(static_values_autosklearn))
-                    print('********************************************************')
+            try:
+                if type(server.find_where({ "session_name": "data" + current_id_name })) == type(None):
+                    if os.path.exists(tmp_path_pickle + "_result.pickle"):
+                        time.sleep(60)
+                        with open(tmp_path_pickle + "_result.pickle", 'rb') as result_file:
+                            static_values_autosklearn = pickle.load(result_file)['static_values']
+                            print('########################################################')
+                            print('autosklearn result: ' + str(static_values_autosklearn))
+                            print('********************************************************')
                     break
-            else:
-                time.sleep(10)
-        session.attached_pane.send_keys('exit')
+                else:
+                    time.sleep(10)
+            except:
+                break
 
     except:
         pass
@@ -439,7 +442,7 @@ def get_best_trial(model_uncertainty):
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24*3:
+    if time.time() - starting_time_tt > 60*60*24*1:
         return -1
 
     X_meta = copy.deepcopy(dictionary['X_meta'])
