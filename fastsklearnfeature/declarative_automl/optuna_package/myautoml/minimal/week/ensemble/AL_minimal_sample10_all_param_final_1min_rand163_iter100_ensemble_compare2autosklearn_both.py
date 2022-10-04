@@ -281,11 +281,17 @@ def run_AutoML(trial):
     except:
         pass
 
-    if os.path.exists(tmp_path_pickle + "_result.pickle"):
-        os.remove(tmp_path_pickle + "_result.pickle")
+    try:
+        if os.path.exists(tmp_path_pickle + "_result.pickle"):
+            os.remove(tmp_path_pickle + "_result.pickle")
+    except:
+        pass
 
-    if os.path.exists(tmp_path_pickle + ".pickle"):
-        os.remove(tmp_path_pickle + "_result.pickle")
+    try:
+        if os.path.exists(tmp_path_pickle + ".pickle"):
+            os.remove(tmp_path_pickle + "_result.pickle")
+    except:
+        pass
 
     if np.mean(static_values) < np.mean(static_values_autosklearn):
         static_values = static_values_autosklearn
