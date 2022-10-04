@@ -40,7 +40,7 @@ if __name__ == '__main__':
     static_params = []
     for random_i in range(repetitions_count):
         tmp_path = "/home/" + getpass.getuser() + "/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(
-            np.random.randint(100))
+            np.random.randint(1000) + 'folder')
         test_score_default = 0.0
         try:
             scorerr = autosklearn.metrics.make_scorer(
