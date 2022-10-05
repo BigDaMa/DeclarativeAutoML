@@ -1,12 +1,10 @@
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.MyAutoMLProcessClassBalanceDict import MyAutoML
 import optuna
 from sklearn.metrics import make_scorer
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 import pickle
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_data
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import data2features
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import optimize_accuracy_under_minimal_sample
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import utils_run_AutoML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import optimize_accuracy_under_minimal_sample_ensemble
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import utils_run_AutoML_ensemble
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_feature_names
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.util_classes_new import ConstraintEvaluation, ConstraintRun, space2str
 from anytree import RenderTree
@@ -88,7 +86,7 @@ for test_holdout_dataset_id in [args.dataset]:
         for repeat in range(10):
 
             mp_global.study_prune = optuna.create_study(direction='maximize')
-            mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample(trial=trial,
+            mp_global.study_prune.optimize(lambda trial: optimize_accuracy_under_minimal_sample_ensemble(trial=trial,
                                                                                    metafeature_values_hold=metafeature_values_hold,
                                                                                    search_time=search_time_frozen,
                                                                                    model_success=model_success,
@@ -96,7 +94,8 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                                    privacy_limit=privacy,
                                                                                    #evaluation_time=int(0.1*search_time_frozen),
                                                                                    #hold_out_fraction=0.33,
-                                                                                   tune_space=True
+                                                                                   tune_space=True,
+                                                                                   tune_val_fraction=True
                                                                                    ), n_trials=1000, n_jobs=1)
 
             space = mp_global.study_prune.best_trial.user_attrs['space']
@@ -108,33 +107,19 @@ for test_holdout_dataset_id in [args.dataset]:
             try:
                 result = None
                 search_dynamic = None
-                if mp_global.study_prune.best_trial.value > 0.5:
-                    result, search_dynamic = utils_run_AutoML(mp_global.study_prune.best_trial,
-                                                                 X_train=X_train_hold,
-                                                                 X_test=X_test_hold,
-                                                                 y_train=y_train_hold,
-                                                                 y_test=y_test_hold,
-                                                                 categorical_indicator=categorical_indicator_hold,
-                                                                 my_scorer=my_scorer,
-                                                                 search_time=search_time_frozen,
-                                                                 memory_limit=memory_budget,
-                                                                 privacy_limit=privacy
-                                                 )
-                else:
-                    gen_new = SpaceGenerator()
-                    space = gen_new.generate_params()
 
-                    search_default = MyAutoML(n_jobs=1,
-                                              time_search_budget=search_time_frozen,
-                                              space=space,
-                                              evaluation_budget=int(0.1 * search_time_frozen),
-                                              main_memory_budget_gb=memory_budget,
-                                              differential_privacy_epsilon=privacy,
-                                              hold_out_fraction=0.33
-                                              )
+                result, search_dynamic = utils_run_AutoML_ensemble(mp_global.study_prune.best_trial,
+                                                             X_train=X_train_hold,
+                                                             X_test=X_test_hold,
+                                                             y_train=y_train_hold,
+                                                             y_test=y_test_hold,
+                                                             categorical_indicator=categorical_indicator_hold,
+                                                             my_scorer=my_scorer,
+                                                             search_time=search_time_frozen,
+                                                             memory_limit=memory_budget,
+                                                             privacy_limit=privacy
+                                             )
 
-                    best_result = search_default.fit(X_train_hold, y_train_hold, categorical_indicator=categorical_indicator_hold, scorer=my_scorer)
-                    result = my_scorer(search_default.get_best_pipeline(), X_test_hold, y_test_hold)
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
             except:
