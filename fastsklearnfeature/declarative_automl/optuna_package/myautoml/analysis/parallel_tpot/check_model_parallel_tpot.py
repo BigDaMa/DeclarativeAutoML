@@ -33,10 +33,10 @@ for test_holdout_dataset_id in [args.dataset]:
 
     new_constraint_evaluation_dynamic_all = []
 
-    for minutes_to_search in [1, 5, 10, 60]:#range(1, 6):
+    for minutes_to_search in [10, 30]:#range(1, 6):
 
         current_dynamic = []
-        search_time_frozen = minutes_to_search * 60
+        search_time_frozen = minutes_to_search #* 60
         new_constraint_evaluation_dynamic = ConstraintEvaluation(dataset=test_holdout_dataset_id,
                                                                  constraint={'search_time': minutes_to_search},
                                                                  system_def='dynamic')
