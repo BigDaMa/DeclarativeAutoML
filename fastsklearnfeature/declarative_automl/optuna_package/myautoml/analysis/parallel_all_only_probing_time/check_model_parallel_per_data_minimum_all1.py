@@ -37,6 +37,9 @@ print(args)
 memory_budget = 500.0
 privacy = None
 
+optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+
 for test_holdout_dataset_id in [args.dataset]:
 
     X_train_hold, X_test_hold, y_train_hold, y_test_hold, categorical_indicator_hold, attribute_names_hold = get_data('data', randomstate=42, task_id=test_holdout_dataset_id)
