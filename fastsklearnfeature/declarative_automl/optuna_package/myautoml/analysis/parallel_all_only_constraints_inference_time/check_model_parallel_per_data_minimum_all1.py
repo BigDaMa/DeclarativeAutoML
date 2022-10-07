@@ -71,7 +71,7 @@ for test_holdout_dataset_id in [args.dataset]:
     new_constraint_evaluation_default_all = []
 
     #for minutes_to_search in [1, 5, 10, 60]:#range(1, 6):
-    for inference_time in [0.0007504010200500488, 0.0007910609245300294,0.0008180351257324219,0.0010206394195556641,0.0014590854644775393, 0.00301915740966]:
+    for inference_time in [0.0007910609245300294,0.0008180351257324219,0.0010206394195556641,0.0014590854644775393, 0.00301915740966]:
 
         minutes_to_search = 5
         search_time_frozen = minutes_to_search * 60
