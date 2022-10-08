@@ -14,6 +14,10 @@ import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.pa
 from sklearn.metrics import balanced_accuracy_score
 from optuna.samplers import NSGAIISampler
 import getpass
+import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsembleSuccessive import MyAutoML as AutoEnsembleML
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -104,17 +108,35 @@ for test_holdout_dataset_id in [args.dataset]:
                 result = None
                 search_dynamic = None
 
-                result, search_dynamic = utils_run_AutoML_ensemble(mp_global.study_prune.best_trial,
-                                                             X_train=X_train_hold,
-                                                             X_test=X_test_hold,
-                                                             y_train=y_train_hold,
-                                                             y_test=y_test_hold,
-                                                             categorical_indicator=categorical_indicator_hold,
-                                                             my_scorer=my_scorer,
-                                                             search_time=search_time_frozen,
-                                                             memory_limit=memory_budget,
-                                                             privacy_limit=privacy
-                                             )
+                if mp_global.study_prune.best_trial.value > 0.5:
+                    result, search_dynamic = utils_run_AutoML_ensemble(mp_global.study_prune.best_trial,
+                                                                 X_train=X_train_hold,
+                                                                 X_test=X_test_hold,
+                                                                 y_train=y_train_hold,
+                                                                 y_test=y_test_hold,
+                                                                 categorical_indicator=categorical_indicator_hold,
+                                                                 my_scorer=my_scorer,
+                                                                 search_time=search_time_frozen,
+                                                                 memory_limit=memory_budget,
+                                                                 privacy_limit=privacy
+                                                 )
+                else:
+                    gen_new = SpaceGenerator()
+                    space = gen_new.generate_params()
+
+                    search_default = AutoEnsembleML(n_jobs=1,
+                                                    time_search_budget=search_time_frozen,
+                                                    space=space,
+                                                    evaluation_budget=int(0.1 * search_time_frozen),
+                                                    main_memory_budget_gb=memory_budget,
+                                                    differential_privacy_epsilon=privacy,
+                                                    hold_out_fraction=0.33)
+
+                    best_result = search_default.fit(X_train_hold, y_train_hold,
+                                                     categorical_indicator=categorical_indicator_hold, scorer=my_scorer)
+                    search_default.ensemble(X_train_hold, y_train_hold)
+                    y_hat_test = search_default.ensemble_predict(X_test_hold)
+                    result = balanced_accuracy_score(y_test_hold, y_hat_test)
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
             except:
