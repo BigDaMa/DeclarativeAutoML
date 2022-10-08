@@ -446,8 +446,11 @@ class MyAutoML:
                 if type(self.fairness_limit) != type(None):
                     return result, (self.fairness_limit - fairness) * my_factor
 
+                return result, (- 1) * my_factor
+
 
             except Exception as e:
+                traceback.print_exc()
                 print('Exception: ' + str(e) + '\n' + traceback.format_exc() + '\n\n')
                 return 0.0, np.inf * my_factor
 

@@ -13,6 +13,7 @@ import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.pa
 from sklearn.metrics import balanced_accuracy_score
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.cbays.new_emukit.Space_GenerationTreeBalanceConstrained2 import SpaceGenerator as EmuSpaceGenerator
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.cbays.new_emukit.Emukit import MyAutoML as AutoEmu
+import traceback
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -40,12 +41,6 @@ for test_holdout_dataset_id in [args.dataset]:
 
     X_train_hold, X_test_hold, y_train_hold, y_test_hold, categorical_indicator_hold, attribute_names_hold = get_data('data', randomstate=42, task_id=test_holdout_dataset_id)
     metafeature_values_hold = data2features(X_train_hold, y_train_hold, categorical_indicator_hold)
-
-    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/training_sampling_min_2Drandom_machine2/my_great_model_compare_scaled.p', "rb"))
-    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine1/my_great_model_compare_scaled.p', "rb"))
-    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine4/my_great_model_compare_scaled.p', "rb"))
-    #model_success = pickle.load(open('/home/neutatz/data/my_temp/my_great_model_compare_scaled.p', "rb"))
-    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/sep14_sampling/my_great_model_compare_scaled.p', "rb"))
 
     my_list_constraints = ['global_search_time_constraint',
                            'global_evaluation_time_constraint',
@@ -107,6 +102,7 @@ for test_holdout_dataset_id in [args.dataset]:
                                   test_score=result, estimated_score=0.0))
 
             except:
+                traceback.print_exc()
                 result = 0
                 new_constraint_evaluation_default.append(
                     ConstraintRun(space_str='', params='default',
