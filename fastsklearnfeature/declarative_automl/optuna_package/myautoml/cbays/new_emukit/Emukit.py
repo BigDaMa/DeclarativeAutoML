@@ -6,7 +6,6 @@ from sklearn.metrics import make_scorer
 from sklearn.metrics import roc_auc_score
 import openml
 import numpy as np
-from fastsklearnfeature.declarative_automl.optuna_package.feature_preprocessing.CategoricalMissingTransformer import CategoricalMissingTransformer
 from sklearn.compose import ColumnTransformer
 from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.SimpleImputerOptuna import SimpleImputerOptuna
 from fastsklearnfeature.declarative_automl.optuna_package.classifiers.QuadraticDiscriminantAnalysisOptuna import QuadraticDiscriminantAnalysisOptuna
@@ -35,6 +34,8 @@ from emukit.examples.gp_bayesian_optimization.unknown_constraint_bayesian_optimi
     UnknownConstraintGPBayesianOptimization,)
 from emukit.core.initial_designs.random_design import RandomDesign
 import traceback
+from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.categorical_encoding.LabelEncoderOptuna import LabelEncoderOptuna
+from fastsklearnfeature.declarative_automl.optuna_package.data_preprocessing.categorical_encoding.OneHotEncoderOptuna import OneHotEncoderOptuna
 
 @dataclass
 class StopWhenOptimumReachedCallback:
@@ -322,7 +323,11 @@ class MyAutoML:
                 augmentation.init_hyperparameters(self.space, X, y)
 
                 numeric_transformer = Pipeline([('imputation', imputer), ('scaler', scaler)])
-                categorical_transformer = Pipeline([('removeNAN', CategoricalMissingTransformer()), ('onehot_transform', onehot_transformer)])
+
+                if isinstance(onehot_transformer, OneHotEncoderOptuna):
+                    categorical_transformer = Pipeline([('removeNAN', LabelEncoderOptuna()), ('onehot_transform', onehot_transformer)])
+                else:
+                    categorical_transformer = Pipeline([('onehot_transform', onehot_transformer)])
 
 
                 my_transformers = []
