@@ -71,6 +71,13 @@ for test_holdout_dataset_id in [args.dataset]:
 
         model_success = pickle.load(open('/home/neutatz/data/my_temp/my_great_model_compare_scaled' + str(days_surrogate) + '.p', "rb"))
 
+        X_day = pickle.load(
+            open('/home/felix/data/28_sep_incremental_days_al_m1/day' + str(days_surrogate) + '/felix_X_compare_scaled.p', "rb"))
+        y_day = pickle.load(
+            open('/home/felix/data/28_sep_incremental_days_al_m1/day' + str(days_surrogate) + '/felix_y_compare_scaled.p', "rb"))
+
+        model_success.fit(X_day, y_day)
+
         current_dynamic = []
 
         minutes_to_search = 5
