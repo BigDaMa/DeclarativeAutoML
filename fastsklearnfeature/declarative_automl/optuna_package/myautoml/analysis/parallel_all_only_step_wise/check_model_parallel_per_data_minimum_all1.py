@@ -41,14 +41,8 @@ for test_holdout_dataset_id in [args.dataset]:
     X_train_hold, X_test_hold, y_train_hold, y_test_hold, categorical_indicator_hold, attribute_names_hold = get_data('data', randomstate=42, task_id=test_holdout_dataset_id)
     metafeature_values_hold = data2features(X_train_hold, y_train_hold, categorical_indicator_hold)
 
-    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/training_sampling_min_2Drandom_machine2/my_great_model_compare_scaled.p', "rb"))
-    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine1/my_great_model_compare_scaled.p', "rb"))
-    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/july30_machine4/my_great_model_compare_scaled.p', "rb"))
-    #model_success = pickle.load(open('/home/neutatz/data/model_no_constraints/my_great_model_compare_scaled.p', "rb"))
-    #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/sep14_sampling/my_great_model_compare_scaled.p', "rb"))
-
-    X_surrogate = pickle.load(open('/home/neutatz/data/my_temp/felix_X_compare_scaled.p', "rb"))
-    y_surrogate = pickle.load(open('/home/neutatz/data/my_temp/felix_y_compare_scaled.p', "rb"))
+    #X_surrogate = pickle.load(open('/home/neutatz/data/my_temp/felix_X_compare_scaled.p', "rb"))
+    #y_surrogate = pickle.load(open('/home/neutatz/data/my_temp/felix_y_compare_scaled.p', "rb"))
 
     my_list_constraints = ['global_search_time_constraint',
                            'global_evaluation_time_constraint',
@@ -70,10 +64,12 @@ for test_holdout_dataset_id in [args.dataset]:
 
     new_constraint_evaluation_dynamic_all = []
 
-    for days_surrogate in [1, 2, 3, 4, 5, 6, 7]:#[1, 5, 10, 60]:#range(1, 6):
+    for days_surrogate in [1, 2, 3]:#[1, 2, 3, 4, 5, 6, 7]:#[1, 5, 10, 60]:#range(1, 6):
 
-        model_success = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
-        model_success.fit(X_surrogate[0: int((days_surrogate / 7.0) * len(X_surrogate)), :], y_surrogate[0: int((days_surrogate / 7.0) * len(X_surrogate))])
+        #model_success = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
+        #model_success.fit(X_surrogate[0: int((days_surrogate / 7.0) * len(X_surrogate)), :], y_surrogate[0: int((days_surrogate / 7.0) * len(X_surrogate))])
+
+        model_success = pickle.load(open('/home/neutatz/data/my_temp/my_great_model_compare_scaled' + str(days_surrogate) + '.p', "rb"))
 
         current_dynamic = []
 
