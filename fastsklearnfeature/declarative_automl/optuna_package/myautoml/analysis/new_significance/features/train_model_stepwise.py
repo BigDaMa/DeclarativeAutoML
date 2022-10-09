@@ -30,9 +30,9 @@ openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
 for day in [1,2,3,4,5,6,7]:
 
 
-    X = pickle.load(open('/home/felix/data/28_sep_incremental_days_al_m1/day' + str(day) + '/felix_X_compare_scaled.p', "rb"))
-    y = pickle.load(open('/home/felix/data/28_sep_incremental_days_al_m1/day' + str(day) + '/felix_y_compare_scaled.p', "rb"))
-    groups = pickle.load(open('/home/felix/data/28_sep_incremental_days_al_m1/day' + str(day) + '/felix_group_compare_scaled.p', "rb"))
+    X = pickle.load(open('/home/felix/data/sep28_incremental_days_random_m2/day' + str(day) + '/felix_X_compare_scaled.p', "rb"))
+    y = pickle.load(open('/home/felix/data/sep28_incremental_days_random_m2/day' + str(day) + '/felix_y_compare_scaled.p', "rb"))
+    groups = pickle.load(open('/home/felix/data/sep28_incremental_days_random_m2/day' + str(day) + '/felix_group_compare_scaled.p', "rb"))
 
 
     print(X.shape)
@@ -92,6 +92,7 @@ for day in [1,2,3,4,5,6,7]:
                                               max_features=study.best_params['max_features'],
                                               max_depth=study.best_params['max_depth'],
                                               random_state=42, n_jobs=-1)
+    model_success.fit(X, y)
 
 
 
