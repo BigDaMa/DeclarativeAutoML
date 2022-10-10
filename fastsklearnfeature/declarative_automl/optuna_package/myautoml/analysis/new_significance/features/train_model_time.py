@@ -13,9 +13,10 @@ from sklearn.metrics import mean_squared_error
 import numpy as np
 import optuna
 from sklearn.model_selection import LeaveOneGroupOut
+import getpass
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
-openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
+openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_openml'
 
 
 #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/sep20_constraint_model/my_great_model_compare_scaled.p', "rb"))
@@ -43,13 +44,9 @@ _, feature_names = get_feature_names(my_list_constraints)
 #y = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_y_compare_scaled.p', "rb"))
 #groups = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_group_compare_scaled.p', "rb"))
 
-#X = pickle.load(open('/home/felix/data/my_temp/felix_X_compare_scaled.p', "rb"))
-#y = pickle.load(open('/home/felix/data/my_temp/felix_y_compare_scaled.p', "rb"))
-#groups = pickle.load(open('/home/felix/data/my_temp/felix_group_compare_scaled.p', "rb"))
-
-X = pickle.load(open('/home/neutatz/data/my_temp/felix_X_compare_scaled.p', "rb"))
-y = pickle.load(open('/home/neutatz/data/my_temp/felix_y_compare_scaled.p', "rb"))
-groups = pickle.load(open('/home/neutatz/data/my_temp/felix_group_compare_scaled.p', "rb"))
+X = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
+y = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "rb"))
+groups = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_group_compare_scaled.p', "rb"))
 
 print(X.shape)
 
@@ -60,7 +57,11 @@ print(X.shape)
 # Fit the model using predictor X and response y.
 #model_success.fit(X, y)
 
+best_params = {'use_max_depth': True, 'max_depth': 8, 'n_estimators': 9, 'bootstrap': True, 'min_samples_split': 12, 'min_samples_leaf': 3, 'max_features': 0.41407332974426403, 'use_train_filter': True, 'train_filter_search_time': 14}
+
+
 study = optuna.create_study(direction='minimize')
+study.enqueue_trial(best_params)
 
 def objective(trial):
 
@@ -136,7 +137,7 @@ model_success = RandomForestRegressor(n_estimators=study.best_params['n_estimato
 if study.best_params["use_train_filter"]:
     indices_higher = np.where(X[:, feature_names.index('global_search_time_constraint')] > study.best_params["train_filter_search_time"])[0]
     X = X[indices_higher, :]
-    y = y[indices_higher]
+    y = np.array(y)[indices_higher]
 model_success.fit(X, y)
 
 
