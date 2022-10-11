@@ -98,7 +98,7 @@ def objective(trial):
 
         #filter based on search time:
 
-        indices_higher = np.where(X_test[:, feature_names.index('global_search_time_constraint')] > 150)[0]
+        indices_higher = np.where(X_test[:, feature_names.index('global_search_time_constraint')] > 200)[0]
         X_test = X_test[indices_higher, :]
         y_test = y_test[indices_higher]
 
