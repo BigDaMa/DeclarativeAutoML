@@ -88,28 +88,32 @@ def objective(trial):
     scores = []
     errors = []
     for train_index, test_index in group_kfold.split(X, y, groups):
-        X_train, X_test = np.array(X)[train_index], np.array(X)[test_index]
-        y_train, y_test = np.array(y)[train_index], np.array(y)[test_index]
+        try:
+            X_train, X_test = np.array(X)[train_index], np.array(X)[test_index]
+            y_train, y_test = np.array(y)[train_index], np.array(y)[test_index]
 
-        if trial.suggest_categorical("use_train_filter", [True, False]):
-            indices_higher = np.where(X_train[:, feature_names.index('global_search_time_constraint')] > trial.suggest_int("train_filter_search_time", 11, 300))[0]
-            X_train = X_train[indices_higher, :]
-            y_train = y_train[indices_higher]
+            if trial.suggest_categorical("use_train_filter", [True, False]):
+                indices_higher = np.where(X_train[:, feature_names.index('global_search_time_constraint')] > trial.suggest_int("train_filter_search_time", 11, 300))[0]
+                X_train = X_train[indices_higher, :]
+                y_train = y_train[indices_higher]
 
-        #filter based on search time:
+            #filter based on search time:
 
-        indices_higher = np.where(X_test[:, feature_names.index('global_search_time_constraint')] > 200)[0]
-        X_test = X_test[indices_higher, :]
-        y_test = y_test[indices_higher]
+            indices_higher = np.where(X_test[:, feature_names.index('global_search_time_constraint')] > 200)[0]
+            X_test = X_test[indices_higher, :]
+            y_test = y_test[indices_higher]
 
-        #model_success = xgb.XGBRegressor(tree_method="hist", n_estimators=trial.suggest_int('n_estimators', 1, 10000, log=True), max_depth=trial.suggest_int('max_depth', 1, 100, log=True))
-        #model_success = RandomForestRegressor(n_estimators=trial.suggest_int('n_estimators', 1, 1000, log=True), random_state=42, n_jobs=-1)
-        if len(X_test) > 0:
-            model_success.fit(X_train, y_train)
-            y_test_predict = model_success.predict(X_test)
-            scores.append(r2_score(y_test, y_test_predict))
-            errors.append(mean_squared_error(y_test, y_test_predict))
-            print('fold')
+            #model_success = xgb.XGBRegressor(tree_method="hist", n_estimators=trial.suggest_int('n_estimators', 1, 10000, log=True), max_depth=trial.suggest_int('max_depth', 1, 100, log=True))
+            #model_success = RandomForestRegressor(n_estimators=trial.suggest_int('n_estimators', 1, 1000, log=True), random_state=42, n_jobs=-1)
+            if len(X_test) > 0:
+                model_success.fit(X_train, y_train)
+                y_test_predict = model_success.predict(X_test)
+                scores.append(r2_score(y_test, y_test_predict))
+                errors.append(mean_squared_error(y_test, y_test_predict))
+                print('fold')
+
+        except:
+            return np.inf
 
     print('r2: ' + str(np.mean(scores)))
     #return np.mean(scores)
