@@ -64,7 +64,7 @@ for test_holdout_dataset_id in [args.dataset]:
 
     new_constraint_evaluation_dynamic_all = []
 
-    for days_surrogate in [1, 2, 3]:#[1, 2, 3, 4, 5, 6, 7]:#[1, 5, 10, 60]:#range(1, 6):
+    for days_surrogate in [4, 5, 6, 7]:#[1, 2, 3, 4, 5, 6, 7]:#[1, 5, 10, 60]:#range(1, 6):
 
         #model_success = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
         #model_success.fit(X_surrogate[0: int((days_surrogate / 7.0) * len(X_surrogate)), :], y_surrogate[0: int((days_surrogate / 7.0) * len(X_surrogate))])
