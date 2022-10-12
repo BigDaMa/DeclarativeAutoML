@@ -53,12 +53,16 @@ for day in [1,2,3,4,5,6,7]:
         except:
             pass
 
+        max_depth = None
+        if trial.suggest_categorical("use_max_depth", [True, False]):
+            max_depth = trial.suggest_int("max_depth", 1, 150, log=True)
+
         model_success = RandomForestRegressor(n_estimators=trial.suggest_int('n_estimators', 1, 1000, log=True),
                                               bootstrap=trial.suggest_categorical("bootstrap", [True, False]),
                                               min_samples_split=trial.suggest_int("min_samples_split", 2, 20),
                                               min_samples_leaf=trial.suggest_int("min_samples_leaf", 1, 20),
                                               max_features=trial.suggest_float("max_features", 0.0, 1.0),
-                                              max_depth=trial.suggest_int("max_depth", 1, 150, log=True),
+                                              max_depth=max_depth,
                                               random_state=42, n_jobs=-1)
 
         #group_kfold = GroupKFold(n_splits=10)
@@ -81,16 +85,20 @@ for day in [1,2,3,4,5,6,7]:
 
     #study = optuna.create_study(direction='maximize')
 
-    study.optimize(objective, n_trials=100)
+    study.optimize(objective, n_trials=200)
 
     print(study.best_params)
+
+    max_depth = None
+    if study.best_params["use_max_depth"]:
+        max_depth = study.best_params["max_depth"]
 
     model_success = RandomForestRegressor(n_estimators=study.best_params['n_estimators'],
                                               bootstrap=study.best_params['bootstrap'],
                                               min_samples_split=study.best_params['min_samples_split'],
                                               min_samples_leaf=study.best_params['min_samples_leaf'],
                                               max_features=study.best_params['max_features'],
-                                              max_depth=study.best_params['max_depth'],
+                                              max_depth=max_depth,
                                               random_state=42, n_jobs=-1)
     model_success.fit(X, y)
 
