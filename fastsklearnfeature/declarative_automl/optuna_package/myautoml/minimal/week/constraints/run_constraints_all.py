@@ -180,9 +180,9 @@ def run_AutoML(trial):
 
     use_incremental_data = trial.params['use_incremental_data']
 
-    shuffle_validation = trial.params['shuffle_validation']
-    if trial.params['use_ensemble']:
-        shuffle_validation = False
+    shuffle_validation = False
+    if not trial.params['use_ensemble']:
+        shuffle_validation = trial.params['shuffle_validation']
 
     for pre, _, node in RenderTree(space.parameter_tree):
         if node.status == True:

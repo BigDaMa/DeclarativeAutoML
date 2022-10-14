@@ -1567,9 +1567,9 @@ def generate_parameters_minimal_sample_constraints_all(trial, total_search_time_
     use_ensemble = trial.suggest_categorical('use_ensemble', [True, False])
     use_incremental_data = trial.suggest_categorical('use_incremental_data', [True, False])
 
-    shuffle_validation = trial.suggest_categorical('shuffle_validation', [False, True])
-    if use_ensemble:
-        shuffle_validation = False
+    shuffle_validation = False
+    if not use_ensemble:
+        shuffle_validation = trial.suggest_categorical('shuffle_validation', [False, True])
 
     return search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, dataset_id, fairness_limit, use_ensemble, use_incremental_data, shuffle_validation
 
