@@ -25,6 +25,7 @@ from sklearn.metrics import balanced_accuracy_score
 import multiprocessing
 import sklearn
 from fastsklearnfeature.declarative_automl.fair_data.test import get_X_y_id
+import traceback
 
 class NoDaemonProcess(multiprocessing.Process):
     @property
@@ -304,6 +305,7 @@ def run_AutoML(trial):
             test_score_default = balanced_accuracy_score(y_test, y_hat_test)
         except:
             test_score_default = 0.0
+            traceback.print_exc()
         static_params.append(test_score_default)
 
     static_values = np.array(static_params)
@@ -346,7 +348,8 @@ def sample_configuration(trial):
         trial.set_user_attr('space', copy.deepcopy(space))
 
         search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, task_id, fairness_limit, use_ensemble, use_incremental_data, shuffle_validation = generate_parameters_minimal_sample_constraints_all(
-            trial, mp_glob.total_search_time, my_openml_tasks, use_training_time_constraint=True,
+            trial, mp_glob.total_search_time, my_openml_tasks, my_openml_tasks_fair,
+            use_training_time_constraint=True,
             use_inference_time_constraint=True,
             use_pipeline_size_constraint=True,
             use_fairness_constraint=True)
@@ -389,6 +392,7 @@ def sample_configuration(trial):
 
         trial.set_user_attr('features', features)
     except:
+        traceback.print_exc()
         return None
     return features
 
