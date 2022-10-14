@@ -148,6 +148,7 @@ def evaluatePipeline(key, return_dict):
         fairness_limit = return_dict['fairness_limit']
         group_id = return_dict['fairness_group_id']
         use_incremental_data = return_dict['use_incremental_data']
+        shuffle_validation = return_dict['shuffle_validation']
 
         trial = None
         if 'trial' in return_dict:
@@ -156,10 +157,11 @@ def evaluatePipeline(key, return_dict):
         size = int(main_memory_budget_gb * 1024.0 * 1024.0 * 1024.0)
         resource.setrlimit(resource.RLIMIT_AS, (size, resource.RLIM_INFINITY))
 
+        my_random_state = 42
+        if shuffle_validation:
+            my_random_state = int(time.time())
 
-
-
-        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
+        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=my_random_state, stratify=y,
                                                                                     test_size=hold_out_fraction)
 
         if training_sampling_factor < 1.0:
@@ -330,7 +332,8 @@ class MyAutoML:
                  fairness_limit=None,
                  fairness_group_id=None,
                  max_ensemble_models=50,
-                 use_incremental_data=True
+                 use_incremental_data=True,
+                 shuffle_validation=False
                  ):
         self.cv = cv
         self.time_search_budget = time_search_budget
@@ -339,6 +342,7 @@ class MyAutoML:
         self.number_of_cvs = number_of_cvs
         self.hold_out_fraction = hold_out_fraction
         self.use_incremental_data = use_incremental_data
+        self.shuffle_validation = shuffle_validation
 
         self.classifier_list = myspace.classifier_list
         self.private_classifier_list = myspace.private_classifier_list
@@ -540,6 +544,7 @@ class MyAutoML:
             return_dict['fairness_limit'] = self.fairness_limit
             return_dict['fairness_group_id'] = self.fairness_group_id
             return_dict['use_incremental_data'] = False
+            return_dict['shuffle_validation'] = False
 
             try:
                 return_dict['study_best_value'] = self.study.best_value
@@ -693,6 +698,7 @@ class MyAutoML:
                 return_dict['fairness_limit'] = self.fairness_limit
                 return_dict['fairness_group_id'] = self.fairness_group_id
                 return_dict['use_incremental_data'] = self.use_incremental_data
+                return_dict['shuffle_validation'] = self.shuffle_validation
 
                 return_dict['trial'] = trial
 
@@ -874,14 +880,16 @@ if __name__ == "__main__":
                           space=space,
                           main_memory_budget_gb=40,
                           hold_out_fraction=0.6,
-                          max_ensemble_models=50,
+                          max_ensemble_models=1,
                           evaluation_budget=2*60*0.1,
                           use_incremental_data=False,
                           #inference_time_limit=0.002
-                          training_time_limit=0.02
+                          #training_time_limit=0.02
                           #pipeline_size_limit=10000
                           #fairness_limit=0.95,
-                          #fairness_group_id=12
+                          #fairness_group_id=12,
+                          shuffle_validation=True,
+
                           )
 
         begin = time.time()
