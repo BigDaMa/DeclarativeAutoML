@@ -171,9 +171,6 @@ def run_AutoML(trial):
     if 'sample_fraction' in trial.params:
         sample_fraction = trial.params['sample_fraction']
 
-    if 'dataset_id' in trial.params:
-        task_id = trial.params['dataset_id'] #get same random seed
-
     ensemble_size = 50
     if not trial.params['use_ensemble']:
         ensemble_size = 1
@@ -329,9 +326,15 @@ def run_AutoML_global(trial_id):
     feature_list.append(copy.deepcopy(mp_glob.my_trials[trial_id].user_attrs['features']))
     target_list.append(comparison)
 
+    dataset_name = ''
+    if 'dataset_id' in mp_glob.my_trials[trial_id].params:
+        dataset_name = 'normal_' + str(mp_glob.my_trials[trial_id].params['dataset_id'])
+    else:
+        dataset_name = 'fair_' + str(mp_glob.my_trials[trial_id].params['dataset_id_fair'])
+
     return {'feature_l': feature_list,
             'target_l': target_list,
-            'group_l': copy.deepcopy(mp_glob.my_trials[trial_id].params['dataset_id']),
+            'group_l': dataset_name,
             'trial_id_l': trial_id}
 
 
@@ -473,7 +476,7 @@ def get_best_trial():
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24*7:
+    if time.time() - starting_time_tt > 60*60*24*1:
         return -1
 
     X_meta = copy.deepcopy(dictionary['X_meta'])
@@ -508,7 +511,14 @@ def sample_and_evaluate(my_id1):
         #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
 
         group_meta = dictionary['group_meta']
-        group_meta.append(best_trial.params['dataset_id'])
+
+        dataset_name = ''
+        if 'dataset_id' in best_trial.params:
+            dataset_name = 'normal_' + str(best_trial.params['dataset_id'])
+        else:
+            dataset_name = 'fair_' + str(best_trial.params['dataset_id_fair'])
+
+        group_meta.append(dataset_name)
         dictionary['group_meta'] = group_meta
 
         #assert len(X_meta) == len(group_meta), 'len(X) != len(group)'
