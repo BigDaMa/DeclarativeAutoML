@@ -29,11 +29,9 @@ openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
 
 for day in [1,2,3,4,5,6,7]:
 
-
-    X = pickle.load(open('/home/felix/data/sep28_incremental_days_random_m2/day' + str(day) + '/felix_X_compare_scaled.p', "rb"))
-    y = pickle.load(open('/home/felix/data/sep28_incremental_days_random_m2/day' + str(day) + '/felix_y_compare_scaled.p', "rb"))
-    groups = pickle.load(open('/home/felix/data/sep28_incremental_days_random_m2/day' + str(day) + '/felix_group_compare_scaled.p', "rb"))
-
+    X = pickle.load(open('/home/neutatz/data/my_temp/felix_X_compare_scaled.p', "rb"))[0: int((day / 7.0) * len(X)), :]
+    y = pickle.load(open('/home/neutatz/data/my_temp/felix_y_compare_scaled.p', "rb"))[0: int((day / 7.0) * len(X))]
+    groups = pickle.load(open('/home/neutatz/data/my_temp/felix_group_compare_scaled.p', "rb"))[0: int((day / 7.0) * len(X))]
 
     print(X.shape)
 
