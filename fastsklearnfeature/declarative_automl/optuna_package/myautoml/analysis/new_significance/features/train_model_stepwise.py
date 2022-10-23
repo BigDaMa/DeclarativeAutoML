@@ -13,9 +13,10 @@ from sklearn.metrics import mean_squared_error
 import numpy as np
 import optuna
 from sklearn.model_selection import LeaveOneGroupOut
+import getpass
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
-openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
+openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_openml'
 
 
 #model_success = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/sep20_constraint_model/my_great_model_compare_scaled.p', "rb"))
@@ -29,10 +30,10 @@ openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
 
 for day in [1,2,3,4,5,6,7]:
 
-    X_old = pickle.load(open('/home/neutatz/data/my_temp/felix_X_compare_scaled.p', "rb"))
+    X_old = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
     X = X_old[0: int((day / 7.0) * len(X_old)), :]
-    y = pickle.load(open('/home/neutatz/data/my_temp/felix_y_compare_scaled.p', "rb"))[0: int((day / 7.0) * len(X_old))]
-    groups = pickle.load(open('/home/neutatz/data/my_temp/felix_group_compare_scaled.p', "rb"))[0: int((day / 7.0) * len(X_old))]
+    y = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "rb"))[0: int((day / 7.0) * len(X_old))]
+    groups = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_group_compare_scaled.p', "rb"))[0: int((day / 7.0) * len(X_old))]
 
     print(X.shape)
 
