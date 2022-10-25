@@ -505,6 +505,7 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
                                         training_time_limit=None,
                                         inference_time_limit=None,
                                         pipeline_size_limit=None,
+                                        fairness_limit=None,
                                         tune_space=False,
                                         save_data=True,
                                         tune_eval_time=False,
@@ -563,6 +564,10 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
         use_ensemble = trial.suggest_categorical('use_ensemble', [True, False])
         use_incremental_data = trial.suggest_categorical('use_incremental_data', [True, False])
 
+        shuffle_validation = False
+        if not use_ensemble:
+            shuffle_validation = trial.suggest_categorical('shuffle_validation', [True, False])
+
         my_list_constraints_values = [search_time,
                                       evaluation_time,
                                       memory_limit,
@@ -574,8 +579,10 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
                                       ifNull(training_time_limit, constant_value=search_time),
                                       ifNull(inference_time_limit, constant_value=60),
                                       ifNull(pipeline_size_limit, constant_value=350000000),
+                                      ifNull(fairness_limit, constant_value=0.0),
                                       int(use_ensemble),
-                                      int(use_incremental_data)
+                                      int(use_incremental_data),
+                                      int(shuffle_validation)
                                       ]
 
         my_list_constraints = ['global_search_time_constraint',
@@ -589,8 +596,10 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
                                'training_time_constraint',
                                'inference_time_constraint',
                                'pipeline_size_constraint',
+                               'fairness_constraint',
                                'use_ensemble',
-                               'use_incremental_data'
+                               'use_incremental_data',
+                               'shuffle_validation'
                                ]
 
         features = space2features(space, my_list_constraints_values, metafeature_values_hold)
@@ -870,6 +879,7 @@ def optimize_accuracy_under_minimal_sample_ensemble(trial, metafeature_values_ho
                                         training_time_limit=None,
                                         inference_time_limit=None,
                                         pipeline_size_limit=None,
+                                        fairness_limit=None,
                                         tune_space=False,
                                         tune_eval_time=False,
                                         tune_val_fraction=False,
@@ -883,6 +893,7 @@ def optimize_accuracy_under_minimal_sample_ensemble(trial, metafeature_values_ho
                       training_time_limit=training_time_limit,
                       inference_time_limit=inference_time_limit,
                       pipeline_size_limit=pipeline_size_limit,
+                      fairness_limit=fairness_limit,
                       tune_space=tune_space,
                       save_data=False,
                       tune_eval_time=tune_eval_time,
@@ -892,8 +903,11 @@ def optimize_accuracy_under_minimal_sample_ensemble(trial, metafeature_values_ho
 
     success_val = predict_range(model_success, features)
 
-    if trial.number == 0 or success_val > mp_global.study_prune.best_trial.value:
-        trial.set_user_attr('space', copy.deepcopy(space))
+    try:
+        if trial.number == 0 or success_val > mp_global.study_prune.best_trial.value:
+            trial.set_user_attr('space', copy.deepcopy(space))
+    except:
+        pass
 
     return success_val
 
