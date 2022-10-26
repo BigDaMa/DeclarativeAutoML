@@ -48,9 +48,9 @@ def generate_constraints(node):
 all_constraints = ''
 print(generate_constraints(space.parameter_tree))
 
-X = pickle.load(open('/home/felix/phd2/dec_automl/oct16_1day_al/felix_X_compare_scaled.p', "rb"))
-y = pickle.load(open('/home/felix/phd2/dec_automl/oct16_1day_al/felix_y_compare_scaled.p', "rb"))
-groups = pickle.load(open('/home/felix/phd2/dec_automl/oct16_1day_al/felix_group_compare_scaled.p', "rb"))
+#X = pickle.load(open('/home/felix/phd2/dec_automl/oct16_1day_al/felix_X_compare_scaled.p', "rb"))
+#y = pickle.load(open('/home/felix/phd2/dec_automl/oct16_1day_al/felix_y_compare_scaled.p', "rb"))
+#groups = pickle.load(open('/home/felix/phd2/dec_automl/oct16_1day_al/felix_group_compare_scaled.p', "rb"))
 
 my_list_constraints = ['global_search_time_constraint',
                            'global_evaluation_time_constraint',
@@ -155,13 +155,14 @@ import xgboost as xgb
 #model_success = xgb.XGBRegressor(tree_method="hist", n_estimators=100)
 #model_success.fit(X, y)
 
-
+'''
 new_array = [X[0,:]]
 for i in range(30000):
     new_array.append(X[0,:])
 start_time = time.time()
 print(len(model_success.predict(new_array)))
 print('period: ' + str(time.time() - start_time))
+'''
 
 
 from optuna.samplers import RandomSampler
