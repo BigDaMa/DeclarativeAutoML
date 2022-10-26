@@ -142,10 +142,8 @@ hold_out_test_instances = 1.0 * features[0, feature_names.index('NumberOfInstanc
 print(hold_out_test_instances)
 
 
-assert len(feature_names) == X.shape[1]
-
-
-print(X.shape)
+#assert len(feature_names) == X.shape[1]
+#print(X.shape)
 
 #model_success = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1, max_depth=None)
 
