@@ -38,6 +38,14 @@ class MyAutoMLSpace:
             space_file.write(my_str)
 
 
+    def prune_space_from_features(self, feature_vector, feature_names):
+        for param_name in list(self.name2node.keys()):
+            param_id = feature_names.index(param_name)
+            if int(feature_vector[param_id]) == 0:
+                self.name2node[param_name].status = False
+
+
+
 
 
     def generate_number(self, name, default_element, depending_node=None, low=0.0, high=1.0 , is_float=True, is_log=False):

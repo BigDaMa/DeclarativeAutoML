@@ -96,6 +96,8 @@ static_names = ['global_search_time_constraint',
 
 _, feature_names = get_feature_names(my_list_constraints)
 
+print('test')
+
 search_time = 60 * 5
 evaluation_time = 0.1 * search_time
 memory_limit = 10
@@ -237,6 +239,16 @@ start_time = time.time()
 print(len(model_success.predict(random_configs)))
 print(np.max(model_success.predict(random_configs)))
 print('period: ' + str(time.time() - start_time))
+
+best_id = np.argmax(model_success.predict(random_configs))
+
+space.prune_space_from_features(random_configs[best_id], feature_names)
+
+
+from anytree import RenderTree
+
+for pre, _, node in RenderTree(space.parameter_tree):
+    print("%s%s: %s" % (pre, node.name, node.status))
 
 
 '''
