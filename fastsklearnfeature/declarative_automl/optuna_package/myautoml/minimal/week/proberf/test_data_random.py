@@ -248,7 +248,8 @@ space.prune_space_from_features(random_configs[best_id], feature_names)
 from anytree import RenderTree
 
 for pre, _, node in RenderTree(space.parameter_tree):
-    print("%s%s: %s" % (pre, node.name, node.status))
+    if node.status:
+        print("%s%s" % (pre, node.name))
 
 
 '''
