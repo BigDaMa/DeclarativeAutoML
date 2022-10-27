@@ -21,6 +21,7 @@ from sklearn.metrics import balanced_accuracy_score
 import time
 from optuna.samplers import NSGAIISampler
 import getpass
+import traceback
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_openml'
@@ -139,7 +140,9 @@ for test_holdout_dataset_id in [args.dataset]:
                     result = balanced_accuracy_score(y_test_hold, y_hat_test)
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
-            except:
+            except Exception as e:
+                print(str(e) + '\n\n')
+                traceback.print_exc()
                 result = 0
                 new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=mp_global.study_prune.best_trial.params, test_score=result, estimated_score=mp_global.study_prune.best_trial.value))
 
