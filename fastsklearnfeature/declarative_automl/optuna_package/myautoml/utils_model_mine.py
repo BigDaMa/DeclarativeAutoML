@@ -1988,7 +1988,9 @@ def utils_run_AutoML_ensemble(trial, X_train=None, X_test=None, y_train=None, y_
     #use_incremental_data = True
     use_incremental_data = trial.params['use_incremental_data']
 
-    shuffle_validation = trial.params['shuffle_validation']
+    shuffle_validation = False
+    if not trial.params['use_ensemble']:
+        shuffle_validation = trial.params['shuffle_validation']
 
     from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsembleSuccessive import MyAutoML as AutoEnsembleML
     search = AutoEnsembleML(cv=cv,
