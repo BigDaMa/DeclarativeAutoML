@@ -1988,6 +1988,8 @@ def utils_run_AutoML_ensemble(trial, X_train=None, X_test=None, y_train=None, y_
     #use_incremental_data = True
     use_incremental_data = trial.params['use_incremental_data']
 
+    shuffle_validation = trial.params['shuffle_validation']
+
     from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsembleSuccessive import MyAutoML as AutoEnsembleML
     search = AutoEnsembleML(cv=cv,
                       number_of_cvs=number_of_cvs,
@@ -2005,7 +2007,8 @@ def utils_run_AutoML_ensemble(trial, X_train=None, X_test=None, y_train=None, y_
                       fairness_limit=fairness_limit,
                       fairness_group_id=fairness_group_id,
                       max_ensemble_models=ensemble_size,
-                      use_incremental_data=use_incremental_data
+                      use_incremental_data=use_incremental_data,
+                      shuffle_validation=shuffle_validation
                       )
     search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
 
@@ -2019,6 +2022,72 @@ def utils_run_AutoML_ensemble(trial, X_train=None, X_test=None, y_train=None, y_
 
 
     return test_score, search
+
+def utils_run_AutoML_ensemble_from_features(X_train=None, X_test=None, y_train=None, y_test=None, categorical_indicator=None, my_scorer=None,
+               search_time=None,
+               memory_limit=None,
+               privacy_limit=None,
+               training_time_limit=None,
+               inference_time_limit=None,
+               pipeline_size_limit=None,
+               fairness_limit=None,
+               fairness_group_id=None,
+               features=None,
+               feature_names=None
+               ):
+    gen = SpaceGenerator()
+    space = gen.generate_params()
+    space.prune_space_from_features(features, feature_names)
+
+    evaluation_time = int(features[feature_names.index('global_evaluation_time_constraint')])
+
+    cv = 1
+    number_of_cvs = 1
+    hold_out_fraction = features[feature_names.index('hold_out_fraction')]
+
+    sample_fraction = 1.0
+
+    ensemble_size = 50
+    if int(features[feature_names.index('use_ensemble')]) == 0:
+        ensemble_size = 1
+
+    #use_incremental_data = True
+    use_incremental_data = int(features[feature_names.index('use_incremental_data')]) == 1
+
+    shuffle_validation = int(features[feature_names.index('shuffle_validation')]) == 1
+
+    from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.ensemble.AutoEnsembleSuccessive import MyAutoML as AutoEnsembleML
+    search = AutoEnsembleML(cv=cv,
+                      number_of_cvs=number_of_cvs,
+                      n_jobs=1,
+                      evaluation_budget=evaluation_time,
+                      time_search_budget=search_time,
+                      space=space,
+                      main_memory_budget_gb=memory_limit,
+                      differential_privacy_epsilon=privacy_limit,
+                      hold_out_fraction=hold_out_fraction,
+                      sample_fraction=sample_fraction,
+                      training_time_limit=training_time_limit,
+                      inference_time_limit=inference_time_limit,
+                      pipeline_size_limit=pipeline_size_limit,
+                      fairness_limit=fairness_limit,
+                      fairness_group_id=fairness_group_id,
+                      max_ensemble_models=ensemble_size,
+                      use_incremental_data=use_incremental_data,
+                      shuffle_validation=shuffle_validation
+                      )
+    search.fit(X_train, y_train, categorical_indicator=categorical_indicator, scorer=my_scorer)
+
+    test_score = 0.0
+    try:
+        search.ensemble(X_train, y_train)
+        y_hat_test = search.ensemble_predict(X_test)
+        test_score = balanced_accuracy_score(y_test, y_hat_test)
+    except:
+        pass
+
+
+    return test_score, search, space
 
 def show_progress(search, X_test, y_test, scorer):
     times = []
