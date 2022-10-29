@@ -44,27 +44,12 @@ for test_holdout_dataset_id in [args.dataset]:
     #X_surrogate = pickle.load(open('/home/neutatz/data/my_temp/felix_X_compare_scaled.p', "rb"))
     #y_surrogate = pickle.load(open('/home/neutatz/data/my_temp/felix_y_compare_scaled.p', "rb"))
 
-    my_list_constraints = ['global_search_time_constraint',
-                           'global_evaluation_time_constraint',
-                           'global_memory_constraint',
-                           'global_cv',
-                           'global_number_cv',
-                           'privacy',
-                           'hold_out_fraction',
-                           'sample_fraction',
-                           'training_time_constraint',
-                           'inference_time_constraint',
-                           'pipeline_size_constraint']
-
-    _, feature_names = get_feature_names(my_list_constraints)
-
-    #plot_most_important_features(model, feature_names, k=len(feature_names))
-
+    
     dynamic_approach = []
 
     new_constraint_evaluation_dynamic_all = []
 
-    for days_surrogate in [4, 5, 6, 7]:#[1, 2, 3, 4, 5, 6, 7]:#[1, 5, 10, 60]:#range(1, 6):
+    for days_surrogate in [1, 2, 3, 4, 5, 6]:#[1, 2, 3, 4, 5, 6, 7]:#[1, 5, 10, 60]:#range(1, 6):
 
         #model_success = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
         #model_success.fit(X_surrogate[0: int((days_surrogate / 7.0) * len(X_surrogate)), :], y_surrogate[0: int((days_surrogate / 7.0) * len(X_surrogate))])
