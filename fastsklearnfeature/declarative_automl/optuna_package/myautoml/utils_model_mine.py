@@ -883,7 +883,8 @@ def optimize_accuracy_under_minimal_sample_ensemble(trial, metafeature_values_ho
                                         tune_space=False,
                                         tune_eval_time=False,
                                         tune_val_fraction=False,
-                                        tune_cv=False
+                                        tune_cv=False,
+                                        save_best_features=False
                                         ):
     features, space = generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, search_time,
                       memory_limit=memory_limit,
@@ -906,6 +907,9 @@ def optimize_accuracy_under_minimal_sample_ensemble(trial, metafeature_values_ho
     try:
         if trial.number == 0 or success_val > mp_global.study_prune.best_trial.value:
             trial.set_user_attr('space', copy.deepcopy(space))
+            if save_best_features:
+                trial.set_user_attr('best_features', copy.deepcopy(features))
+                trial.set_user_attr('best_score', copy.deepcopy(success_val))
     except:
         pass
 
