@@ -5,8 +5,6 @@ from sklearn.metrics import make_scorer
 import numpy as np
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.my_system.Space_GenerationTreeBalance import SpaceGenerator
 import copy
-from anytree import RenderTree
-from sklearn.ensemble import RandomForestRegressor
 from optuna.samplers import RandomSampler
 import pickle
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.mp_global_vars as mp_glob
@@ -229,7 +227,7 @@ def get_best_trial():
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*1:
+    if time.time() - starting_time_tt > 60*60*24:
         return -1
 
     best_score = None
@@ -274,6 +272,19 @@ def sample_and_evaluate(my_id1):
         y_meta = dictionary['y_meta']
         y_meta.append(best_score)
         dictionary['y_meta'] = y_meta
+
+        group_meta = dictionary['group_meta']
+
+        dataset_name = ''
+        if 'dataset_id' in best_trial.params:
+            dataset_name = 'normal_' + str(best_trial.params['dataset_id'])
+        else:
+            dataset_name = 'fair_' + str(best_trial.params['dataset_id_fair'])
+
+        group_meta.append(dataset_name)
+        dictionary['group_meta'] = group_meta
+
+
     except Exception as e:
         print('catched: ' + str(e))
     finally:
@@ -285,6 +296,7 @@ assert len(X_meta) == len(y_meta)
 
 dictionary['X_meta'] = X_meta
 dictionary['y_meta'] = y_meta
+dictionary['group_meta'] = group_meta
 
 with NestablePool(processes=topk) as pool:
     results = pool.map(sample_and_evaluate, range(100000))
@@ -296,4 +308,7 @@ with open('/home/neutatz/data/my_temp/felix_X_compare_scaled.p', "wb") as pickle
 
 with open('/home/neutatz/data/my_temp/felix_y_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['y_meta'], pickle_model_file)
+
+with open('/home/neutatz/data/my_temp/felix_group_compare_scaled.p', "wb") as pickle_model_file:
+    pickle.dump(dictionary['group_meta'], pickle_model_file)
 
