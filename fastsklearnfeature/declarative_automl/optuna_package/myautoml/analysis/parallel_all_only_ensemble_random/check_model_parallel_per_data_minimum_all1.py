@@ -52,7 +52,8 @@ for test_holdout_dataset_id in [args.dataset]:
     metafeature_values_hold = data2features(X_train_hold, y_train_hold, categorical_indicator_hold)
 
     model_success = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/my_great_model_compare_scaled.p', "rb"))
-    random_configs = np.array(pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/randomconfigs.p', "rb"))['random_configs'])
+    #random_configs = np.array(pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/randomconfigs.p', "rb"))['random_configs'])
+    random_configs = np.array(pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/randomconfigs.p', "rb")))
 
     #model_success = pickle.load(open('/home/felix/phd2/dec_automl/okt25_al_opt_models/my_great_model_compare_scaled7.p', "rb"))
     #random_configs = np.array(pickle.load(open('/home/felix/phd2/dec_automl/oct25_random_configs/randomconfigs.p', "rb"))['random_configs'])
