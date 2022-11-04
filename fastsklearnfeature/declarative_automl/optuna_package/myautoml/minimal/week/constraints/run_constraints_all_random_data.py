@@ -357,7 +357,7 @@ def sample_configuration(trial):
 
         my_random_seed = int(time.time())
 
-        if fairness_limit > 0.0:
+        if task_id in my_openml_tasks_fair:
             X, y, sensitive_attribute_id, categorical_indicator = get_X_y_id(key=task_id)
             X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X,
                                                                                         y,
