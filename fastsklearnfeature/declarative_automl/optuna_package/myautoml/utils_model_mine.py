@@ -28,6 +28,7 @@ import multiprocessing as mp
 import fastsklearnfeature.declarative_automl.optuna_package.myautoml.analysis.parallel.my_global_vars as mp_global
 import logging
 from sklearn.metrics import balanced_accuracy_score
+import copy
 
 metafeature_names_new = ['ClassEntropy', 'NumSymbols', 'SymbolsSum', 'SymbolsSTD', 'SymbolsMean', 'SymbolsMax', 'SymbolsMin', 'ClassOccurences', 'ClassProbabilitySTD', 'ClassProbabilityMean', 'ClassProbabilityMax', 'ClassProbabilityMin', 'InverseDatasetRatio', 'DatasetRatio', 'RatioNominalToNumerical', 'RatioNumericalToNominal', 'NumberOfCategoricalFeatures', 'NumberOfNumericFeatures', 'MissingValues', 'NumberOfMissingValues', 'NumberOfFeaturesWithMissingValues', 'NumberOfInstancesWithMissingValues', 'NumberOfFeatures', 'NumberOfClasses', 'NumberOfInstances', 'LogInverseDatasetRatio', 'LogDatasetRatio', 'PercentageOfMissingValues', 'PercentageOfFeaturesWithMissingValues', 'PercentageOfInstancesWithMissingValues', 'LogNumberOfFeatures', 'LogNumberOfInstances']
 
@@ -1593,6 +1594,95 @@ def generate_parameters_minimal_sample_constraints_all(trial, total_search_time_
 
 
 
+def generate_parameters_minimal_sample_constraints_all_uniform_datasets(trial, total_search_time_minutes, my_openml_datasets, my_openml_datasets_fair, sample_data=True,
+                                                   use_training_time_constraint=False,
+                                                   use_inference_time_constraint=False,
+                                                   use_pipeline_size_constraint=False,
+                                                   use_fairness_constraint=False):
+    #test
+    all_joined_datasets = copy.deepcopy(my_openml_datasets)
+    all_joined_datasets.extend(my_openml_datasets_fair)
+
+    dataset_id = trial.suggest_categorical('dataset_id', all_joined_datasets)
+
+    # which constraints to use
+    search_time = trial.suggest_int('global_search_time_constraint', 10, max(10, total_search_time_minutes), log=False) #* 60
+
+    # how much time for each evaluation
+    evaluation_time = int(0.1 * search_time)
+    if trial.suggest_categorical('use_evaluation_time_constraint', [False]):
+        evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
+
+    # how much memory is allowed
+    memory_limit = 10
+    if trial.suggest_categorical('use_search_memory_constraint', [False]):
+        memory_limit = trial.suggest_loguniform('global_memory_constraint', 0.00000000000001, 10)
+
+    # how much privacy is required
+    privacy_limit = None
+    if trial.suggest_categorical('use_privacy_constraint', [False]):
+        privacy_limit = trial.suggest_loguniform('privacy_constraint', 0.0001, 10)
+
+    training_time_limit = search_time
+    training_time_choices = [False]
+    if use_training_time_constraint:
+        training_time_choices.append(True)
+    if trial.suggest_categorical('use_training_time_constraint', training_time_choices):
+        training_time_limit = trial.suggest_loguniform('training_time_constraint', 0.008, 217)
+
+    inference_time_limit = 60
+    inference_time_choices = [False]
+    if use_inference_time_constraint:
+        inference_time_choices.append(True)
+    if trial.suggest_categorical('use_inference_time_constraint', inference_time_choices):
+        inference_time_limit = trial.suggest_loguniform('inference_time_constraint', 0.0007, 0.9)
+
+    pipeline_size_limit = 350000000
+    pipeline_size_choices = [False]
+    if use_pipeline_size_constraint:
+        pipeline_size_choices.append(True)
+    if trial.suggest_categorical('use_pipeline_size_constraint', pipeline_size_choices):
+        pipeline_size_limit = trial.suggest_loguniform('pipeline_size_constraint', 3175, 34070059)
+
+    fairness_limit = 0.0
+    fairness_choices = [False]
+    if dataset_id in my_openml_datasets_fair:
+        if use_fairness_constraint:
+            fairness_choices.append(True)
+
+        use_fairness_constraint = trial.suggest_categorical('use_fairness_constraint', fairness_choices)
+        if use_fairness_constraint:
+            fairness_limit = trial.suggest_uniform('fairness_constraint', 0.9, 1.0)
+
+
+    # how many cvs should be used
+    cv = 1
+    number_of_cvs = 1
+    hold_out_fraction = None
+    if trial.suggest_categorical('use_hold_out', [True]):
+        hold_out_fraction = trial.suggest_uniform('hold_out_fraction', 0.0, 1.0)
+    else:
+        cv = trial.suggest_int('global_cv', 2, 20, log=False)  # todo: calculate minimum number of splits based on y
+        number_of_cvs = 1
+        if trial.suggest_categorical('use_multiple_cvs', [True, False]):
+            number_of_cvs = trial.suggest_int('global_number_cv', 2, 10, log=False)
+
+    sample_fraction = 1.0
+    if trial.suggest_categorical('use_sampling', [False]):
+        sample_fraction = trial.suggest_uniform('sample_fraction', 0, 1)
+
+    use_ensemble = trial.suggest_categorical('use_ensemble', [True, False])
+    use_incremental_data = trial.suggest_categorical('use_incremental_data', [True, False])
+
+    shuffle_validation = False
+    if not use_ensemble:
+        shuffle_validation = trial.suggest_categorical('shuffle_validation', [False, True])
+
+    return search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, dataset_id, fairness_limit, use_ensemble, use_incremental_data, shuffle_validation
+
+
+
+
 
 def generate_parameters_minimal_sample_constraints_all_partial_random(trial, total_search_time_minutes, my_openml_datasets, my_openml_datasets_fair, sample_data=True,
                                                    use_training_time_constraint=False,
@@ -1600,6 +1690,13 @@ def generate_parameters_minimal_sample_constraints_all_partial_random(trial, tot
                                                    use_pipeline_size_constraint=False,
                                                    use_fairness_constraint=False):
     # which constraints to use
+    all_joined_datasets = copy.deepcopy(my_openml_datasets)
+    all_joined_datasets.extend(my_openml_datasets_fair)
+
+    #dataset_id = trial.suggest_categorical('dataset_id', all_joined_datasets)
+    dataset_id = np.random.choice(all_joined_datasets)
+    trial.set_user_attr('dataset_id', dataset_id)
+
     #search_time = trial.suggest_int('global_search_time_constraint', 10, max(10, total_search_time_minutes), log=False) #* 60
     search_time = np.random.randint(low=10, high=max(10, total_search_time_minutes))
     trial.set_user_attr('global_search_time_constraint', search_time)
@@ -1642,12 +1739,13 @@ def generate_parameters_minimal_sample_constraints_all_partial_random(trial, tot
 
     fairness_limit = 0.0
     fairness_choices = [False]
-    if use_fairness_constraint:
-        fairness_choices.append(True)
+    if dataset_id in my_openml_datasets_fair:
+        if use_fairness_constraint:
+            fairness_choices.append(True)
 
-    use_fairness_constraint = trial.suggest_categorical('use_fairness_constraint', fairness_choices)
-    if use_fairness_constraint:
-        fairness_limit = trial.suggest_uniform('fairness_constraint', 0.9, 1.0)
+        use_fairness_constraint = trial.suggest_categorical('use_fairness_constraint', fairness_choices)
+        if use_fairness_constraint:
+            fairness_limit = trial.suggest_uniform('fairness_constraint', 0.9, 1.0)
 
 
     # how many cvs should be used
@@ -1665,17 +1763,6 @@ def generate_parameters_minimal_sample_constraints_all_partial_random(trial, tot
     sample_fraction = 1.0
     if trial.suggest_categorical('use_sampling', [False]):
         sample_fraction = trial.suggest_uniform('sample_fraction', 0, 1)
-
-    dataset_id = None
-    if sample_data:
-        if use_fairness_constraint:
-            #dataset_id = trial.suggest_categorical('dataset_id_fair', my_openml_datasets_fair)
-            dataset_id = np.random.choice(my_openml_datasets_fair)
-            trial.set_user_attr('dataset_id_fair', dataset_id)
-        else:
-            #dataset_id = trial.suggest_categorical('dataset_id', my_openml_datasets)
-            dataset_id = np.random.choice(my_openml_datasets)
-            trial.set_user_attr('dataset_id', dataset_id)
 
     use_ensemble = trial.suggest_categorical('use_ensemble', [True, False])
     use_incremental_data = trial.suggest_categorical('use_incremental_data', [True, False])

@@ -16,7 +16,7 @@ from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_m
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import space2features
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import get_feature_names
 from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import ifNull
-from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import generate_parameters_minimal_sample_constraints_all_partial_random
+from fastsklearnfeature.declarative_automl.optuna_package.myautoml.utils_model_mine import generate_parameters_minimal_sample_constraints_all_uniform_datasets
 from optuna.samplers import TPESampler
 import multiprocessing as mp
 from multiprocessing import Lock
@@ -127,8 +127,7 @@ def run_AutoML(trial):
     print(trial.params)
 
     #make this a hyperparameter
-    #search_time = trial.params['global_search_time_constraint']# * 60
-    search_time = trial.user_attrs['global_search_time_constraint']
+    search_time = trial.params['global_search_time_constraint']# * 60
 
     evaluation_time = int(0.1 * search_time)
     if 'global_evaluation_time_constraint' in trial.params:
@@ -192,7 +191,7 @@ def run_AutoML(trial):
 
     sensitive_attribute_id = None
     try:
-        task_id = trial.user_attrs['dataset_id']
+        task_id = trial.params['dataset_id']
         if task_id in my_openml_tasks_fair:
             X, y, sensitive_attribute_id, categorical_indicator = get_X_y_id(key=task_id)
             X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X,
@@ -326,7 +325,7 @@ def run_AutoML_global(trial_id):
     feature_list.append(copy.deepcopy(mp_glob.my_trials[trial_id].user_attrs['features']))
     target_list.append(comparison)
 
-    dataset_name = str(mp_glob.my_trials[trial_id].user_attrs['dataset_id'])
+    dataset_name = str(mp_glob.my_trials[trial_id].params['dataset_id'])
 
     return {'feature_l': feature_list,
             'target_l': target_list,
@@ -348,7 +347,7 @@ def sample_configuration(trial):
 
         trial.set_user_attr('space', copy.deepcopy(space))
 
-        search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, task_id, fairness_limit, use_ensemble, use_incremental_data, shuffle_validation = generate_parameters_minimal_sample_constraints_all_partial_random(
+        search_time, evaluation_time, memory_limit, privacy_limit, training_time_limit, inference_time_limit, pipeline_size_limit, cv, number_of_cvs, hold_out_fraction, sample_fraction, task_id, fairness_limit, use_ensemble, use_incremental_data, shuffle_validation = generate_parameters_minimal_sample_constraints_all_uniform_datasets(
             trial, mp_glob.total_search_time, my_openml_tasks, my_openml_tasks_fair,
             use_training_time_constraint=True,
             use_inference_time_constraint=True,
@@ -454,33 +453,25 @@ else:
 
 
 class Objective(object):
-    def __init__(self, model_uncertainty):
-        self.model_uncertainty = model_uncertainty
-
     def __call__(self, trial):
         features = sample_configuration(trial)
         if type(features) == type(None):
             return -1 * np.inf
 
-        predictions = []
-        for tree in range(self.model_uncertainty.n_estimators):
-            predictions.append(predict_range(self.model_uncertainty.estimators_[tree], features))
+        return 1
 
-        stddev_pred = np.std(np.matrix(predictions).transpose(), axis=1)
-        uncertainty = stddev_pred[0]
-
-        objective = uncertainty
-        return objective
-
-def get_best_trial(model_uncertainty):
-    sampler = TPESampler()
-    study_uncertainty = optuna.create_study(direction='maximize', sampler=sampler)
-    my_objective = Objective(model_uncertainty)
-    study_uncertainty.optimize(my_objective, n_trials=100, n_jobs=1)
+def get_best_trial():
+    while True:
+        sampler = RandomSampler()
+        study_uncertainty = optuna.create_study(direction='maximize', sampler=sampler)
+        my_objective = Objective()
+        study_uncertainty.optimize(my_objective, n_trials=1, n_jobs=1)
+        if study_uncertainty.best_value > 0.0:
+            break
     return study_uncertainty.best_trial
 
 def sample_and_evaluate(my_id1):
-    if time.time() - starting_time_tt > 60*60*24*7:
+    if time.time() - starting_time_tt > 60*60*24*14:
         return -1
 
     X_meta = copy.deepcopy(dictionary['X_meta'])
@@ -494,10 +485,7 @@ def sample_and_evaluate(my_id1):
     #assert len(X_meta) == len(y_meta), 'len(X) != len(y)'
 
     try:
-        model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=my_id1, n_jobs=1)
-        model_uncertainty.fit(X_meta, y_meta)
-
-        best_trial = get_best_trial(model_uncertainty)
+        best_trial = get_best_trial()
         features_of_sampled_point = best_trial.user_attrs['features']
 
         result = run_AutoML(best_trial)
@@ -519,7 +507,7 @@ def sample_and_evaluate(my_id1):
 
         group_meta = dictionary['group_meta']
 
-        dataset_name = str(best_trial.user_attrs['dataset_id'])
+        dataset_name = str(best_trial.params['dataset_id'])
 
         group_meta.append(dataset_name)
         dictionary['group_meta'] = group_meta
@@ -549,12 +537,6 @@ with NestablePool(processes=topk) as pool:
     results = pool.map(sample_and_evaluate, range(100000))
 
 print('storing stuff')
-
-model_uncertainty = RandomForestRegressor(n_estimators=1000, random_state=42, n_jobs=1)
-model_uncertainty.fit(dictionary['X_meta'], dictionary['y_meta'])
-
-with open('/home/neutatz/data/my_temp/my_great_model_compare_scaled.p', "wb") as pickle_model_file:
-    pickle.dump(model_uncertainty, pickle_model_file)
 
 with open('/home/neutatz/data/my_temp/felix_X_compare_scaled.p', "wb") as pickle_model_file:
     pickle.dump(dictionary['X_meta'], pickle_model_file)
