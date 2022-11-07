@@ -1778,7 +1778,8 @@ def generate_parameters_minimal_sample_constraints_all_partial_random(trial, tot
                                                    use_training_time_constraint=False,
                                                    use_inference_time_constraint=False,
                                                    use_pipeline_size_constraint=False,
-                                                   use_fairness_constraint=False):
+                                                   use_fairness_constraint=False,
+                                                   frozen_search_time=None):
     # which constraints to use
     all_joined_datasets = copy.deepcopy(my_openml_datasets)
     all_joined_datasets.extend(my_openml_datasets_fair)
@@ -1788,8 +1789,8 @@ def generate_parameters_minimal_sample_constraints_all_partial_random(trial, tot
     trial.set_user_attr('dataset_id', dataset_id)
 
     #search_time = trial.suggest_int('global_search_time_constraint', 10, max(10, total_search_time_minutes), log=False) #* 60
-    search_time = np.random.randint(low=10, high=max(10, total_search_time_minutes))
-    trial.set_user_attr('global_search_time_constraint', search_time)
+    trial.set_user_attr('global_search_time_constraint', frozen_search_time)
+    search_time = frozen_search_time
 
     # how much time for each evaluation
     evaluation_time = int(0.1 * search_time)
