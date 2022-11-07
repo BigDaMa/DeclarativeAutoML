@@ -340,7 +340,7 @@ def calculate_max_std(N, min_value=0, max_value=1):
     return np.std(np.append(min_elements, max_elements))
 
 
-def sample_configuration(trial):
+def sample_configuration(trial, frozen_search_time=None):
     try:
         gen = SpaceGenerator()
         space = gen.generate_params()
@@ -353,7 +353,8 @@ def sample_configuration(trial):
             use_training_time_constraint=True,
             use_inference_time_constraint=True,
             use_pipeline_size_constraint=True,
-            use_fairness_constraint=True)
+            use_fairness_constraint=True,
+            frozen_search_time=frozen_search_time)
 
         my_random_seed = int(time.time())
 
@@ -454,11 +455,12 @@ else:
 
 
 class Objective(object):
-    def __init__(self, model_uncertainty):
+    def __init__(self, model_uncertainty, search_time):
         self.model_uncertainty = model_uncertainty
+        self.search_time = search_time
 
     def __call__(self, trial):
-        features = sample_configuration(trial)
+        features = sample_configuration(trial, self.search_time)
         if type(features) == type(None):
             return -1 * np.inf
 
@@ -475,7 +477,10 @@ class Objective(object):
 def get_best_trial(model_uncertainty):
     sampler = TPESampler()
     study_uncertainty = optuna.create_study(direction='maximize', sampler=sampler)
-    my_objective = Objective(model_uncertainty)
+
+    search_time = np.random.randint(low=10, high=max(10, mp_glob.total_search_time))
+
+    my_objective = Objective(model_uncertainty, search_time)
     study_uncertainty.optimize(my_objective, n_trials=100, n_jobs=1)
     return study_uncertainty.best_trial
 
