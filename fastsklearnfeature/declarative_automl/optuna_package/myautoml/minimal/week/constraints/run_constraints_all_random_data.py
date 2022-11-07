@@ -399,7 +399,8 @@ def sample_configuration(trial, frozen_search_time=None):
     return features
 
 def random_config(trial):
-    features = sample_configuration(trial)
+    search_time = np.random.randint(low=10, high=max(10, mp_glob.total_search_time))
+    features = sample_configuration(trial, frozen_search_time=search_time)
     if type(features) == type(None):
         return -1 * np.inf
     return 0.0
