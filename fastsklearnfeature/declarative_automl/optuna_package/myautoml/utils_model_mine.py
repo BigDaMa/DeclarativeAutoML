@@ -1779,14 +1779,11 @@ def generate_parameters_minimal_sample_constraints_all_partial_random(trial, tot
                                                    use_inference_time_constraint=False,
                                                    use_pipeline_size_constraint=False,
                                                    use_fairness_constraint=False,
-                                                   frozen_search_time=None):
-    # which constraints to use
-    all_joined_datasets = copy.deepcopy(my_openml_datasets)
-    all_joined_datasets.extend(my_openml_datasets_fair)
-
+                                                   frozen_search_time=None,
+                                                   frozen_dataset_id=None):
     #dataset_id = trial.suggest_categorical('dataset_id', all_joined_datasets)
-    dataset_id = np.random.choice(all_joined_datasets)
-    trial.set_user_attr('dataset_id', dataset_id)
+    trial.set_user_attr('dataset_id', frozen_dataset_id)
+    dataset_id = frozen_dataset_id
 
     #search_time = trial.suggest_int('global_search_time_constraint', 10, max(10, total_search_time_minutes), log=False) #* 60
     trial.set_user_attr('global_search_time_constraint', frozen_search_time)

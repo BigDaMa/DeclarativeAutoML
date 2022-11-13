@@ -340,7 +340,7 @@ def calculate_max_std(N, min_value=0, max_value=1):
     return np.std(np.append(min_elements, max_elements))
 
 
-def sample_configuration(trial, frozen_search_time=None):
+def sample_configuration(trial, frozen_search_time=None, frozen_dataset_id=None):
     try:
         gen = SpaceGenerator()
         space = gen.generate_params()
@@ -354,7 +354,8 @@ def sample_configuration(trial, frozen_search_time=None):
             use_inference_time_constraint=True,
             use_pipeline_size_constraint=True,
             use_fairness_constraint=True,
-            frozen_search_time=frozen_search_time)
+            frozen_search_time=frozen_search_time,
+            frozen_dataset_id=frozen_dataset_id)
 
         my_random_seed = int(time.time())
 
@@ -400,7 +401,15 @@ def sample_configuration(trial, frozen_search_time=None):
 
 def random_config(trial):
     search_time = np.random.randint(low=10, high=max(10, mp_glob.total_search_time))
-    features = sample_configuration(trial, frozen_search_time=search_time)
+
+    all_joined_datasets = copy.deepcopy(my_openml_tasks)
+    all_joined_datasets.extend(my_openml_tasks_fair)
+
+    # dataset_id = trial.suggest_categorical('dataset_id', all_joined_datasets)
+    dataset_id = np.random.choice(all_joined_datasets)
+
+
+    features = sample_configuration(trial, frozen_search_time=search_time, frozen_dataset_id=dataset_id)
     if type(features) == type(None):
         return -1 * np.inf
     return 0.0
@@ -456,12 +465,13 @@ else:
 
 
 class Objective(object):
-    def __init__(self, model_uncertainty, search_time):
+    def __init__(self, model_uncertainty, search_time, dataset_id):
         self.model_uncertainty = model_uncertainty
         self.search_time = search_time
+        self.dataset_id = dataset_id
 
     def __call__(self, trial):
-        features = sample_configuration(trial, self.search_time)
+        features = sample_configuration(trial, self.search_time, self.dataset_id)
         if type(features) == type(None):
             return -1 * np.inf
 
@@ -481,7 +491,13 @@ def get_best_trial(model_uncertainty):
 
     search_time = np.random.randint(low=10, high=max(10, mp_glob.total_search_time))
 
-    my_objective = Objective(model_uncertainty, search_time)
+    all_joined_datasets = copy.deepcopy(my_openml_tasks)
+    all_joined_datasets.extend(my_openml_tasks_fair)
+
+    # dataset_id = trial.suggest_categorical('dataset_id', all_joined_datasets)
+    dataset_id = np.random.choice(all_joined_datasets)
+
+    my_objective = Objective(model_uncertainty, search_time, dataset_id)
     study_uncertainty.optimize(my_objective, n_trials=100, n_jobs=1)
     return study_uncertainty.best_trial
 
