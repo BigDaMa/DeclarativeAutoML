@@ -522,12 +522,22 @@ def generate_features_minimum_sample_ensemble(trial, metafeature_values_hold, se
                 space.sample_parameters(trial)
 
 
+        '''
         evaluation_time = int(0.1 * search_time)
         cat_eval_list = [False]
         if tune_eval_time:
             cat_eval_list = [False, True]
         if trial.suggest_categorical('use_evaluation_time_constraint', cat_eval_list):
             evaluation_time = trial.suggest_int('global_evaluation_time_constraint', 10, search_time, log=False)
+        trial.set_user_attr('evaluation_time', evaluation_time)
+        '''
+
+        evaluation_time = int(0.1 * search_time)
+        cat_eval_list = [False]
+        if tune_eval_time:
+            cat_eval_list = [False, True]
+        if trial.suggest_categorical('dont_use_evaluation_time_constraint', cat_eval_list):
+            evaluation_time = int(search_time)
         trial.set_user_attr('evaluation_time', evaluation_time)
 
         # how many cvs should be used
