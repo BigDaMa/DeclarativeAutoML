@@ -98,7 +98,7 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                                    #hold_out_fraction=0.33,
                                                                                    tune_space=True,
                                                                                    tune_val_fraction=True,
-                                                                                   tune_eval_time=True
+                                                                                   #tune_eval_time=True
                                                                                    ), n_trials=1000, n_jobs=1)
             print("probing time: " + str(time.time() - start_probing))
 
