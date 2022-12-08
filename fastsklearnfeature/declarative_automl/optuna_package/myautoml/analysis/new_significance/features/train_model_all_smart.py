@@ -86,7 +86,7 @@ for day in [14]:
                                                   max_depth=max_depth,
                                                   random_state=42, n_jobs=-1)
 
-            group_kfold = GroupKFold(n_splits=224)
+            group_kfold = GroupKFold(n_splits=folds)
             #group_kfold = LeaveOneGroupOut()
             scores = []
             errors = []
