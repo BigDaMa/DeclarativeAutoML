@@ -32,15 +32,19 @@ openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_open
 
 for day in [14]:
 
+
     X_old = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
     X = X_old
     y = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "rb"))
     groups = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_group_compare_scaled.p', "rb"))
 
-    #X_old = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_X_compare_scaled.p', "rb"))
-    #X = X_old
-    #y = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_y_compare_scaled.p', "rb"))
-    #groups = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_group_compare_scaled.p', "rb"))
+
+    '''
+    X_old = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_X_compare_scaled.p', "rb"))
+    X = X_old
+    y = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_y_compare_scaled.p', "rb"))
+    groups = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_group_compare_scaled.p', "rb"))
+    '''
 
     new_groups = []
     for g in groups:
@@ -87,7 +91,9 @@ for day in [14]:
                                                   random_state=42, n_jobs=-1)
 
             group_kfold = GroupKFold(n_splits=folds)
-            #group_kfold = LeaveOneGroupOut()
+            if folds == 224:
+                group_kfold = LeaveOneGroupOut()
+
             scores = []
             errors = []
             for train_index, test_index in group_kfold.split(X, y, groups):
@@ -113,12 +119,12 @@ for day in [14]:
         for t in best_trials:
             study.enqueue_trial(t.params)
 
-        study.optimize(partial(objective, folds=folds), n_trials=100)
+        study.optimize(partial(objective, folds=folds), n_trials=20)
 
         def get_val(trial):
             return trial.value
 
-        best_trials = heapq.nsmallest(10, enumerate(study.trials), key=get_val)
+        best_trials = heapq.nsmallest(10, study.trials, key=get_val)
 
 
     print(study.best_params)
