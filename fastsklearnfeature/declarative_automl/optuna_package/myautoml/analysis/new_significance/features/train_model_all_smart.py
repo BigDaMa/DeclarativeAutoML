@@ -32,19 +32,28 @@ openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_open
 
 for day in [14]:
 
-
     X_old = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
     X = X_old
     y = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "rb"))
     groups = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_group_compare_scaled.p', "rb"))
-
 
     '''
     X_old = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_X_compare_scaled.p', "rb"))
     X = X_old
     y = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_y_compare_scaled.p', "rb"))
     groups = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_group_compare_scaled.p', "rb"))
+    
+
+    X_old = pickle.load(open('/home/felix/phd2/dec_automl/dez2_joint_random_al_data/felix_X_compare_scaled.p', "rb"))
+    X = X_old
+    y = pickle.load(open('/home/felix/phd2/dec_automl/dez2_joint_random_al_data/felix_y_compare_scaled.p', "rb"))
+    groups = pickle.load(
+        open('/home/felix/phd2/dec_automl/dez2_joint_random_al_data/felix_group_compare_scaled.p', "rb"))
     '''
+
+
+    print(np.unique(groups))
+
 
     new_groups = []
     for g in groups:
@@ -55,6 +64,9 @@ for day in [14]:
     groups = new_groups
 
     print(np.unique(groups))
+    print(len(np.unique(groups)))
+
+    #print(np.unique(groups))
 
 
     print(X.shape)
