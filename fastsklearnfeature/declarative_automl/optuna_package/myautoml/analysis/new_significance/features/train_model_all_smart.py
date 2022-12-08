@@ -69,7 +69,7 @@ for day in [14]:
     best_trials = []
     study = None
 
-    for folds in [5, 15, 45, 135, 224]:
+    for folds in [5, 10, 224]:
 
         def objective(trial, folds):
 
@@ -119,7 +119,7 @@ for day in [14]:
         for t in best_trials:
             study.enqueue_trial(t.params)
 
-        study.optimize(partial(objective, folds=folds), n_trials=20)
+        study.optimize(partial(objective, folds=folds), n_trials=100)
 
         def get_val(trial):
             return trial.value
