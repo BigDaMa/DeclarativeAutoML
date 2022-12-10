@@ -156,7 +156,9 @@ for day in [14]:
                                               max_features=study.best_params['max_features'],
                                               max_depth=max_depth,
                                               random_state=42, n_jobs=-1)
-    model_success.fit(X, y)
+
+    sample_weight = compute_sample_weight(class_weight='balanced', y=groups)
+    model_success.fit(X, y, sample_weight=sample_weight)
 
 
 
