@@ -114,12 +114,17 @@ for day in [14]:
                 y_train, y_test = np.array(y)[train_index], np.array(y)[test_index]
                 groups_train, groups_test = np.array(groups)[train_index], np.array(groups)[test_index]
 
-                sample_weight = compute_sample_weight(class_weight='balanced', y=groups_train)
+                sample_weight_train = compute_sample_weight(class_weight='balanced', y=groups_train)
+                sample_weight_test = compute_sample_weight(class_weight='balanced', y=groups_test)
 
-                model_success.fit(X_train, y_train,  sample_weight=sample_weight)
+                model_success.fit(X_train, y_train,  sample_weight=sample_weight_train)
                 y_test_predict = model_success.predict(X_test)
                 scores.append(r2_score(y_test, y_test_predict))
-                errors.append(mean_squared_error(y_test, y_test_predict))
+
+                if folds != 224:
+                    errors.append(mean_squared_error(y_test, y_test_predict, sample_weight=sample_weight_test))
+                else:
+                    errors.append(mean_squared_error(y_test, y_test_predict))
                 print('fold')
 
             print('r2: ' + str(np.mean(scores)))
