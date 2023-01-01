@@ -151,7 +151,7 @@ for test_holdout_dataset_id in [args.dataset]:
             random_configs[:, feature_names.index('log_sampled_instances')]= np.log(random_configs[:, feature_names.index('NumberOfInstances')])
 
 
-            predictions = np.zeros((len(random_configs), 1))
+            predictions = np.zeros((len(random_configs), ))
             for model_success_i in range(len(model_success_list)):
                 model_success = model_success_list[model_success_i]
                 print(model_success.classes_)
