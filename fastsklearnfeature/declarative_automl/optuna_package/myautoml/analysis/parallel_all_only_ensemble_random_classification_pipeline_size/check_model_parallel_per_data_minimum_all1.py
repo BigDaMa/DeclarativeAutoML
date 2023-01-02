@@ -54,7 +54,8 @@ for test_holdout_dataset_id in [args.dataset]:
     #model_success = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/my_great_model_compare_scaled.p', "rb"))
 
     model_success_list = []
-    discrete_list = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    #discrete_list = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    discrete_list = [0.1]
     for discrete in discrete_list:
         model_success_list.append(pickle.load(open(
             '/home/' + getpass.getuser() + '/data/my_temp/my_great_model_compare_scaled' + str(14) + "_" + str(
