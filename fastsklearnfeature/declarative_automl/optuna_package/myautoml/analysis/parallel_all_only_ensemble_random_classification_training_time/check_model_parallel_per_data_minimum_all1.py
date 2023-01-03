@@ -51,16 +51,15 @@ for test_holdout_dataset_id in [args.dataset]:
     X_train_hold, X_test_hold, y_train_hold, y_test_hold, categorical_indicator_hold, attribute_names_hold = get_data('data', randomstate=42, task_id=test_holdout_dataset_id)
     metafeature_values_hold = data2features(X_train_hold, y_train_hold, categorical_indicator_hold)
 
-    # model_success = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/my_great_model_compare_scaled.p', "rb"))
+    #model_success = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/my_great_model_compare_scaled.p', "rb"))
 
     model_success_list = []
-    # discrete_list = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    #discrete_list = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     discrete_list = [0.1]
     for discrete in discrete_list:
         model_success_list.append(pickle.load(open(
             '/home/' + getpass.getuser() + '/data/my_temp/my_great_model_compare_scaled' + str(14) + "_" + str(
                 discrete) + ".p", "rb")))
-
 
     #random_configs = np.array(pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/randomconfigs.p', "rb"))['random_configs'])
     random_configs = np.array(pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/randomconfigs.p', "rb")))
@@ -110,17 +109,21 @@ for test_holdout_dataset_id in [args.dataset]:
     pipeline_size_limit = None
     fairness_limit = None
 
+
+
     #for minutes_to_search in [10, 30, 1*60, 5*60, 10*60, 60*60]:#[1, 5]:#range(1, 6):
-    for training_time_limit in [0.008367328643798829, 0.00939997673034668, 0.009795446395874024, 0.012252435684204102, 0.019357662200927734, 0.07790081024169922]:
+    for training_time_limit in [0.008367328643798829, 0.00939997673034668, 0.009795446395874024, 0.012252435684204102,
+                                0.019357662200927734, 0.07790081024169922]:
 
         minutes_to_search = 5 * 60
 
         current_dynamic = []
 
-        search_time_frozen = minutes_to_search #* 60
+        search_time_frozen = minutes_to_search  # * 60
 
         new_constraint_evaluation_dynamic = ConstraintEvaluation(dataset=test_holdout_dataset_id,
-                                                                 constraint={'training_time_limit': training_time_limit},
+                                                                 constraint={
+                                                                     'training_time_limit': training_time_limit},
                                                                  system_def='dynamic')
         for repeat in range(10):
 
@@ -150,19 +153,19 @@ for test_holdout_dataset_id in [args.dataset]:
             random_configs[:, feature_names.index('log_evaluation_time_constraint')] = np.ones((len(random_configs))) * np.log(int(0.1 * search_time_frozen))
             random_configs[:, feature_names.index('log_sampled_instances')]= np.log(random_configs[:, feature_names.index('NumberOfInstances')])
 
-            predictions = np.zeros((len(random_configs),))
+
+            predictions = np.zeros((len(random_configs), ))
             for model_success_i in range(len(model_success_list)):
                 model_success = model_success_list[model_success_i]
                 print(model_success.classes_)
                 discrete = discrete_list[model_success_i]
                 predictions_curr = model_success.predict_proba(random_configs)[:, 1]
                 print(predictions_curr.shape)
-                #predictions += np.multiply(predictions_curr, discrete)
+                predictions += np.multiply(predictions_curr, discrete)
 
             best_id = np.argmax(predictions)
-            print('best_id: ' + str(best_id))
+            print('best_id: '+ str(best_id))
             print('max:' + str(np.max(predictions)))
-            print('avg:' + str(np.average(predictions)))
 
             space = None
             try:
