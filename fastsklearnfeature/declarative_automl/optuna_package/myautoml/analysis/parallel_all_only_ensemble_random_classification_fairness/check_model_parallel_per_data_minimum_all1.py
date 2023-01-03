@@ -183,7 +183,7 @@ for test_holdout_dataset_id in [args.dataset]:
                 discrete = discrete_list[model_success_i]
                 predictions_curr = model_success.predict_proba(random_configs)[:, 1]
                 print(predictions_curr.shape)
-                predictions += np.multiply(predictions_curr, discrete)
+                predictions += predictions_curr
 
             best_id = np.argmax(predictions)
             print('best_id: ' + str(best_id))
