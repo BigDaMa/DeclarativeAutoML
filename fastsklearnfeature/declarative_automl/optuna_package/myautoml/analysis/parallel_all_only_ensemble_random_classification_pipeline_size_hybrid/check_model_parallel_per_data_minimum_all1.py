@@ -164,7 +164,7 @@ for test_holdout_dataset_id in [args.dataset]:
                 predictions += predictions_curr
 
             best_id = np.argmax(predictions)
-            if predictions[predictions_regression_best_id] > 0.5:
+            if predictions[predictions_regression_best_id] > 0.3:
                 best_id = predictions_regression_best_id
                 print('regression model')
             else:
