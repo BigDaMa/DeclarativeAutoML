@@ -35,18 +35,19 @@ for discrete in [0.1]:
     for day in [14]:
 
 
-        '''
+        
         X_old = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
         X = X_old
         y = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "rb"))
         groups = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_group_compare_scaled.p', "rb"))
-        '''
 
+
+        '''
         X_old = pickle.load(open('/home/felix/phd2/dec_automl/dec25_2weeks_alternating/felix_X_compare_scaled.p', "rb"))
         X = X_old
         y = pickle.load(open('/home/felix/phd2/dec_automl/dec25_2weeks_alternating/felix_y_compare_scaled.p', "rb"))
         groups = pickle.load(open('/home/felix/phd2/dec_automl/dec25_2weeks_alternating/felix_group_compare_scaled.p', "rb"))
-
+        '''
         print(np.unique(y))
 
         '''
