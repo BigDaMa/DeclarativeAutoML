@@ -32,15 +32,14 @@ openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_open
 #for discrete in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
 for discrete in [0.1]:
 
-    for day in [1, 2, 3, 4, 5, 6, 7]:
+    for day in [14]:
 
+
+        '''
         X_old = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
-        X = X_old[0: int((day / 14.0) * len(X_old)), :]
-        y = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "rb"))[
-            0: int((day / 14.0) * len(X_old))]
-        groups = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_group_compare_scaled.p', "rb"))[
-                 0: int((day / 14.0) * len(X_old))]
-
+        X = X_old
+        y = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "rb"))
+        groups = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_group_compare_scaled.p', "rb"))
         '''
 
         X_old = pickle.load(open('/home/felix/phd2/dec_automl/dec25_2weeks_alternating/felix_X_compare_scaled.p', "rb"))
@@ -50,7 +49,7 @@ for discrete in [0.1]:
 
         print(np.unique(y))
 
-        
+        '''
         X_old = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_X_compare_scaled.p', "rb"))
         X = X_old
         y = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_y_compare_scaled.p', "rb"))
@@ -128,10 +127,10 @@ for discrete in [0.1]:
                     print(y_train >= discrete)
                     print(np.sum(y_train >= discrete))
 
-                    model_success.fit(X_train, y_train >= discrete)
+                    model_success.fit(X_train, y_train >= discrete, sample_weight=y_train + 0.1)
                     y_test_predict = model_success.predict(X_test)
                     print('predict: ' + str(y_test_predict))
-                    errors.append(f1_score(y_test >= discrete, y_test_predict))
+                    errors.append(f1_score(y_test >= discrete, y_test_predict, sample_weight=y_test + 0.1))
                     print('fold')
 
                 print('r2: ' + str(np.mean(scores)))
@@ -168,7 +167,7 @@ for discrete in [0.1]:
                                                   max_features=study.best_params['max_features'],
                                                   max_depth=max_depth,
                                                   random_state=42, n_jobs=-1)
-        model_success.fit(X, np.array(y) >= discrete)
+        model_success.fit(X, np.array(y) >= discrete, sample_weight=np.array(y) + 0.1)
 
 
 

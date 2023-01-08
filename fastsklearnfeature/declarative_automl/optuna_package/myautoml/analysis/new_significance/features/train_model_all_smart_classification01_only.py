@@ -150,7 +150,7 @@ for discrete in [0.1]:
             def get_val(trial):
                 return trial.value
 
-            best_trials = heapq.nsmallest(10, study.trials, key=get_val)
+            best_trials = heapq.nlargest(10, study.trials, key=get_val)
 
 
         print(study.best_params)

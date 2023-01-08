@@ -29,11 +29,12 @@ openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_open
 #y = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_y_compare_scaled.p', "rb"))
 #groups = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_group_compare_scaled.p', "rb"))
 
-for discrete in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+#for discrete in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+for discrete in [1.0]:
 
     for day in [14]:
 
-
+        '''
         X_old = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
         X = X_old
         y = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "rb"))
@@ -44,7 +45,7 @@ for discrete in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
         X = X_old
         y = pickle.load(open('/home/felix/phd2/dec_automl/dec25_2weeks_alternating/felix_y_compare_scaled.p', "rb"))
         groups = pickle.load(open('/home/felix/phd2/dec_automl/dec25_2weeks_alternating/felix_group_compare_scaled.p', "rb"))
-        '''
+
         print(np.unique(y))
 
         '''
@@ -149,7 +150,7 @@ for discrete in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
             def get_val(trial):
                 return trial.value
 
-            best_trials = heapq.nsmallest(10, study.trials, key=get_val)
+            best_trials = heapq.nlargest(10, study.trials, key=get_val)
 
 
         print(study.best_params)
