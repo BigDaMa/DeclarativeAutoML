@@ -30,6 +30,9 @@ openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_open
 #y = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_y_compare_scaled.p', "rb"))
 #groups = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_group_compare_scaled.p', "rb"))
 
+factor_for_zero = 1.0
+
+
 #for discrete in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
 for discrete in [0.1]:
 
@@ -130,9 +133,9 @@ for discrete in [0.1]:
                     print(np.sum(y_train >= discrete))
 
                     weights_train = copy.deepcopy(y_train)
-                    weights_train[weights_train == 0.0] = 2.0
+                    weights_train[weights_train == 0.0] = factor_for_zero
                     weights_test = copy.deepcopy(y_test)
-                    weights_test[weights_test == 0.0] = 2.0
+                    weights_test[weights_test == 0.0] = factor_for_zero
 
                     model_success.fit(X_train, y_train >= discrete, sample_weight=weights_train)
                     y_test_predict = model_success.predict(X_test)
@@ -176,7 +179,7 @@ for discrete in [0.1]:
                                                   random_state=42, n_jobs=-1)
 
         weights_all = copy.deepcopy(np.array(y))
-        weights_all[weights_all == 0.0] = 2.0
+        weights_all[weights_all == 0.0] = factor_for_zero
 
         model_success.fit(X, np.array(y) >= discrete, sample_weight=weights_all)
 
