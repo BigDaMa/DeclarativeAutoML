@@ -34,7 +34,7 @@ for discrete in [0.1]:
 
     for day in [14]:
 
-        '''
+
         X_old = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
         X = X_old
         y = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "rb"))
@@ -48,7 +48,7 @@ for discrete in [0.1]:
 
         print(np.unique(y))
 
-        '''
+        
         X_old = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_X_compare_scaled.p', "rb"))
         X = X_old
         y = pickle.load(open('/home/felix/phd2/dec_automl/dez06_joint_al_rand_rand10/felix_y_compare_scaled.p', "rb"))
