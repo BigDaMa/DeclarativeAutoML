@@ -15,6 +15,7 @@ from sklearn.model_selection import LeaveOneGroupOut
 import getpass
 import heapq
 from functools import partial
+import copy
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_openml'
@@ -35,7 +36,7 @@ for discrete in [0.1]:
     for day in [14]:
 
 
-        
+
         X_old = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
         X = X_old
         y = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "rb"))
@@ -128,10 +129,15 @@ for discrete in [0.1]:
                     print(y_train >= discrete)
                     print(np.sum(y_train >= discrete))
 
-                    model_success.fit(X_train, y_train >= discrete, sample_weight=y_train + 0.1)
+                    weights_train = copy.deepcopy(y_train)
+                    weights_train[weights_train == 0.0] = 2.0
+                    weights_test = copy.deepcopy(y_test)
+                    weights_test[weights_test == 0.0] = 2.0
+
+                    model_success.fit(X_train, y_train >= discrete, sample_weight=weights_train)
                     y_test_predict = model_success.predict(X_test)
                     print('predict: ' + str(y_test_predict))
-                    errors.append(f1_score(y_test >= discrete, y_test_predict, sample_weight=y_test + 0.1))
+                    errors.append(f1_score(y_test >= discrete, y_test_predict, sample_weight=weights_test))
                     print('fold')
 
                 print('r2: ' + str(np.mean(scores)))
@@ -168,7 +174,11 @@ for discrete in [0.1]:
                                                   max_features=study.best_params['max_features'],
                                                   max_depth=max_depth,
                                                   random_state=42, n_jobs=-1)
-        model_success.fit(X, np.array(y) >= discrete, sample_weight=np.array(y) + 0.1)
+
+        weights_all = copy.deepcopy(np.array(y))
+        weights_all[weights_all == 0.0] = 2.0
+
+        model_success.fit(X, np.array(y) >= discrete, sample_weight=weights_all)
 
 
 
