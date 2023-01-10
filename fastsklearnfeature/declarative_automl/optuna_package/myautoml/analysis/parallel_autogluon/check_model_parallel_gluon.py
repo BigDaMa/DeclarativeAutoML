@@ -7,6 +7,11 @@ import openml
 from sklearn.metrics import balanced_accuracy_score
 from autogluon.tabular import TabularDataset, TabularPredictor
 import pandas as pd
+import time
+import numpy as np
+import getpass
+import os
+import shutil
 
 
 
@@ -39,7 +44,7 @@ for test_holdout_dataset_id in [args.dataset]:
 
     new_constraint_evaluation_dynamic_all = []
 
-    for minutes_to_search in [10, 30, 60, 5*60, 10*60, 60*60]:
+    for minutes_to_search in [10, 30, 60, 5*60]:
 
         current_dynamic = []
         search_time_frozen = minutes_to_search #* 60
@@ -48,6 +53,8 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                  system_def='dynamic')
 
         for repeat in range(10):
+
+            tmp_path = "/home/" + getpass.getuser() + "/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(np.random.randint(1000) + 'folder')
 
             try:
                 df = pd.DataFrame(data=X_train_hold)
@@ -60,7 +67,7 @@ for test_holdout_dataset_id in [args.dataset]:
                 my_data_test = TabularDataset(data=df_test)
 
 
-                predictor = TabularPredictor(label=label, eval_metric='balanced_accuracy').fit(train_data=my_data_train, time_limit=search_time_frozen, presets='best_quality')
+                predictor = TabularPredictor(label=label, eval_metric='balanced_accuracy', path=tmp_path).fit(train_data=my_data_train, time_limit=search_time_frozen, presets='best_quality')
 
                 y_hat = predictor.predict(my_data_test)
                 print("Predictions:  \n", y_hat)
@@ -71,6 +78,9 @@ for test_holdout_dataset_id in [args.dataset]:
             except:
                 result = 0
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'shit happened', result, more='test'))
+            finally:
+                if os.path.exists(tmp_path) and os.path.isdir(tmp_path):
+                    shutil.rmtree(tmp_path)
 
             current_dynamic.append(result)
             print('dynamic: ' + str(current_dynamic))
