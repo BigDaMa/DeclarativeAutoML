@@ -54,7 +54,7 @@ for test_holdout_dataset_id in [args.dataset]:
 
         for repeat in range(10):
 
-            tmp_path = "/home/" + getpass.getuser() + "/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(np.random.randint(1000) + 'folder')
+            tmp_path = "/home/" + getpass.getuser() + "/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(np.random.randint(1000)) + 'folder'
 
             try:
                 df = pd.DataFrame(data=X_train_hold)
