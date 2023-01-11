@@ -32,7 +32,7 @@ openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_open
 #for discrete in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
 for discrete in [0.1]:
 
-    for day in [1, 2, 3, 4, 5, 6, 7]:
+    for day in [8,9,10,11,12,13,14]:
 
         X_old = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
         X = X_old[0: int((day / 14.0) * len(X_old)), :]
