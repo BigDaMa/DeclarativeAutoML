@@ -120,7 +120,8 @@ for test_holdout_dataset_id in [args.dataset]:
 
 
     #for minutes_to_search in [10, 30, 1*60, 5*60, 10*60, 60*60]:#[1, 5]:#range(1, 6):
-    for config_fraction in [0.25, 0.5, 0.75]:
+    #for config_fraction in [0.25, 0.5, 0.75]: # jan13_number_random_configurations_searchtime
+    for config_fraction in [0.015625, 0.03125, 0.0625, 0.125]:
     #for minutes_to_search in [10 * 60, 60 * 60]:
 
         random_configs = random_configs_old[0:int(len(random_configs_old)*config_fraction)]
