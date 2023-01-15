@@ -111,7 +111,7 @@ for discrete in [0.1]:
                                                       bootstrap=trial.suggest_categorical("bootstrap", [True, False]),
                                                       min_samples_split=trial.suggest_int("min_samples_split", 2, 20),
                                                       min_samples_leaf=trial.suggest_int("min_samples_leaf", 1, 20),
-                                                      max_features=trial.suggest_float("max_features", 0.0, 1.0),
+                                                      max_features=None,#trial.suggest_float("max_features", 0.5, 1.0),
                                                       max_depth=max_depth,
                                                       random_state=42, n_jobs=-1)
 
@@ -144,7 +144,7 @@ for discrete in [0.1]:
             study = optuna.create_study(direction='maximize')
 
 
-            study.optimize(partial(objective, folds=folds), n_trials=100)
+            study.optimize(partial(objective, folds=folds), n_trials=200)
 
 
 
@@ -159,7 +159,7 @@ for discrete in [0.1]:
                                                   bootstrap=study.best_params['bootstrap'],
                                                   min_samples_split=study.best_params['min_samples_split'],
                                                   min_samples_leaf=study.best_params['min_samples_leaf'],
-                                                  max_features=study.best_params['max_features'],
+                                                  max_features=None,#study.best_params['max_features'],
                                                   max_depth=max_depth,
                                                   random_state=42, n_jobs=-1)
         model_success.fit(X, np.array(y) >= discrete)
