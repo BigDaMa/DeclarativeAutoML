@@ -6,6 +6,12 @@ import openml
 from sklearn.metrics import balanced_accuracy_score
 from autosklearn.metrics import balanced_accuracy
 from autosklearn.experimental.askl2 import AutoSklearn2Classifier
+from codecarbon import EmissionsTracker
+import numpy as np
+import getpass
+import time
+import os
+import shutil
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -43,7 +49,13 @@ for test_holdout_dataset_id in [args.dataset]:
 
         for repeat in range(10):
 
+            tmp_path = "/home/" + getpass.getuser() + "/data/auto_tmp/autosklearn" + str(time.time()) + '_' + str(
+                np.random.randint(1000) + 'folder')
+
             try:
+                tracker = EmissionsTracker()
+                tracker.start()
+
                 feat_type = []
                 for c_i in range(len(categorical_indicator_hold)):
                     if categorical_indicator_hold[c_i]:
@@ -57,7 +69,7 @@ for test_holdout_dataset_id in [args.dataset]:
                     metric=balanced_accuracy,
                     seed=repeat,
                     memory_limit=1024 * 250,
-                    ensemble_size=1
+                    tmp_folder=tmp_path
                 )
 
                 X_train_sample = X_train_hold
@@ -66,15 +78,20 @@ for test_holdout_dataset_id in [args.dataset]:
                 automl.fit(X_train_sample.copy(), y_train_sample.copy(), feat_type=feat_type, metric=balanced_accuracy)
                 #automl.refit(X_train_sample.copy(), y_train_sample.copy())
 
+                tracker.stop()
+
                 y_hat = automl.predict(X_test_hold)
                 result = balanced_accuracy_score(y_test_hold, y_hat)
 
 
-                new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'test', result, more='test'))
+                new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'test', result, more='test', tracker=tracker))
             except Exception as e:
                 print(e)
                 result = 0
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'shit happened', result, more='test'))
+            finally:
+                if os.path.exists(tmp_path) and os.path.isdir(tmp_path):
+                    shutil.rmtree(tmp_path)
 
             current_dynamic.append(result)
             print('dynamic: ' + str(current_dynamic))
