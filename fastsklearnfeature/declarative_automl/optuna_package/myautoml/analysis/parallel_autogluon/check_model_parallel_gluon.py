@@ -13,7 +13,7 @@ import getpass
 import os
 import shutil
 from codecarbon import EmissionsTracker
-
+import traceback
 
 
 
@@ -79,7 +79,9 @@ for test_holdout_dataset_id in [args.dataset]:
                 result = balanced_accuracy_score(y_test_hold, y_hat)
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'test', result, more='test', tracker=tracker))
-            except:
+            except Exception as e:
+                traceback.print_exc()
+                print(e)
                 result = 0
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'shit happened', result, more='test'))
             finally:

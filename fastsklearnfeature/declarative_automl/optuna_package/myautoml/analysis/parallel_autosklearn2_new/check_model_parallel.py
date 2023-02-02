@@ -12,6 +12,7 @@ import getpass
 import time
 import os
 import shutil
+import traceback
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -86,6 +87,7 @@ for test_holdout_dataset_id in [args.dataset]:
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'test', result, more='test', tracker=tracker))
             except Exception as e:
+                traceback.print_exc()
                 print(e)
                 result = 0
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'shit happened', result, more='test'))
