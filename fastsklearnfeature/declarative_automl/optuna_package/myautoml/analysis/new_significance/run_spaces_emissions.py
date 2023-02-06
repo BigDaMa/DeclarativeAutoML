@@ -33,6 +33,12 @@ nametag = 'good_random_pipelinesize_'
 folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_searchtime_big_constraints'
 nametag = 'ensemble_'
 
+folder = '/home/felix/phd2/dec_automl/feb_03_autosklearn'
+nametag = 'autosklearn2_'
+
+folder = '/home/felix/phd2/dec_automl/feb_03_autogluon'
+nametag = 'gluon_'
+
 print(glob.glob( folder + nametag + '*'))
 
 my_list = ['168797', '167200', '189862', '168794', '75097', '189905', '189866', '168796', '75193', '167185', '75105', '167168', '168793', '167152', '126025', '168798', '167083', '167149', '189908', '126026', '189865', '167181', '189906', '189874', '189872', '167190', '167104', '189909', '167161', '75127', '167201', '189861', '126029', '189860', '189873', '167184', '168795', '168792', '189871']
@@ -46,34 +52,37 @@ for constraint_i in range(4):
     data_means[constraint_i] = {}
 
     for datasetid in my_list:
-        data = pickle.load(open(folder + '/' + nametag + datasetid + '.p', "rb"))
-        data_all.append(data['dynamic'][constraint_i])
-        data_means[constraint_i][datasetid] = np.mean(data['dynamic'][constraint_i])
+        try:
+            #data = pickle.load(open(folder + '/' + nametag + datasetid + '.p', "rb"))
+            #data_all.append(data['dynamic'][constraint_i])
+            #data_means[constraint_i][datasetid] = np.mean(data['dynamic'][constraint_i])
 
-        data_space = pickle.load(open(folder + '/' + 'log_' + nametag + datasetid + '.p', "rb"))
-        best_run_space = None
-        best_run_score = 0.0
-        best_str = None
-        for my_run in data_space['dynamic'][constraint_i].runs:
-            #print(data_space['dynamic'][constraint_i].runs)
-            if my_run.test_score > best_run_score:
-                best_run_score = my_run.test_score
-                best_run_space = my_run.params
-                best_str = my_run.space_str
-        #print(datasetid + ': ' + str(best_run_space))
+            data_space = pickle.load(open(folder + '/' + 'log_' + nametag + datasetid + '.p', "rb"))
+            best_run_space = None
+            best_run_score = 0.0
+            best_str = None
+            for my_run in data_space['dynamic'][constraint_i].runs:
+                #print(data_space['dynamic'][constraint_i].runs)
+                if my_run.test_score > best_run_score:
+                    best_run_score = my_run.test_score
+                    best_run_space = my_run.params
+                    best_str = my_run.space_str
+            #print(datasetid + ': ' + str(best_run_space))
 
-        #dataset = openml.datasets.get_dataset(dataset_id=datasetid)
-        #print(datasetid +  ': ' + str(len(best_run_space)))
-        #print(datasetid + ': ' + str(best_run_space['sample_fraction']))
-        #if datasetid == '168793':
-        '''
-        if True:
-            print(best_run_space)
-            #print('sample_fraction: ' + str(best_run_space['sample_fraction']))
-            print(best_str)
-        '''
+            #dataset = openml.datasets.get_dataset(dataset_id=datasetid)
+            #print(datasetid +  ': ' + str(len(best_run_space)))
+            #print(datasetid + ': ' + str(best_run_space['sample_fraction']))
+            #if datasetid == '168793':
+            '''
+            if True:
+                print(best_run_space)
+                #print('sample_fraction: ' + str(best_run_space['sample_fraction']))
+                print(best_str)
+            '''
 
-        ##print best space
+            ##print best space
+        except:
+            pass
 
     pop_dyn, pop_static = [], []
     for i in range(10000):

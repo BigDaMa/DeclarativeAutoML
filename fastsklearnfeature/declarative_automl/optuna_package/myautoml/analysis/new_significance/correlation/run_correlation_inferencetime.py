@@ -1,6 +1,7 @@
 import pickle
 import glob
-import  numpy as np
+import numpy as np
+from scipy.stats import mannwhitneyu
 
 
 #folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/autosklearn_oct15'
@@ -510,210 +511,14 @@ nametag = '/good_random_trainingtime_'
 #folder = '/home/felix/phd2/dec_automl/jan04_alternating_classification01_searchtime'
 #nametag = '/ensemble_'
 
-#jan04_alter_classification_training_time
-#folder = '/home/felix/phd2/dec_automl/jan04_alter_classification_training_time'
-#nametag = '/good_random_trainingtime_'
 
 
-#jan04_alter_classification_inference_time
-#folder = '/home/felix/phd2/dec_automl/jan04_alter_classification_inference_time'
-#nametag = '/good_random_inferencetime_'
-
-#jan04_alternating_classification01_searchtime_hybrid05
-#folder = '/home/felix/phd2/dec_automl/jan04_alternating_classification01_searchtime_hybrid05'
-#nametag = '/ensemble_'
-
-#jan04_hybrid_setting03
-#folder = '/home/felix/phd2/dec_automl/jan04_hybrid_setting03'
-#nametag = '/ensemble_'
-
-#jan04_hybrid_setting04
-#folder = '/home/felix/phd2/dec_automl/jan04_hybrid_setting04'
-#nametag = '/ensemble_'
-
-#jan04_hybrid_setting06
-#folder = '/home/felix/phd2/dec_automl/jan04_hybrid_setting06'
-#nametag = '/ensemble_'
-
-#jan04_classifaction01_fairness
-#folder = '/home/felix/phd2/dec_automl/jan04_classifaction01_fairness'
-#nametag = '/good_random_fairness_'
-
-#jan04_alternating_classification01_searchtime_hybrid025
-folder = '/home/felix/phd2/dec_automl/jan04_alternating_classification01_searchtime_hybrid025'
-nametag = '/ensemble_'
-
-folder = '/home/felix/phd2/dec_automl/jan04_alternating_classification01_searchtime_hybrid02'
-nametag = '/ensemble_'
-
-folder = '/home/felix/phd2/dec_automl/jan04_alternating_classification01_searchtime_hybrid035'
-nametag = '/ensemble_'
-
-folder = '/home/felix/phd2/dec_automl/jan04_alternating_classification01_searchtime_hybrid03_big_constraints'
-nametag = '/ensemble_'
-
-#jan06_alternating_classification01_pipelinesize_hybrid03
-folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_pipelinesize_hybrid03'
-nametag = '/good_random_pipelinesize_'
-
-folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_pipelinesize_hybrid05'
-nametag = '/good_random_pipelinesize_'
-
-folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_pipelinesize_hybrid03_big_constraints'
-nametag = '/good_random_pipelinesize_'
-
-folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_pipelinesize_hybrid05_big_constraints'
-nametag = '/good_random_pipelinesize_'
-
-#jan06_alternating_classification01_searchtime_big_constraints
-folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_searchtime_big_constraints'
-nametag = '/ensemble_'
-
-#folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_pipelinesize_hybrid05_big_constraints'
-#nametag = '/good_random_pipelinesize_'
-
-#jan06_alternating_classification01_pipelinesize_big_constraints
-#folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_pipelinesize_big_constraints'
-#nametag = '/good_random_pipelinesize_'
-
-
-#jan07_alternating_classification01_trainingtime_big_constraints
-#folder = '/home/felix/phd2/dec_automl/jan07_alternating_classification01_trainingtime_big_constraints'
-#nametag = '/good_random_trainingtime_'
 
 #jan07_alternating_classification01_inferencetime_big_constraints
-#folder = '/home/felix/phd2/dec_automl/jan07_alternating_classification01_inferencetime_big_constraints'
-#nametag = '/good_random_inferencetime_'
-
-#jan07_alternating_classification01_fairness_big_constraints
-#folder = '/home/felix/phd2/dec_automl/jan07_alternating_classification01_fairness_big_constraints'
-#nametag = '/good_random_fairness_'
-
-#folder = '/home/felix/phd2/dec_automl/dec08_alternating_classification_1h_searchtime'
-#nametag = '/ensemble_'
-
-#dec09_alternating_classification_weihgting_factor2_searchtime
-#folder = '/home/felix/phd2/dec_automl/dec09_alternating_classification_weihgting_factor2_searchtime'
-#nametag = '/ensemble_'
-
-#dec09_alternating_classification_weihgting_factor1_searchtime
-#folder = '/home/felix/phd2/dec_automl/dec09_alternating_classification_weihgting_factor1_searchtime'
-#nametag = '/ensemble_'
-
-#dec09_alternating_classification_weihgting_factor3_searchtime
-#folder = '/home/felix/phd2/dec_automl/dec09_alternating_classification_weihgting_factor3_searchtime'
-#nametag = '/ensemble_'
-
-#dec11_random_sampling_classification_stepwise
-folder = '/home/felix/phd2/dec_automl/dec11_random_sampling_classification_stepwise'
-nametag = '/stepwise_'
-
-#folder = '/home/felix/phd2/dec_automl/dec11_alternating_sampling_classification_stepwise'
-#nametag = '/stepwise_'
-
-#folder = '/home/felix/phd2/dec_automl/dec11_uncertainty_sampling_classification_stepwise'
-#nametag = '/stepwise_'
-
-#jan11_gluon
-#folder = '/home/felix/phd2/dec_automl/jan11_gluon'
-#nametag = '/gluon_'
-
-#folder = '/home/felix/phd2/dec_automl/autosklearn_oct15'
-#nametag = '/autosklearn_'
-
-#folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_pipelinesize_big_constraints'
-#nametag = '/good_random_pipelinesize_'
-
-#folder = '/home/felix/phd2/dec_automl/sep24_pipeline_size'
-#nametag = '/sample_instances_new2_all_constraints_'
-#tag = 'static'
-
-#folder = '/home/felix/phd2/dec_automl/september23_training_time'
-#nametag = '/sample_instances_new2_all_constraints_training_time__'
-#tag = 'static'
-
-#folder = '/home/felix/phd2/dec_automl/jan07_alternating_classification01_trainingtime_big_constraints'
-#nametag = '/good_random_trainingtime_'
-
-#folder = '/home/felix/phd2/dec_automl/sep26_inference_time'
-#nametag = '/sample_instances_new2_all_constraints_inference_time__'
-#tag = 'static'
-
-#folder = '/home/felix/phd2/dec_automl/jan07_alternating_classification01_inferencetime_big_constraints'
-#nametag = '/good_random_inferencetime_'
+folder = '/home/felix/phd2/dec_automl/jan07_alternating_classification01_inferencetime_big_constraints'
+nametag = '/good_random_inferencetime_'
 
 
-#sep21_fair_results
-#folder = '/home/felix/phd2/dec_automl/sep21_fair_results'
-#nametag = '/sample_instances_new2_all_constraints_fairness__'
-
-#jan13_number_random_configurations_searchtime
-#folder = '/home/felix/phd2/dec_automl/jan13_number_random_configurations_searchtime'
-#nametag = '/random_configs_fraction_'
-
-#jan13_uncertainty_sampling_classification_stepwise_searchtime
-#folder = '/home/felix/phd2/dec_automl/jan13_uncertainty_sampling_classification_stepwise_searchtime'
-#nametag = '/stepwise_'
-
-#jan13_alternating_sampling_classification_stepwise_searchtime
-#folder = '/home/felix/phd2/dec_automl/jan13_alternating_sampling_classification_stepwise_searchtime'
-#nametag = '/stepwise_'
-
-#jan13_random_sampling_classification_stepwise_searchtime
-#folder = '/home/felix/phd2/dec_automl/jan13_random_sampling_classification_stepwise_searchtime'
-#nametag = '/stepwise_'
-
-#jan14_number_random_configurations_searchtime_smaller
-#folder = '/home/felix/phd2/dec_automl/jan14_number_random_configurations_searchtime_smaller'
-#nametag = '/random_configs_fraction_'
-
-#jan14_full_vall_searchtime
-#folder = '/home/felix/phd2/dec_automl/jan14_full_vall_searchtime'
-#nametag = '/ensemble_'
-
-#jan15_al_sampling_daywise_models_classification_smallest_searchtime
-#folder = '/home/felix/phd2/dec_automl/jan15_al_sampling_daywise_models_classification_smallest_searchtime'
-#nametag = '/stepwise_'
-
-#jan15_random_sampling_daywise_models_classification_smallest_searchtime
-#folder = '/home/felix/phd2/dec_automl/jan15_random_sampling_daywise_models_classification_smallest_searchtime'
-#nametag = '/stepwise_'
-
-folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_searchtime_big_constraints'
-nametag = '/ensemble_'
-
-#jan16_number_random_configs_smaller_even
-#folder = '/home/felix/phd2/dec_automl/jan16_number_random_configs_smaller_even'
-#nametag = '/random_configs_fraction_'
-
-#folder = '/home/felix/phd2/dec_automl/jan17_al_smallest_searchtime'
-#nametag = '/ensemble_'
-
-#folder = '/home/felix/phd2/dec_automl/jan17_al_smallest_searchtime'
-#nametag = '/ensemble_'
-
-#jan17_uncertainty_sampling_stepwise14_smallest_searchtime
-#folder = '/home/felix/phd2/dec_automl/jan17_uncertainty_sampling_stepwise14_smallest_searchtime'
-#nametag = '/stepwise_'
-
-#jan17_random_sampling_stepwise14_smallest_searchtime
-#folder = '/home/felix/phd2/dec_automl/jan17_random_sampling_stepwise14_smallest_searchtime'
-#nametag = '/stepwise_'
-
-#jan17_uncertainty_pipelinesize
-#folder = '/home/felix/phd2/dec_automl/jan17_uncertainty_pipelinesize'
-#nametag = '/good_random_pipelinesize_'
-
-#jan18_alternating_sampling_stepwise14_smallest_searchtime
-#folder = '/home/felix/phd2/dec_automl/jan18_alternating_sampling_stepwise14_smallest_searchtime'
-#nametag = '/stepwise_'
-
-#jan20_random_fractions_2,10,20
-#folder = '/home/felix/phd2/dec_automl/jan20_random_fractions_2,10,20'
-#nametag = '/random_configs_fraction_'
-
-#folder = '/home/felix/phd2/dec_automl/jan13_number_random_configurations_searchtime'
-#nametag = '/random_configs_fraction_'
 
 print(glob.glob( folder + nametag + '*'))
 
@@ -722,34 +527,57 @@ my_list = ['168797', '167200', '189862', '168794', '75097', '189905', '189866', 
 #my_list = ['0', '1', '2', '3', '4']
 
 
-data_means = {}
 
 #tag = 'static'
 tag = 'dynamic'
 
-for constraint_i in range(15):
+data_all_constraint = {}
+for constraint_i in [0,1,2,3,4]:
     data_all = []
-    data_means[constraint_i] = {}
-
     for datasetid in my_list:
         try:
             data = pickle.load(open(folder + nametag + datasetid + '.p', "rb"))
-            #print(data)
             data_all.append(data[tag][constraint_i])
-            data_means[constraint_i][datasetid] = np.mean(data[tag][constraint_i])
         except:
             data_all.append(np.zeros(10))
-            data_means[constraint_i][datasetid] = np.mean(np.zeros(10))
+    data_all_constraint[constraint_i] = data_all
 
+
+print(data_all_constraint)
+
+#dez3_pipeline_size_m1
+folder = '/home/felix/phd2/dec_automl/sep26_inference_time'
+nametag = '/sample_instances_new2_all_constraints_inference_time__'
+tag = 'static'
+
+
+data_all_constraint_compare = {}
+for constraint_i in [0,1,2,3,4,5]:
+    data_all = []
+    for datasetid in my_list:
+        try:
+            data = pickle.load(open(folder + nametag + datasetid + '.p', "rb"))
+            data_all.append(data[tag][constraint_i])
+        except:
+            data_all.append(np.zeros(10))
+    data_all_constraint_compare[constraint_i] = data_all
+
+print(data_all_constraint_compare)
+
+constraint_ids = [0,1,2,3,4]
+constraint_ids_compare = [1,2,3,4,5]
+
+for constraint_indices in range(10):
     pop_dyn, pop_static = [], []
     for i in range(10000):
         list_dyn, list_static = [], []
-        for d in range(len(data_all)):
-            list_dyn.append(np.random.choice(data_all[d]))
-            #list_static.append()
+        for d in range(len(my_list)):
+            list_dyn.append(np.random.choice(data_all_constraint[constraint_ids[constraint_indices]][d]))
+            list_static.append(np.random.choice(data_all_constraint_compare[constraint_ids_compare[constraint_indices]][d]))
         pop_dyn.append(np.mean(list_dyn))
-        #pop_static.append(np.mean(list_static))
-        #w, p = scipy.stats.mannwhitneyu(pop_dyn, pop_static, alternative='less')
-    print(str(np.mean(pop_dyn)) + ' +- ' + str(np.std(pop_dyn)))
+        pop_static.append(np.mean(list_static))
+        #print(str(np.mean(list_dyn)) + ' : ' + str(np.mean(list_static)))
+    w, p = mannwhitneyu(pop_static, pop_dyn, alternative='less')
+    #w, p = mannwhitneyu(pop_dyn, pop_static, alternative='less')
+    print('w: ' + str(w) + ' p: ' + str(p))
 
-print(data_means)

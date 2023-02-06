@@ -40,13 +40,13 @@ my_list_constraints = ['global_search_time_constraint',
 
 _, feature_names = get_feature_names(my_list_constraints)
 
-#X = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_X_compare_scaled.p', "rb"))
-#y = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_y_compare_scaled.p', "rb"))
-#groups = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_group_compare_scaled.p', "rb"))
+X = pickle.load(open('/home/felix/phd2/dec_automl/okt22_al_1week_m4/felix_X_compare_scaled.p', "rb"))
+y = pickle.load(open('/home/felix/phd2/dec_automl/okt22_al_1week_m4/felix_y_compare_scaled.p', "rb"))
+groups = pickle.load(open('/home/felix/phd2/dec_automl/okt22_al_1week_m4/felix_group_compare_scaled.p', "rb"))
 
-X = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
-y = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "rb"))
-groups = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_group_compare_scaled.p', "rb"))
+#X = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
+#y = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_y_compare_scaled.p', "rb"))
+#groups = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_group_compare_scaled.p', "rb"))
 
 print(X.shape)
 
@@ -57,11 +57,11 @@ print(X.shape)
 # Fit the model using predictor X and response y.
 #model_success.fit(X, y)
 
-best_params = {'use_max_depth': True, 'max_depth': 8, 'n_estimators': 9, 'bootstrap': True, 'min_samples_split': 12, 'min_samples_leaf': 3, 'max_features': 0.41407332974426403, 'use_train_filter': True, 'train_filter_search_time': 14}
+#best_params = {'use_max_depth': True, 'max_depth': 8, 'n_estimators': 9, 'bootstrap': True, 'min_samples_split': 12, 'min_samples_leaf': 3, 'max_features': 0.41407332974426403, 'use_train_filter': True, 'train_filter_search_time': 14}
 
 
 study = optuna.create_study(direction='minimize')
-study.enqueue_trial(best_params)
+#study.enqueue_trial(best_params)
 
 def objective(trial):
 
@@ -92,6 +92,7 @@ def objective(trial):
             X_train, X_test = np.array(X)[train_index], np.array(X)[test_index]
             y_train, y_test = np.array(y)[train_index], np.array(y)[test_index]
 
+            '''
             if trial.suggest_categorical("use_train_filter", [True, False]):
                 indices_higher = np.where(X_train[:, feature_names.index('global_search_time_constraint')] > trial.suggest_int("train_filter_search_time", 11, 300))[0]
                 X_train = X_train[indices_higher, :]
@@ -102,6 +103,7 @@ def objective(trial):
             indices_higher = np.where(X_test[:, feature_names.index('global_search_time_constraint')] > 200)[0]
             X_test = X_test[indices_higher, :]
             y_test = y_test[indices_higher]
+            '''
 
             #model_success = xgb.XGBRegressor(tree_method="hist", n_estimators=trial.suggest_int('n_estimators', 1, 10000, log=True), max_depth=trial.suggest_int('max_depth', 1, 100, log=True))
             #model_success = RandomForestRegressor(n_estimators=trial.suggest_int('n_estimators', 1, 1000, log=True), random_state=42, n_jobs=-1)

@@ -21,17 +21,8 @@ import openml
 #folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/mai26_3weeks'
 #nametag = '/sample_instances_new2_all_'
 
-#folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/okt10_dynamic'
-#nametag = 'ensemble_'
-
-folder = '/home/felix/phd2/dec_automl/nov25_run_until1h_good_random'
-nametag = 'ensemble_'
-
-folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_pipelinesize_big_constraints'
-nametag = 'good_random_pipelinesize_'
-
-folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_searchtime_big_constraints'
-nametag = 'ensemble_'
+folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/aug21_autosklearn2_describe'
+nametag = 'autosklearn_'
 
 print(glob.glob( folder + nametag + '*'))
 
@@ -56,34 +47,8 @@ for constraint_i in range(4):
         best_str = None
         for my_run in data_space['dynamic'][constraint_i].runs:
             #print(data_space['dynamic'][constraint_i].runs)
-            if my_run.test_score > best_run_score:
-                best_run_score = my_run.test_score
-                best_run_space = my_run.params
-                best_str = my_run.space_str
-        #print(datasetid + ': ' + str(best_run_space))
+            if datasetid == '75193':
+                print(my_run.space)
+        #print(datasetid + ': ' + str(best_str))
+    print('###########################')
 
-        #dataset = openml.datasets.get_dataset(dataset_id=datasetid)
-        #print(datasetid +  ': ' + str(len(best_run_space)))
-        #print(datasetid + ': ' + str(best_run_space['sample_fraction']))
-        #if datasetid == '168793':
-        '''
-        if True:
-            print(best_run_space)
-            #print('sample_fraction: ' + str(best_run_space['sample_fraction']))
-            print(best_str)
-        '''
-
-        ##print best space
-
-    pop_dyn, pop_static = [], []
-    for i in range(10000):
-        list_dyn, list_static = [], []
-        for d in range(len(my_list)):
-            list_dyn.append(np.random.choice(data_all[d]))
-            #list_static.append()
-        pop_dyn.append(np.mean(list_dyn))
-        #pop_static.append(np.mean(list_static))
-        #w, p = scipy.stats.mannwhitneyu(pop_dyn, pop_static, alternative='less')
-    print(str(np.mean(pop_dyn)) + ' +- ' + str(np.std(pop_dyn)))
-
-print(data_means)

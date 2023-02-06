@@ -21,14 +21,8 @@ import openml
 #folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/mai26_3weeks'
 #nametag = '/sample_instances_new2_all_'
 
-#folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/okt10_dynamic'
-#nametag = 'ensemble_'
-
-folder = '/home/felix/phd2/dec_automl/nov25_run_until1h_good_random'
+folder = '/home/neutatz/phd2/decAutoML2weeks_compare2default/okt10_dynamic'
 nametag = 'ensemble_'
-
-folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_pipelinesize_big_constraints'
-nametag = 'good_random_pipelinesize_'
 
 folder = '/home/felix/phd2/dec_automl/jan06_alternating_classification01_searchtime_big_constraints'
 nametag = 'ensemble_'
@@ -41,7 +35,9 @@ data_means = {}
 
 space_len = {}
 
-for constraint_i in range(4):
+dict_data2space_size = {}
+
+for constraint_i in range(6):
     data_all = []
     data_means[constraint_i] = {}
 
@@ -65,13 +61,27 @@ for constraint_i in range(4):
         #dataset = openml.datasets.get_dataset(dataset_id=datasetid)
         #print(datasetid +  ': ' + str(len(best_run_space)))
         #print(datasetid + ': ' + str(best_run_space['sample_fraction']))
-        #if datasetid == '168793':
-        '''
+        #if datasetid == '168796':
+        #if datasetid == '168796':
+        #if datasetid == '189908':
         if True:
+            print('----------------------------')
+            print('constraint: ' + str(constraint_i))
             print(best_run_space)
-            #print('sample_fraction: ' + str(best_run_space['sample_fraction']))
+            hold_out_fraction = -1
+            try:
+                hold_out_fraction = best_run_space['hold_out_fraction']
+                print('validation_fraction: ' + str(hold_out_fraction))
+            except:
+                pass
             print(best_str)
-        '''
+            print('----------------------------\n\n\n')
+            if not datasetid in dict_data2space_size:
+                dict_data2space_size[datasetid] = []
+            else:
+                #dict_data2space_size[datasetid].append(len(str(best_str)))
+                dict_data2space_size[datasetid].append(hold_out_fraction)
+            print(dict_data2space_size)
 
         ##print best space
 
@@ -87,3 +97,5 @@ for constraint_i in range(4):
     print(str(np.mean(pop_dyn)) + ' +- ' + str(np.std(pop_dyn)))
 
 print(data_means)
+
+print(dict_data2space_size)
