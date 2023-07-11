@@ -6,7 +6,7 @@ import openml
 from sklearn.metrics import balanced_accuracy_score
 from autosklearn.metrics import balanced_accuracy
 from autosklearn.experimental.askl2 import AutoSklearn2Classifier
-from codecarbon import EmissionsTracker
+#from codecarbon import EmissionsTracker
 import numpy as np
 import getpass
 import time
@@ -40,7 +40,7 @@ for test_holdout_dataset_id in [args.dataset]:
 
     new_constraint_evaluation_dynamic_all = []
 
-    for minutes_to_search in [5]:
+    for minutes_to_search in [30, 60]:
 
         current_dynamic = []
         search_time_frozen = minutes_to_search * 60
@@ -54,8 +54,8 @@ for test_holdout_dataset_id in [args.dataset]:
                 np.random.randint(1000)) + 'folder'
 
             try:
-                tracker = EmissionsTracker()
-                tracker.start()
+                #tracker = EmissionsTracker()
+                #tracker.start()
 
                 feat_type = []
                 for c_i in range(len(categorical_indicator_hold)):
@@ -79,13 +79,13 @@ for test_holdout_dataset_id in [args.dataset]:
                 automl.fit(X_train_sample.copy(), y_train_sample.copy(), feat_type=feat_type, metric=balanced_accuracy)
                 #automl.refit(X_train_sample.copy(), y_train_sample.copy())
 
-                tracker.stop()
+                #tracker.stop()
 
                 y_hat = automl.predict(X_test_hold)
                 result = balanced_accuracy_score(y_test_hold, y_hat)
 
 
-                new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'test', result, more='test', tracker=tracker))
+                new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'test', result, more='test'))
             except Exception as e:
                 traceback.print_exc()
                 print(e)
