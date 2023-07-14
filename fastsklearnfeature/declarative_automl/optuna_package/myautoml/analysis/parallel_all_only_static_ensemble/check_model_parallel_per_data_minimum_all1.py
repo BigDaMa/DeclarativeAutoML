@@ -35,7 +35,7 @@ print(args.dataset)
 
 print(args)
 
-memory_budget = 500.0
+memory_budget = 10.0
 privacy = None
 
 for test_holdout_dataset_id in [args.dataset]:
