@@ -64,7 +64,7 @@ for test_holdout_dataset_id in [args.dataset]:
     new_constraint_evaluation_dynamic_all = []
     new_constraint_evaluation_default_all = []
 
-    for search_time_frozen in [10, 30, 1*60, 5*60, 10*60, 60*60]:
+    for search_time_frozen in [30*60, 60*60]:#[10, 30, 1*60, 5*60, 10*60, 60*60]:
         pipeline_size = None
         inference_time = None
 
