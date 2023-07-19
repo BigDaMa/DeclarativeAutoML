@@ -6,7 +6,7 @@ import argparse
 import openml
 from sklearn.metrics import balanced_accuracy_score
 from tpot import TPOTClassifier
-import autosklearn
+import traceback
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -22,7 +22,7 @@ print(args.dataset)
 
 print(args)
 
-memory_budget = 500.0
+memory_budget = 10.0
 privacy = None
 
 for test_holdout_dataset_id in [args.dataset]:
@@ -52,7 +52,9 @@ for test_holdout_dataset_id in [args.dataset]:
                 print('dynamic: ' + str(result))
 
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'test', result, more='test'))
-            except:
+            except Exception as e:
+                print(str(e) + '\n\n')
+                traceback.print_exc()
                 result = 0
                 new_constraint_evaluation_dynamic.append(ConstraintRun('test', 'shit happened', result, more='test'))
 
