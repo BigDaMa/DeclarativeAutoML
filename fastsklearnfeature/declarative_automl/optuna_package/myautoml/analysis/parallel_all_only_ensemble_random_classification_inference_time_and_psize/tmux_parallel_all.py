@@ -8,7 +8,8 @@ datasets = [168794, 168797, 168796, 189871, 189861, 167185, 189872, 189908, 7510
 
 
 
-program = '/home/' + getpass.getuser() + '/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/parallel_all_only_ensemble_random_classification_inference_time_and_psize/check_model_parallel_per_data_minimum_all1.py'
+program = '/home/' + getpass.getuser() + '/Software/DeclarativeAutoML/fastsklearnfeature/declarative_automl/optuna_package/myautoml/analysis/parallel_all_only_ensemble_random_classification_inference_time_and_psize/check_model_parallel_per_data_minimum_all1.py'
+
 outputname = 'good_random_inferencetime_psize'
 
 conda_name = 'AutoMLD'
