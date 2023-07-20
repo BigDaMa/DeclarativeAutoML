@@ -10,6 +10,9 @@ from matplotlib import pyplot as plt
 import getpass
 import pickle
 
+openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
+openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
+
 auc = make_scorer(balanced_accuracy_score)
 
 # dataset = openml.datasets.get_dataset(1114)
