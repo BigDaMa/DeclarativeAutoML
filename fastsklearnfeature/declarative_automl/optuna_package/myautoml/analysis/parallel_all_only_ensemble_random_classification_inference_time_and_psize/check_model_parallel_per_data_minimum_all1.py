@@ -173,6 +173,7 @@ for test_holdout_dataset_id in [args.dataset]:
                 try:
                     result = None
                     search_dynamic = None
+                    '''
                     if True:#mp_global.study_prune.best_trial.value > 0.5: #TODO
                         result, search_dynamic, space = utils_run_AutoML_ensemble_from_features(X_train=X_train_hold,
                                                                      X_test=X_test_hold,
@@ -188,8 +189,38 @@ for test_holdout_dataset_id in [args.dataset]:
                                                                      inference_time_limit=inference_time_limit,
                                                                      pipeline_size_limit=pipeline_size_limit
                                                      )
+                    '''
+                    gen_new = SpaceGenerator()
+                    space = gen_new.generate_params()
 
-                    new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=random_configs[best_id], test_score=result, estimated_score=0.0))
+                    result = None
+                    search_default = AutoEnsembleML(n_jobs=1,
+                                                    time_search_budget=search_time_frozen,
+                                                    space=space,
+                                                    evaluation_budget=int(0.1 * search_time_frozen),
+                                                    main_memory_budget_gb=memory_budget,
+                                                    differential_privacy_epsilon=privacy,
+                                                    hold_out_fraction=0.33,
+                                                    inference_time_limit=inference_time_limit,
+                                                    pipeline_size_limit=pipeline_size_limit
+                                                    )
+
+                    best_result = search_default.fit(X_train_hold, y_train_hold,
+                                                     categorical_indicator=categorical_indicator_hold,
+                                                     scorer=my_scorer)
+
+                    result = 0.0
+                    try:
+                        search_default.ensemble(X_train_hold, y_train_hold)
+                        y_hat_test = search_default.ensemble_predict(X_test_hold)
+                        result = balanced_accuracy_score(y_test_hold, y_hat_test)
+                    except:
+                        pass
+
+                    #new_constraint_evaluation_dynamic.append(ConstraintRun(space_str=space2str(space.parameter_tree), params=random_configs[best_id], test_score=result, estimated_score=0.0))
+                    new_constraint_evaluation_dynamic.append(
+                        ConstraintRun(space_str='', params=random_configs[best_id],
+                                      test_score=result, estimated_score=0.0))
                 except:
                     result = 0
                     new_constraint_evaluation_dynamic.append(ConstraintRun(space_str='', params=random_configs[best_id], test_score=result, estimated_score=0.0))
