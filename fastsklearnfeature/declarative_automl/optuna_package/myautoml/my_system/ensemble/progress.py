@@ -9,6 +9,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import getpass
 import pickle
+from sklearn.model_selection import StratifiedShuffleSplit
 
 openml.config.apikey = '4384bd56dad8c3d2c0f6630c52ef5567'
 openml.config.cache_directory = '/home/neutatz/phd2/cache_openml'
@@ -26,7 +27,7 @@ dataset = openml.datasets.get_dataset(31)  # 51
 #dataset = openml.datasets.get_dataset(1596)
 
 #41161
-#dataset = openml.datasets.get_dataset(41161)
+dataset = openml.datasets.get_dataset(41161)
 
 X, y, categorical_indicator, attribute_names = dataset.get_data(
     dataset_format='array',
@@ -41,19 +42,39 @@ X, y, categorical_indicator, attribute_names = dataset.get_data(
 
 print(X.shape)
 
+'''
 X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=42, stratify=y,
                                                                             train_size=0.6)
+                                                                            
+sss = StratifiedShuffleSplit(n_splits=5, test_size=0.4, random_state=0)
+for i, (train_index, test_index) in enumerate(sss.split(X, y)):
+	break
+
+print(train_index)
+print(test_index)
+split_dict = {}
+split_dict['train_index'] = train_index
+split_dict['test_index'] = test_index
+
+with open('split.p', "wb+") as pickle_model_file:
+    pickle.dump(split_dict, pickle_model_file)
+'''
+split_dict = pickle.load(open('split.p', "rb"))
+X_train = X[split_dict['train_index']]
+X_test = X[split_dict['test_index']]
+y_train = y[split_dict['train_index']]
+y_test = y[split_dict['test_index']]
 
 gen = SpaceGenerator()
 space = gen.generate_params()
 
-searchtime = 2*60
+searchtime = 10 * 60
 
 times_all = []
 best_val_scores_all = []
 
 
-for repeat in range(5):
+for repeat in range(10):
 
     search = AutoEnsembleML(n_jobs=1,
                       evaluation_budget=searchtime * 0.1,
