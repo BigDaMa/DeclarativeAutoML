@@ -130,7 +130,7 @@ for discrete in [0.1]:
             for t in best_trials:
                 study.enqueue_trial(t.params)
 
-            study.optimize(partial(objective, folds=folds), n_trials=10)
+            study.optimize(partial(objective, folds=folds), n_trials=100)
 
             def get_val(trial):
                 return trial.value
