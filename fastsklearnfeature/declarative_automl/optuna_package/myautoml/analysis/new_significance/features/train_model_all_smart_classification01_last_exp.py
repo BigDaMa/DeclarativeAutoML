@@ -34,7 +34,7 @@ days_f1score = []
 #for discrete in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
 for discrete in [0.1]:
 
-    for day in [1,2]:#[1,2,3,4,5,6,7]:
+    for day in [1,2,3,4,5,6,7]:
 
 
         X = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
@@ -132,7 +132,7 @@ for discrete in [0.1]:
             for t in best_trials:
                 study.enqueue_trial(t.params)
 
-            study.optimize(partial(objective, folds=folds), n_trials=10)
+            study.optimize(partial(objective, folds=folds), n_trials=100)
 
             def get_val(trial):
                 return trial.value
