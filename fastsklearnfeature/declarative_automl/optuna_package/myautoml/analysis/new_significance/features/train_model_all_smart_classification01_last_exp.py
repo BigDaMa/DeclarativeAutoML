@@ -29,10 +29,12 @@ openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_open
 #y = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_y_compare_scaled.p', "rb"))
 #groups = pickle.load(open('/home/neutatz/phd2/decAutoML2weeks_compare2default/okt1_2week_constraint_model/felix_group_compare_scaled.p', "rb"))
 
+days_f1score = []
+
 #for discrete in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
 for discrete in [0.1]:
 
-    for day in [1]:#[1,2,3,4,5,6,7]:
+    for day in [1,2]:#[1,2,3,4,5,6,7]:
 
 
         X = pickle.load(open('/home/' + getpass.getuser() + '/data/my_temp/felix_X_compare_scaled.p', "rb"))
@@ -130,7 +132,7 @@ for discrete in [0.1]:
             for t in best_trials:
                 study.enqueue_trial(t.params)
 
-            study.optimize(partial(objective, folds=folds), n_trials=100)
+            study.optimize(partial(objective, folds=folds), n_trials=10)
 
             def get_val(trial):
                 return trial.value
@@ -154,4 +156,9 @@ for discrete in [0.1]:
         model_success.fit(X, np.array(y) >= discrete)
 
         y_test_predict_all = model_success.predict(X_test_all)
-        print(f1_score(np.array(y_test_all) >= discrete, y_test_predict_all))
+
+        days_f1score.append(f1_score(np.array(y_test_all) >= discrete, y_test_predict_all))
+
+        print(days_f1score[-1])
+
+print(days_f1score)
