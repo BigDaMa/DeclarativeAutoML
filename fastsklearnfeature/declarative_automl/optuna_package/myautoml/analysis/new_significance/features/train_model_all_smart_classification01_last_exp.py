@@ -130,7 +130,7 @@ for discrete in [0.1]:
             for t in best_trials:
                 study.enqueue_trial(t.params)
 
-            study.optimize(partial(objective, folds=folds), n_trials=100)
+            study.optimize(partial(objective, folds=folds), n_trials=10)
 
             def get_val(trial):
                 return trial.value
@@ -154,4 +154,4 @@ for discrete in [0.1]:
         model_success.fit(X, np.array(y) >= discrete)
 
         y_test_predict_all = model_success.predict(X_test_all)
-        print(f1_score(y_test_all >= discrete, y_test_predict_all))
+        print(f1_score(np.array(y_test_all) >= discrete, y_test_predict_all))
