@@ -170,4 +170,10 @@ for rrepeat in range(10):
     days_f1score_all.append(copy.deepcopy(days_f1score))
     print(days_f1score_all)
 
+    my_dict = {}
+    my_dict['res'] = days_f1score_all
+
+    with open('/tmp/avg_series.p', "wb+") as pickle_model_file:
+        pickle.dump(my_dict, pickle_model_file)
+
 print(days_f1score_all)
