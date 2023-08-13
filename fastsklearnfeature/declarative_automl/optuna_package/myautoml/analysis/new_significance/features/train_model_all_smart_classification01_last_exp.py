@@ -32,7 +32,7 @@ openml.config.cache_directory = '/home/' + getpass.getuser() + '/phd2/cache_open
 
 days_f1score_all = []
 
-for rrepeat in range(10):
+for rrepeat in range(5):
 
     days_f1score = []
 
@@ -84,7 +84,7 @@ for rrepeat in range(10):
             best_trials = []
             study = None
 
-            for folds in [10]:
+            for folds in [20]:
 
                 def objective(trial, folds):
 
@@ -137,7 +137,7 @@ for rrepeat in range(10):
                 for t in best_trials:
                     study.enqueue_trial(t.params)
 
-                study.optimize(partial(objective, folds=folds), n_trials=150)
+                study.optimize(partial(objective, folds=folds), n_trials=100)
 
                 def get_val(trial):
                     return trial.value
