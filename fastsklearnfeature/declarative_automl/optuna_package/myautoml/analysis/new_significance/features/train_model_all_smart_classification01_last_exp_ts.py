@@ -138,7 +138,7 @@ for rrepeat in range(5):
                 for t in best_trials:
                     study.enqueue_trial(t.params)
 
-                study.optimize(partial(objective, folds=folds), n_trials=100)
+                study.optimize(partial(objective, folds=folds), n_trials=200)
 
                 def get_val(trial):
                     return trial.value
