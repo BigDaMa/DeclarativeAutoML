@@ -126,7 +126,10 @@ for rrepeat in range(5):
                             train_index_filtered = []
                             for train_i in range(len(train_index)):
                                 if train_index[train_i] in train_index_group:
-                                    test_index_filtered.append(train_index[train_i])
+                                    train_index_filtered.append(train_index[train_i])
+
+                            print('train index: ' + str(train_index_filtered))
+                            print('test index: ' + str(test_index_filtered))
 
                             X_train, X_test = np.array(X)[train_index_filtered], np.array(X)[test_index_filtered]
                             y_train, y_test = np.array(y)[train_index_filtered], np.array(y)[test_index_filtered]
