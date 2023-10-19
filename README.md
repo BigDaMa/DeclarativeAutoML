@@ -8,6 +8,10 @@ In this paper, we propose CAML, which uses meta-learning to automatically adapt 
 
 Credit Stable Diffusion
 
+Check out the example of CAML here:
+https://colab.research.google.com/drive/1z8EnNQnik5gNKSTf38YIDGk4ivJlRVpi?usp=sharing
+
+
 ## Setup
 ```
 conda create -n AutoMLD python=3.7
