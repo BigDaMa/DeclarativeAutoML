@@ -20,3 +20,32 @@ cd Software/DeclarativeAutoML/
 git pull origin main
 sh setup.sh
 ```
+
+## CAML in four lines of code
+
+```python
+from fastsklearnfeature.declarative_automl.caml.CAML import CAML
+caml = CAML(time_search_budget=60, inference_time_limit=0.001)
+caml.fit(X_train, y_train, categorical_indicator)
+y_pred = caml.predict(X_test)
+```
+
+## Relevant publication
+
+If you use CAML in scientific publications, we would appreciate citations.
+
+**AutoML in Heavily Constrained Applications**
+*Felix Neutatz, Marius Lindauer, and Ziawasch Abedjan*
+VLDB Journal (2023)
+
+[Link](https://arxiv.org/pdf/2306.16913.pdf) to publication.
+```
+@inproceedings{feurer-neurips15a,
+    title     = {AutoML in Heavily Constrained Applications},
+    author    = {Felix Neutatz and
+                  Marius Lindauer and
+                  Ziawasch Abedjan},
+    booktitle = {VLDB Journal},
+    year      = {2023}
+}
+```
