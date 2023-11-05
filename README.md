@@ -40,7 +40,7 @@ VLDB Journal (2023)
 
 [Link](https://arxiv.org/pdf/2306.16913.pdf) to publication.
 ```
-@inproceedings{feurer-neurips15a,
+@inproceedings{caml,
     title     = {AutoML in Heavily Constrained Applications},
     author    = {Felix Neutatz and
                   Marius Lindauer and
